@@ -1,16 +1,18 @@
-# superhut
+# SuperHUT
+超级湖南工业大学APP
 
-A new Flutter project.
+## 软件功能
 
-## Getting Started
+- 查看课表
 
-This project is a starting point for a Flutter application.
+## 待实现
 
-A few resources to get you started if this is your first Flutter project:
+- 一键喝水
+- 一键洗澡
+- 查看成绩
+- 查看空教室
+- 接入官方app的部分功能
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 为什么要做这个app
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+因为官方的app真的非常不好用
