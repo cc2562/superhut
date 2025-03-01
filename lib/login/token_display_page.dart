@@ -1,0 +1,54 @@
+// token_display_page.dart
+import 'package:flutter/material.dart';
+
+import '../bridge/getCoursePage.dart';
+import '../command/token.dart';
+
+class TokenDisplayPage extends StatefulWidget {
+  final String token;
+
+  const TokenDisplayPage({super.key, required this.token});
+  @override
+  State<TokenDisplayPage> createState() => _TokenDisplayPageState();
+}
+
+class _TokenDisplayPageState extends State<TokenDisplayPage> {
+  @override
+  void initState() {
+    super.initState();
+    saveToken(widget.token);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => Getcoursepage()));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Token信息')),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '获取到的Token:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  widget.token,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
