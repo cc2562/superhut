@@ -7,19 +7,6 @@ import 'package:get/get.dart';
  */
 
 class CourseTableViewLogic extends GetxController {
-  @override
-  void onInit() {
-    super.onInit();
-  }
 
-  @override
-  void onReady() {
-    super.onReady();
-    //设置周数
-  }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }

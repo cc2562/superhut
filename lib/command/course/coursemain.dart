@@ -54,10 +54,10 @@ Future<void> saveCourseDataToJson(Map<String, List<Course>> courseData) async {
 
   // 将 Map 转换为 JSON 字符串
   String jsonString = jsonEncode(courseDataMap);
-  final Directory _appDocumentsDir = await getApplicationDocumentsDirectory();
-  final String _appDocumentsPath = _appDocumentsDir.path;
+  final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
+  final String appDocumentsPath = appDocumentsDir.path;
   // 将 JSON 字符串写入文件
-  final file = File('$_appDocumentsPath/course_data.json');
+  final file = File('$appDocumentsPath/course_data.json');
   print(jsonString);
   await file.writeAsString(jsonString);
 }
@@ -87,11 +87,11 @@ Future<Map<String, List<Course>>> readCourseDataFromJson(
 }
 
 Future<Map<String, List<Course>>> loadClassFromLocal() async {
-  final Directory _appDocumentsDir = await getApplicationDocumentsDirectory();
-  final String _appDocumentsPath = _appDocumentsDir.path;
+  final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
+  final String appDocumentsPath = appDocumentsDir.path;
   try {
     final Map<String, List<Course>> courseData = await readCourseDataFromJson(
-      '$_appDocumentsPath/course_data.json',
+      '$appDocumentsPath/course_data.json',
     );
     print(courseData);
     return courseData;
@@ -102,8 +102,8 @@ Future<Map<String, List<Course>>> loadClassFromLocal() async {
 }
 
 Future<String> saveClassToLocal(String token) async {
-  final Directory _appDocumentsDir = await getApplicationDocumentsDirectory();
-  final String _appDocumentsPath = _appDocumentsDir.path;
+  final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
+  final String appDocumentsPath = appDocumentsDir.path;
   try {
     final Map<String, List<Course>> courseData = await loadClassFormUrl(token);
     print(courseData);

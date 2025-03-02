@@ -100,65 +100,6 @@ class _CourseTableViewState extends State<CourseTableView> {
     _currentRealWeek = _currentWeek;
   }
 
-  /*
-   * 加载示例课程数据
-   * 为三个不同日期创建演示课程
-   */
-  void _loadExampleData() {
-    _courseData['2025-02-28'] = [
-      Course(
-        name: '高等数学',
-        startSection: 1,
-        duration: 2,
-        teacherName: '雷军',
-        weekDuration: '',
-        location: '公共302',
-      ),
-      Course(
-        name: '大学英语',
-        startSection: 3,
-        duration: 2,
-        teacherName: '任正非',
-        weekDuration: '',
-        location: '公共212',
-      ),
-      Course(
-        name: '体育课',
-        startSection: 7,
-        duration: 2,
-        teacherName: '李华',
-        weekDuration: '',
-        location: '虚拟体育馆',
-      ),
-    ];
-    _courseData['2025-02-27'] = [
-      Course(
-        name: '瓦罗兰特A',
-        startSection: 1,
-        duration: 1,
-        teacherName: '马化腾',
-        weekDuration: '',
-        location: '公共212',
-      ),
-      Course(
-        name: '高等数学',
-        startSection: 3,
-        duration: 2,
-        teacherName: '雷军',
-        weekDuration: '',
-        location: '公共302',
-      ),
-      Course(
-        name: '大学英语',
-        startSection: 5,
-        duration: 2,
-        teacherName: '任正非',
-        weekDuration: '',
-        location: '公共212',
-      ),
-    ];
-    _courseData['2023-10-04'] = [];
-  }
 
   /*
    * 获取指定日期所在周的起始日期（周一）
@@ -168,7 +109,19 @@ class _CourseTableViewState extends State<CourseTableView> {
   DateTime _getStartOfWeek(DateTime date) {
     return date.subtract(Duration(days: date.weekday - 1));
   }
-
+  void _backToRealWeek() {
+    if (_currentWeek ==_currentRealWeek) {
+      return;
+    }
+    setState(() {
+      _currentDate = DateTime(
+        _currentDate.year,
+        _currentDate.month,
+        _currentDate.day - 7*(_currentWeek -_currentRealWeek),
+      );
+      _currentWeek = _currentRealWeek;
+    });
+  }
   /*
    * 切换到上个月视图
    * 更新_currentDate为上月第一天
@@ -266,7 +219,7 @@ class _CourseTableViewState extends State<CourseTableView> {
     if (course.startSection == 1) {
       marginT = 0;
     }
-    String showCourseName = '${course.name}';
+    String showCourseName = course.name;
 
     return Container(
       alignment: Alignment.topLeft,
@@ -321,14 +274,14 @@ class _CourseTableViewState extends State<CourseTableView> {
                                 Ionicons.person_outline,
                                 color: Theme.of(context).primaryColor,
                               ),
-                              title: Text('${course.teacherName}'),
+                              title: Text(course.teacherName),
                             ),
                             ListTile(
                               leading: Icon(
                                 Ionicons.location_outline,
                                 color: Theme.of(context).primaryColor,
                               ),
-                              title: Text('${course.location}'),
+                              title: Text(course.location),
                             ),
                           ],
                         ),
@@ -446,18 +399,38 @@ class _CourseTableViewState extends State<CourseTableView> {
                       //日期显示
                       Expanded(
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               DateFormat('yyyy/M/dd').format(_currentDate),
                               style: const TextStyle(fontSize: 18),
                             ),
-                            Text(
-                              showWeekStr,
-                              style: const TextStyle(fontSize: 18),
+                            PopupMenuButton(
+                              onSelected: (re){
+
+                              },
+                              child: Text(
+                                showWeekStr,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                              itemBuilder: (BuildContext context) {
+                                return [
+                                   PopupMenuItem(
+                                    value: "1",
+                                    child: Text('回到当前周'),
+                                    onTap: (){
+                                      _backToRealWeek();
+                                    },
+                                  ),
+                                ];
+                              },
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+
+                              ),
                             ),
                           ],
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
                         ),
                       ),
                       //上下切换按钮
@@ -499,9 +472,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                     ),
                     ...weekDays.map((day) {
                       String showText =
-                          _weekdayMap[day.weekday]! +
-                          '\n' +
-                          DateFormat('M-d').format(day);
+                          '${_weekdayMap[day.weekday]!}\n${DateFormat('M-d').format(day)}';
                       return Expanded(
                         flex: 4,
                         child: Container(
@@ -521,7 +492,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
 
@@ -544,7 +515,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                           children: [
                             // 添加课程编号列
                             Expanded(
-                              child: Container(
+                              child: SizedBox(
                                 width: 40,
                                 child: Column(
                                   children: List.generate(10, (index) {
@@ -589,7 +560,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                                   ),
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ],
                         ),
                       ),

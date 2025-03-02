@@ -5,18 +5,6 @@ class HomeviewLogic extends GetxController {
   late var nowToken = "".obs;
   PageController homePageController = PageController();
 
-  @override
-  void onInit() {
-    super.onInit();
-  }
 
-  @override
-  void onReady() {
-    super.onReady();
-  }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }

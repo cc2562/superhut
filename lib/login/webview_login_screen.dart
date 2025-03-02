@@ -1,20 +1,23 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'token_display_page.dart';
-
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 class WebViewLoginScreen extends StatefulWidget {
   final String userNo;
   final String password;
   final String showText;
+  final bool renew;
 
   const WebViewLoginScreen({
     super.key,
     required this.userNo,
     required this.password,
     required this.showText,
+    required this.renew,
   });
 
   @override
@@ -65,13 +68,16 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
           ..setJavaScriptMode(JavaScriptMode.unrestricted)
           ..addJavaScriptChannel(
             'TokenChannel',
-            onMessageReceived: (message) {
+            onMessageReceived: (message) async {
+              final prefs = await SharedPreferences.getInstance();
+              prefs.setString('user', widget.userNo);
+              prefs.setString('password', widget.password);
               _handleResponse();
               Navigator.of(context).pop();
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => TokenDisplayPage(token: message.message),
+                  builder: (_) => TokenDisplayPage(token: message.message,renew: widget.renew,),
                 ),
               );
             },
@@ -164,19 +170,18 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('登录中...')),
       body: Stack(
         children: [
           WebViewWidget(controller: _webViewController),
           Container(
-            color: Colors.white.withAlpha(240),
+            color: Theme.of(context).colorScheme.surface.withAlpha(245),
             width: double.infinity,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                CircularProgressIndicator(),
+              children:  [
+                LoadingAnimationWidget.inkDrop(color: Theme.of(context).primaryColor, size: 40),
                 SizedBox(height: 16),
-                Text('正在登录...'),
+                Text(widget.showText),
               ],
             ),
           ),

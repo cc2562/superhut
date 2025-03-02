@@ -6,8 +6,8 @@ import '../command/token.dart';
 
 class TokenDisplayPage extends StatefulWidget {
   final String token;
-
-  const TokenDisplayPage({super.key, required this.token});
+  final bool renew;
+  const TokenDisplayPage({super.key, required this.token,required this.renew});
   @override
   State<TokenDisplayPage> createState() => _TokenDisplayPageState();
 }
@@ -17,11 +17,15 @@ class _TokenDisplayPageState extends State<TokenDisplayPage> {
   void initState() {
     super.initState();
     saveToken(widget.token);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => Getcoursepage()));
-    });
+    if(widget.renew){
+      Navigator.of(context).pop();
+    }else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => Getcoursepage()));
+      });
+    }
   }
 
   @override
