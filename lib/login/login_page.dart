@@ -28,102 +28,111 @@ class _LoginPageState extends State<LoginPage> {
               width: 1000,
               height: 400,
               color: Theme.of(context).secondaryHeaderColor,
-              padding: EdgeInsets.only(top:200,right: 20,left: 20),
+              padding: EdgeInsets.only(top: 200, right: 20, left: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("欢迎~",
+                  Text(
+                    "欢迎~",
                     style: TextStyle(
-                        fontSize: 35,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor
+                      fontSize: 35,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  Text("与HUT签订契约吧",
+                  Text(
+                    "与HUT签订契约吧",
                     style: TextStyle(
-                       // fontSize: 35,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor
+                      // fontSize: 35,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
                 ],
               ),
             ),
-            MediaQuery.removePadding(context: context,
-                removeTop: true,
-                child:   ListView(
-                  children: [
-                    Container(
-                      margin: EdgeInsets.only(top: 200,),
-                      child: Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.only(topLeft:Radius.circular(20),topRight: Radius.circular(20)),
+            MediaQuery.removePadding(
+              context: context,
+              removeTop: true,
+              child: ListView(
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(top: 200),
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              topRight: Radius.circular(20),
                             ),
-                            margin: EdgeInsets.only(top: 100,),
-                            padding: EdgeInsets.only(top: 40,right: 20,left: 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text("登录",
-                                  style: TextStyle(
-                                      fontSize: 30,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).primaryColor
-                                  ),
+                          ),
+                          margin: EdgeInsets.only(top: 100),
+                          padding: EdgeInsets.only(
+                            top: 40,
+                            right: 20,
+                            left: 20,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "登录",
+                                style: TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
                                 ),
-                                SizedBox(height: 10,),
-                                Container(
-                                  width: 400,
-                                  padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-                                  //      margin: EdgeInsets.only(left: 5,right: 5),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    color:Theme.of(context).highlightColor,
-                                  ),
-                                  child:  TextField(
-                                    keyboardType: TextInputType.number,
-                                    style: TextStyle(
-                                        fontSize: 18
-                                    ),
-                                    maxLength: 13,
-                                    decoration: InputDecoration(
-                                      filled: false,
-                                      hintText: "账号",
-                                      border: InputBorder.none,
-                                      counterText: '',
-                                    ),
-                                    controller: _userNoController,
-                                  ),
+                              ),
+                              SizedBox(height: 10),
+                              Container(
+                                width: 400,
+                                padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+                                //      margin: EdgeInsets.only(left: 5,right: 5),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  color: Theme.of(context).highlightColor,
                                 ),
-                                SizedBox(height: 10,),
-                                Container(
-                                  width: 400,
-                                  padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-                                  //      margin: EdgeInsets.only(left: 5,right: 5),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    color:Theme.of(context).highlightColor,
+                                child: TextField(
+                                  keyboardType: TextInputType.number,
+                                  style: TextStyle(fontSize: 18),
+                                  maxLength: 13,
+                                  decoration: InputDecoration(
+                                    filled: false,
+                                    hintText: "账号",
+                                    border: InputBorder.none,
+                                    counterText: '',
                                   ),
-                                  child:   TextField(
-                                    style: TextStyle(
-                                        fontSize: 18
-                                    ),
-                                    maxLength: 40,
-                                    decoration: InputDecoration(
-                                      filled: false,
-                                      hintText: "密码",
-                                      border: InputBorder.none,
-                                      counterText: '',
-                                    ),
-                                    controller: _pwdController,
-                                    obscureText: true,
-                                  ),
+                                  controller: _userNoController,
                                 ),
-                                const SizedBox(height: 20),
-                                Flex(direction: Axis.horizontal,children: [
+                              ),
+                              SizedBox(height: 10),
+                              Container(
+                                width: 400,
+                                padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+                                //      margin: EdgeInsets.only(left: 5,right: 5),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  color: Theme.of(context).highlightColor,
+                                ),
+                                child: TextField(
+                                  style: TextStyle(fontSize: 18),
+                                  maxLength: 40,
+                                  decoration: InputDecoration(
+                                    filled: false,
+                                    hintText: "密码",
+                                    border: InputBorder.none,
+                                    counterText: '',
+                                  ),
+                                  controller: _pwdController,
+                                  obscureText: true,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Flex(
+                                direction: Axis.horizontal,
+                                children: [
                                   Expanded(
                                     child: FilledButton(
                                       onPressed: () {
@@ -131,7 +140,11 @@ class _LoginPageState extends State<LoginPage> {
                                             _pwdController.text.isEmpty) {
                                           ScaffoldMessenger.of(
                                             context,
-                                          ).showSnackBar(const SnackBar(content: Text('账号或密码不能为空')));
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('账号或密码不能为空'),
+                                            ),
+                                          );
                                           return;
                                         }
                                         Navigator.push(
@@ -139,35 +152,38 @@ class _LoginPageState extends State<LoginPage> {
                                           MaterialPageRoute(
                                             builder:
                                                 (context) => WebViewLoginScreen(
-                                              userNo: _userNoController.text,
-                                              password: _pwdController.text,
-                                              showText: "正在登录...",
+                                                  userNo:
+                                                      _userNoController.text,
+                                                  password: _pwdController.text,
+                                                  showText: "正在登录...",
                                                   renew: false,
-                                            ),
+                                                ),
                                           ),
                                         );
                                       },
                                       child: const Text('登录'),
                                     ),
-                                  )
-                                ],)
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          Container(
-                            padding: EdgeInsets.only(right: 20),
-                            alignment: Alignment.topRight,
-                            margin: EdgeInsets.only(top: 0),
-                            child: SvgPicture.asset(Assets.illustrationLogin,width: 150,),
+                        ),
+                        Container(
+                          padding: EdgeInsets.only(right: 20),
+                          alignment: Alignment.topRight,
+                          margin: EdgeInsets.only(top: 0),
+                          child: SvgPicture.asset(
+                            Assets.illustrationLogin,
+                            width: 150,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-            )
-
-
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

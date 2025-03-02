@@ -5,6 +5,7 @@ import 'package:ionicons/ionicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/command/token.dart';
 import 'package:superhut/home/coursetable/view.dart';
+import 'package:superhut/pages/score/scorepage.dart';
 
 import '../../login/webview_login_screen.dart';
 import 'logic.dart';
@@ -33,7 +34,14 @@ class _HomeviewPageState extends State<HomeviewPage>
             Container(
               child: Center(
                 child: ElevatedButton(onPressed: () async {
-                  renewToken(context);
+                  await renewToken(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>ScorePage(),
+                    ),
+                  );
 
                 }, child: Text("2222")),
               ),

@@ -31,8 +31,9 @@ Future<bool> checkTokenValid() async {
   }
 }
 
-Future<void> renewToken(context) async {
+Future<String> renewToken(context) async {
   bool isValid = await checkTokenValid();
+  var su;
   print("REEE");
   print(isValid);
   if(isValid){
@@ -42,7 +43,7 @@ Future<void> renewToken(context) async {
     String user = prefs.getString('user')??"1";
     String password = prefs.getString('password')??"1";
     print(1122);
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder:
@@ -54,5 +55,7 @@ Future<void> renewToken(context) async {
         ),
       ),
     );
+
   }
+  return "1123";
 }

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../bridge/getCoursePage.dart';
+import '../command/token.dart';
 import 'token_display_page.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 class WebViewLoginScreen extends StatefulWidget {
@@ -73,13 +75,23 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
               prefs.setString('user', widget.userNo);
               prefs.setString('password', widget.password);
               _handleResponse();
+              saveToken(message.message);
               Navigator.of(context).pop();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TokenDisplayPage(token: message.message,renew: widget.renew,),
-                ),
-              );
+              if(widget.renew){
+
+              }else{
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (context) => Getcoursepage()));
+                });
+              }
+              //Navigator.push(
+             //   context,
+              //  MaterialPageRoute(
+              //    builder: (_) => TokenDisplayPage(token: message.message,renew: widget.renew,),
+              //  ),
+              //);
             },
           )
           ..addJavaScriptChannel(
