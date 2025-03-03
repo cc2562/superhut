@@ -96,7 +96,7 @@ class _MyAppState extends State<MyApp> {
     }
 
     return GetMaterialApp(
-      title: 'Flutter Demo',
+      title: '超级湖工大',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       home: _isFirstOpen ? WelcomepagePage() : const HomeviewPage(),

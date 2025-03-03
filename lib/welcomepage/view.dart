@@ -18,7 +18,6 @@ class WelcomepagePage extends StatelessWidget {
         next: Text("下一步"),
         done: Text("登录教务系统"),
         onDone: () {
-          logic.completeWelcome(context);
           Get.off(LoginPage());
         },
         pages: [
@@ -48,7 +47,7 @@ class WelcomepagePage extends StatelessWidget {
           ),
           PageViewModel(
             title: "快速喝水",
-            body: "通过小助手的喝水功能，可以快速喝水",
+            body: "通过小助手的喝水功能，可以快速喝水（还没有做好）",
             image: const Center(child: Icon(Icons.water_drop, size: 50.0)),
             decoration: const PageDecoration(
               titleTextStyle: TextStyle(color: Colors.orange),

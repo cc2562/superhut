@@ -41,10 +41,10 @@ class _CourseTableViewState extends State<CourseTableView> {
   DateTime _currentDate = getMondayOfCurrentWeek();
   //设置周数
   //当前显示周数
-  int _currentWeek = 2;
+  int _currentWeek = 1;
   int _allWeek = 100;
   //当前实际周数
-  int _currentRealWeek = 2;
+  int _currentRealWeek = 1;
   /*
    * 课程数据存储器
    * Key格式：yyyy-MM-dd 的日期字符串
@@ -96,8 +96,11 @@ class _CourseTableViewState extends State<CourseTableView> {
     final prefs = await SharedPreferences.getInstance();
     var firstDay = prefs.getString('firstDay');
     _allWeek = prefs.getInt('maxWeek') ?? 1;
-    _currentWeek = calculateSchoolWeek(firstDay);
-    _currentRealWeek = _currentWeek;
+    setState(() {
+      _currentWeek = calculateSchoolWeek(firstDay);
+      _currentRealWeek = _currentWeek;
+    });
+
   }
 
 

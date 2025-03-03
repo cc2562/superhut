@@ -101,11 +101,11 @@ Future<Map<String, List<Course>>> loadClassFromLocal() async {
   }
 }
 
-Future<String> saveClassToLocal(String token) async {
+Future<String> saveClassToLocal(String token,context) async {
   final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
   final String appDocumentsPath = appDocumentsDir.path;
   try {
-    final Map<String, List<Course>> courseData = await loadClassFormUrl(token);
+    final Map<String, List<Course>> courseData = await loadClassFormUrl(token,context);
     print(courseData);
     await saveCourseDataToJson(courseData);
     return '200';
@@ -125,14 +125,14 @@ Future<Map<String, List<Course>>> testc() async {
   oneJson.initData();
   oneJson.getWeekDate();
   Map<String, List<Course>> courseData = await oneJson.getSingleClass();
-  print(courseData);
+  //print(courseData);
   return courseData;
 }
 
-Future<Map<String, List<Course>>> loadClassFormUrl(String token) async {
+Future<Map<String, List<Course>>> loadClassFormUrl(String token,context) async {
   GetOrgDataWeb getOrgDataWeb = GetOrgDataWeb(token: token);
   getOrgDataWeb.initData();
   await getOrgDataWeb.getTeachingWeek();
-  Map<String, List<Course>> courseData = await getOrgDataWeb.getAllWeekClass();
+  Map<String, List<Course>> courseData = await getOrgDataWeb.getAllWeekClass(context);
   return courseData;
 }

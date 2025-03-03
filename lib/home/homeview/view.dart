@@ -4,7 +4,9 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/command/token.dart';
+import 'package:superhut/home/Functionpage/view.dart';
 import 'package:superhut/home/coursetable/view.dart';
+import 'package:superhut/home/userpage/view.dart';
 import 'package:superhut/pages/score/scorepage.dart';
 
 import '../../login/webview_login_screen.dart';
@@ -31,27 +33,14 @@ class _HomeviewPageState extends State<HomeviewPage>
           controller: logic.homePageController,
           children: [
             CourseTableView(),
-            Container(
-              child: Center(
-                child: ElevatedButton(onPressed: () async {
-                  await renewToken(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) =>ScorePage(),
-                    ),
-                  );
-
-                }, child: Text("2222")),
-              ),
-            ),
-            Container(child: Center(child: Text("我"))),
+            FunctionPage(),
+            UserPage()
           ],
         ),
       ),
-      bottomSheet: Padding(
-        padding: EdgeInsets.all(0),
+      bottomSheet: Container(
+       // margin: EdgeInsets.all(10),
+        padding: EdgeInsets.only(left: 15,right: 15,bottom: 20,top: 10),
         child: GNav(
           gap: 8,
           color: Theme.of(context).hintColor,

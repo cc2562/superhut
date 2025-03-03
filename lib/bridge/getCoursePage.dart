@@ -20,7 +20,7 @@ class _GetcoursepageState extends State<Getcoursepage> {
 
   Future<void> loadClass() async {
     String token = await getToken();
-    String re = await saveClassToLocal(token);
+    String re = await saveClassToLocal(token,context);
     if (re == '200') {
       Navigator.push(
         context,

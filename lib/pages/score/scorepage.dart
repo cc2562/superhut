@@ -278,7 +278,7 @@ class _ScorePageState extends State<ScorePage> {
   Widget BigTopCard(){
     return Card.filled(
         color: Theme.of(context).colorScheme.surfaceContainer,
-        child: Padding(padding: EdgeInsets.all(10),
+        child: Padding(padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

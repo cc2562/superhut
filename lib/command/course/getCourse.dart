@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/command/course/coursemain.dart';
 
@@ -90,7 +91,7 @@ class GetOrgDataWeb {
   }
 
   //循环获取所有周课表
-  Future<Map<String, List<Course>>> getAllWeekClass() async {
+  Future<Map<String, List<Course>>> getAllWeekClass(context) async {
     bool noget = true;
     final prefs = await SharedPreferences.getInstance();
     for (int i = firstWeek; i <= maxWeek; i++) {
@@ -111,6 +112,13 @@ class GetOrgDataWeb {
       }
       // print(courseData.toString());
       await Future.delayed(Duration(microseconds: 500));
+      ScaffoldMessenger.of(context).removeCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Theme.of(context).secondaryHeaderColor,
+          content: Text('正在获取第$i周课表'),
+        ),
+      );
       print(i);
     }
     print(courseData.length);
