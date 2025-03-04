@@ -23,7 +23,7 @@ class _TokenDisplayPageState extends State<TokenDisplayPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.of(
           context,
-        ).push(MaterialPageRoute(builder: (context) => Getcoursepage()));
+        ).push(MaterialPageRoute(builder: (context) => Getcoursepage(renew: false,)));
       });
     }
   }

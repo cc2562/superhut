@@ -111,7 +111,7 @@ class GetOrgDataWeb {
         noget = false;
       }
       // print(courseData.toString());
-      await Future.delayed(Duration(microseconds: 500));
+      await Future.delayed(Duration(microseconds: 300));
       ScaffoldMessenger.of(context).removeCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

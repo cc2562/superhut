@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,41 +29,56 @@ import 'home/homeview/view.dart';
 abstract final class AppTheme {
   // The defined light theme.
   static ThemeData light = FlexThemeData.light(
-    scheme: FlexScheme.materialBaseline,
+    scheme: FlexScheme.mango,
     subThemesData: const FlexSubThemesData(
-      interactionEffects: true,
-      tintedDisabledControls: true,
-      useM2StyleDividerInM3: true,
       inputDecoratorIsFilled: true,
-      inputDecoratorBorderType: FlexInputBorderType.outline,
       alignedDropdown: true,
+      tooltipRadius: 4,
+      tooltipSchemeColor: SchemeColor.inverseSurface,
+      tooltipOpacity: 0.9,
+      snackBarElevation: 6,
+      snackBarBackgroundSchemeColor: SchemeColor.inverseSurface,
       navigationRailUseIndicator: true,
       navigationRailLabelType: NavigationRailLabelType.all,
     ),
+    keyColors: const FlexKeyColors(),
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
   );
   // The defined dark theme.
   static ThemeData dark = FlexThemeData.dark(
-    scheme: FlexScheme.materialBaseline,
+    scheme: FlexScheme.mango,
     subThemesData: const FlexSubThemesData(
-      interactionEffects: true,
-      tintedDisabledControls: true,
       blendOnColors: true,
-      useM2StyleDividerInM3: true,
       inputDecoratorIsFilled: true,
-      inputDecoratorBorderType: FlexInputBorderType.outline,
       alignedDropdown: true,
+      tooltipRadius: 4,
+      tooltipSchemeColor: SchemeColor.inverseSurface,
+      tooltipOpacity: 0.9,
+      snackBarElevation: 6,
+      snackBarBackgroundSchemeColor: SchemeColor.inverseSurface,
       navigationRailUseIndicator: true,
       navigationRailLabelType: NavigationRailLabelType.all,
     ),
+    keyColors: const FlexKeyColors(),
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
   );
 }
 
+
 void main() {
+
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // 全局状态栏颜色
+      statusBarIconBrightness: Brightness.dark, // 图标颜色（根据背景调整）
+    ),
+  );
   runApp(const MyApp());
+
+
 }
 
 class MyApp extends StatefulWidget {

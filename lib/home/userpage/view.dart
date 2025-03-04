@@ -21,7 +21,9 @@ class _UserPageState extends State<UserPage> {
         appBar: AppBar(
           title: Text("功能"),
         ),
-        body:Padding(padding: EdgeInsets.only(right: 10,left: 10,top: 10),
+        body:Container(
+          color: Theme.of(context).colorScheme.surface,
+          padding: EdgeInsets.only(right: 10,left: 10,top: 10),
           child: ListView(
             children: [
               Card.filled(
@@ -61,6 +63,10 @@ class _UserPageState extends State<UserPage> {
               Container(
                 padding: EdgeInsets.only(left: 10,right: 10),
                 margin: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                ),
                 child:Column(
                   children: [
                     ListTile(
@@ -70,11 +76,9 @@ class _UserPageState extends State<UserPage> {
                       title: Text("刷新课表"),
                       onTap: () async {
                         await renewToken(context);
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          Navigator.of(
-                            context,
-                          ).pushReplacement(MaterialPageRoute(builder: (context) => Getcoursepage()));
-                        });
+                        Navigator.of(
+                          context,
+                        ).push(MaterialPageRoute(builder: (context) => Getcoursepage(renew: true,)));
                       },
                     ),
                     ListTile(
@@ -104,10 +108,6 @@ class _UserPageState extends State<UserPage> {
                       },
                     ),
                   ],
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: Theme.of(context).colorScheme.surfaceContainer,
                 ),
               )
             ],

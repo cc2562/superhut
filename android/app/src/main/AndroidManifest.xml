@@ -31,6 +31,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
     </application>
     <!-- 必须：允许应用访问互联网 -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -49,5 +50,6 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
+
 
 </manifest>

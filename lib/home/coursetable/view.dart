@@ -256,6 +256,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                             ),
+                            SizedBox(height: 10,),
                             ListTile(
                               leading: Icon(
                                 Ionicons.calendar_outline,
@@ -385,7 +386,8 @@ class _CourseTableViewState extends State<CourseTableView> {
       showWeekStr = "第$_currentWeek周（当前第$_currentRealWeek周）";
     }
     return Scaffold(
-      body: EnhancedFutureBuilder(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: SafeArea(child: EnhancedFutureBuilder(
         future: doOnlyOne(),
         rememberFutureResult: true,
         whenDone: (da) {
@@ -419,7 +421,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                               ),
                               itemBuilder: (BuildContext context) {
                                 return [
-                                   PopupMenuItem(
+                                  PopupMenuItem(
                                     value: "1",
                                     child: Text('回到当前周'),
                                     onTap: (){
@@ -575,7 +577,7 @@ class _CourseTableViewState extends State<CourseTableView> {
           );
         },
         whenNotDone: Center(child: Text('Waiting...')),
-      ),
+      )),
     );
   }
 }

@@ -76,6 +76,7 @@ class _ScorePageState extends State<ScorePage> {
         rememberFutureResult: true,
         whenDone: (da){
           return Scaffold(
+            backgroundColor: Theme.of(context).colorScheme.surface,
             appBar: AppBar(
               title: Text("成绩查询"),
               actions: [
@@ -126,6 +127,7 @@ class _ScorePageState extends State<ScorePage> {
 
             ),
             body: Container(
+
                 margin: EdgeInsets.only(left: 10,right: 10),
                 child: ListView.builder(
                   itemCount: scoreList.length+1,

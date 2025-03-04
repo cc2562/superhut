@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:ionicons/ionicons.dart';
@@ -26,17 +27,15 @@ class _HomeviewPageState extends State<HomeviewPage>
     super.build(context);
     final HomeviewLogic logic = Get.put(HomeviewLogic());
     return Scaffold(
-      body: SafeArea(
-        bottom: true,
-        child: PageView(
-          physics: NeverScrollableScrollPhysics(),
-          controller: logic.homePageController,
-          children: [
-            CourseTableView(),
-            FunctionPage(),
-            UserPage()
-          ],
-        ),
+      //extendBodyBehindAppBar: true,
+      body:PageView(
+        physics: NeverScrollableScrollPhysics(),
+        controller: logic.homePageController,
+        children: [
+          CourseTableView(),
+          FunctionPage(),
+          UserPage()
+        ],
       ),
       bottomSheet: Container(
        // margin: EdgeInsets.all(10),
@@ -46,7 +45,7 @@ class _HomeviewPageState extends State<HomeviewPage>
           color: Theme.of(context).hintColor,
           activeColor: Theme.of(context).primaryColor,
           iconSize: 24,
-          tabBackgroundColor: Colors.purple.withOpacity(0.1),
+          tabBackgroundColor:Theme.of(context).primaryColor.withAlpha(20),
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           duration: Duration(milliseconds: 200),
           tabs: [
