@@ -19,6 +19,7 @@ Future<String> getToken() async {
 
 Future<bool> checkTokenValid() async {
   String token =await getToken();
+  print(token);
   configureDio(token);
   Response response;
   response =await postDio('/njwhd/noticeTab', {});

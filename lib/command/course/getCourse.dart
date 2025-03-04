@@ -33,17 +33,22 @@ class GetSingleWeekClass {
       courseData[tempDate['mxrq']] = [];
       courseKey[tempDate['xqid']] = tempDate['mxrq'];
     }
+    print(courseData.toString());
+
   }
 
   Future<Map<String, List<Course>>> getSingleClass() async {
     late Map tempClass;
     for (var i = 0; i < orgclassList.length; i++) {
       tempClass = orgclassList[i];
-      int atday = (int.parse(tempClass['classTime']) / 10000).toInt();
+      int atday = (int.parse(tempClass['classTime'].substring(0, 1))).toInt();
       int startSection = int.parse(tempClass['classTime'].substring(1, 3));
-      int endSection = int.parse(tempClass['classTime'].substring(3, 5));
+      int endSection = int.parse(tempClass['classTime'].substring(tempClass['classTime'].length - 2));
       int duration = endSection - startSection + 1;
       String saveDate = courseKey[atday]!;
+    //  print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS');
+      print(saveDate.toString());
+      print(tempClass['courseName']);
       courseData[saveDate]!.add(
         Course(
           name: tempClass['courseName'],
@@ -54,7 +59,9 @@ class GetSingleWeekClass {
           duration: duration,
         ),
       );
+
     }
+
 
     return courseData;
   }
@@ -98,11 +105,15 @@ class GetOrgDataWeb {
       Response response;
       response = await postDio('/njwhd/student/curriculum?week=$i', {});
       Map data = response.data;
+      //print("YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
+      print(data.toString());
       GetSingleWeekClass getsingleweek = GetSingleWeekClass(orgdata: data);
+     // print("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
       getsingleweek.initData();
       getsingleweek.getWeekDate();
       Map<String, List<Course>> tempData = await getsingleweek.getSingleClass();
       courseData.addAll(tempData);
+    //  print("33333333333333333333333333333eeeeeeeeeeeee");
       if (i == 1 && noget) {
         var entry = tempData.entries;
         MapEntry en = entry.first;

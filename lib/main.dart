@@ -29,7 +29,7 @@ import 'home/homeview/view.dart';
 abstract final class AppTheme {
   // The defined light theme.
   static ThemeData light = FlexThemeData.light(
-    scheme: FlexScheme.mango,
+    scheme: FlexScheme.blumineBlue,
     subThemesData: const FlexSubThemesData(
       inputDecoratorIsFilled: true,
       alignedDropdown: true,
@@ -47,7 +47,7 @@ abstract final class AppTheme {
   );
   // The defined dark theme.
   static ThemeData dark = FlexThemeData.dark(
-    scheme: FlexScheme.mango,
+    scheme: FlexScheme.blumineBlue,
     subThemesData: const FlexSubThemesData(
       blendOnColors: true,
       inputDecoratorIsFilled: true,
