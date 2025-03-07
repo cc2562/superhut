@@ -33,7 +33,7 @@ class GetSingleWeekClass {
       courseData[tempDate['mxrq']] = [];
       courseKey[tempDate['xqid']] = tempDate['mxrq'];
     }
-    print(courseData.toString());
+   // print(courseData.toString());
 
   }
 
@@ -46,9 +46,6 @@ class GetSingleWeekClass {
       int endSection = int.parse(tempClass['classTime'].substring(tempClass['classTime'].length - 2));
       int duration = endSection - startSection + 1;
       String saveDate = courseKey[atday]!;
-    //  print('SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS');
-      print(saveDate.toString());
-      print(tempClass['courseName']);
       courseData[saveDate]!.add(
         Course(
           name: tempClass['courseName'],
@@ -91,7 +88,7 @@ class GetOrgDataWeb {
     }
     firstWeek = int.parse(weekList[0]);
     maxWeek = int.parse(weekList[weekList.length - 1]);
-    print('$firstWeek and $maxWeek now $nowWeek');
+   // print('$firstWeek and $maxWeek now $nowWeek');
     prefs.setInt('firstWeek', firstWeek);
     prefs.setInt('maxWeek', maxWeek);
     return '200';
@@ -105,23 +102,19 @@ class GetOrgDataWeb {
       Response response;
       response = await postDio('/njwhd/student/curriculum?week=$i', {});
       Map data = response.data;
-      //print("YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
-      print(data.toString());
+    //  print(data.toString());
       GetSingleWeekClass getsingleweek = GetSingleWeekClass(orgdata: data);
-     // print("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
       getsingleweek.initData();
       getsingleweek.getWeekDate();
       Map<String, List<Course>> tempData = await getsingleweek.getSingleClass();
       courseData.addAll(tempData);
-    //  print("33333333333333333333333333333eeeeeeeeeeeee");
       if (i == 1 && noget) {
         var entry = tempData.entries;
         MapEntry en = entry.first;
-        print("开学第一天：${en.key}");
+     //   print("开学第一天：${en.key}");
         prefs.setString('firstDay', en.key);
         noget = false;
       }
-      // print(courseData.toString());
       await Future.delayed(Duration(microseconds: 300));
       ScaffoldMessenger.of(context).removeCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -130,9 +123,9 @@ class GetOrgDataWeb {
           content: Text('正在获取第$i周课表'),
         ),
       );
-      print(i);
+     // print(i);
     }
-    print(courseData.length);
+    //print(courseData.length);
     return courseData;
   }
 }

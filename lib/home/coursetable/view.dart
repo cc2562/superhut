@@ -184,21 +184,41 @@ class _CourseTableViewState extends State<CourseTableView> {
    * @return 包含课程块和空白时间段的组件列表
    * 实现逻辑：
    * 1. 按开始节数排序课程
-   * 2. 填充课程之间的空白时间段
-   * 3. 保证最多显示到第6节课
+   * 2. 检查是否有重叠的课程，如果有则将它们放在同一个位置显示
+   * 3. 填充课程之间的空白时间段
+   * 4. 保证最多显示到第6节课
    */
   List<Widget> _buildDayCourses(List<Course> courses) {
     courses.sort((a, b) => a.startSection.compareTo(b.startSection));
     final widgets = <Widget>[];
     int currentSection = 1;
 
-    for (final course in courses) {
+    for (int i = 0; i < courses.length; i++) {
+      final course = courses[i];
       while (currentSection < course.startSection) {
         widgets.add(_buildTimeSlot(currentSection));
         currentSection++;
       }
-      widgets.add(_buildCourseItem(course));
-      currentSection += course.duration;
+
+      // 检查是否有重叠的课程
+      List<Course> overlappingCourses = [course];
+      for (int j = i + 1; j < courses.length; j++) {
+        if (courses[j].startSection < course.startSection + course.duration) {
+          overlappingCourses.add(courses[j]);
+        } else {
+          break;
+        }
+      }
+
+      // 如果有重叠的课程，将它们放在同一个位置显示
+      if (overlappingCourses.length > 1) {
+        widgets.add(_buildOverlappingCourses(overlappingCourses));
+        currentSection += course.duration;
+        i += overlappingCourses.length - 1; // 跳过已经处理的重叠课程
+      } else {
+        widgets.add(_buildCourseItem(course));
+        currentSection += course.duration;
+      }
     }
 
     while (currentSection <= 10) {
@@ -207,6 +227,138 @@ class _CourseTableViewState extends State<CourseTableView> {
     }
 
     return widgets;
+  }
+
+  /*
+   * 构建重叠课程显示块
+   * @param courses 重叠的课程列表
+   * @return 包含多个课程名称的彩色区块组件
+   */
+  Widget _buildOverlappingCourses(List<Course> courses) {
+    double marginTB = 0, marginT = 1;
+    if (courses[0].duration >= 2) {
+      marginTB = courses[0].duration.toDouble();
+    }
+    if (courses[0].startSection == 1) {
+      marginT = 0;
+    }
+
+    return Container(
+      alignment: Alignment.topLeft,
+      height: 60 * courses[0].duration.toDouble() + marginTB,
+      decoration: BoxDecoration(
+        border: Border.all(color: _getCourseColor(courses[0].name).withAlpha(100)),
+        color: _getCourseColor(courses[0].name),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      margin: EdgeInsets.fromLTRB(1, marginT, 1, 1),
+      padding: EdgeInsets.all(1),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: courses.map((course) {
+          return Expanded(
+            child: InkWell(
+              onTap: () {
+                showCupertinoModalBottomSheet(
+                  expand: false,
+                  context: context,
+                  builder: (context) => Material(
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+                          height: 350,
+                          child: ListView(
+                            physics: NeverScrollableScrollPhysics(),
+                            children: [
+                              Container(
+                                child: Text(
+                                  course.name,
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                              ),
+                              SizedBox(height: 10,),
+                              ListTile(
+                                leading: Icon(
+                                  Ionicons.calendar_outline,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                title: Text(course.weekDuration),
+                              ),
+                              ListTile(
+                                leading: Icon(
+                                  Ionicons.time_outline,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                title: Text(
+                                  '第${course.startSection}-${(course.duration + course.startSection - 1)}节',
+                                ),
+                              ),
+                              ListTile(
+                                leading: Icon(
+                                  Ionicons.person_outline,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                title: Text(course.teacherName),
+                              ),
+                              ListTile(
+                                leading: Icon(
+                                  Ionicons.location_outline,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                title: Text(course.location),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    course.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    course.location,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.normal,
+                    ),
+                    textAlign: TextAlign.left,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    course.teacherName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.normal,
+                    ),
+                    textAlign: TextAlign.left,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   /*
@@ -363,7 +515,6 @@ class _CourseTableViewState extends State<CourseTableView> {
 
   bool firstload = true;
   Future<void> doOnlyOne() async {
-    print("1");
     if (firstload) {
       firstload = false;
       getWeek();
@@ -372,7 +523,6 @@ class _CourseTableViewState extends State<CourseTableView> {
       firstload = false;
       //getWeek();
       //_courseData = await loadClassFromLocal();
-      print("2");
       return;
     }
   }
@@ -505,7 +655,6 @@ class _CourseTableViewState extends State<CourseTableView> {
                 Expanded(
                   child: GestureDetector(
                     onHorizontalDragEnd: (details) {
-                      print(details);
                       if (details.primaryVelocity! > 10) {
                         _previousWeek();
                       } else {

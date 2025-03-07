@@ -58,7 +58,7 @@ Future<void> saveCourseDataToJson(Map<String, List<Course>> courseData) async {
   final String appDocumentsPath = appDocumentsDir.path;
   // 将 JSON 字符串写入文件
   final file = File('$appDocumentsPath/course_data.json');
-  print(jsonString);
+ // print(jsonString);
   await file.writeAsString(jsonString);
 }
 
@@ -93,7 +93,7 @@ Future<Map<String, List<Course>>> loadClassFromLocal() async {
     final Map<String, List<Course>> courseData = await readCourseDataFromJson(
       '$appDocumentsPath/course_data.json',
     );
-    print(courseData);
+   // print(courseData);
     return courseData;
   } catch (e) {
     print('Error reading JSON file: $e');
@@ -106,7 +106,7 @@ Future<String> saveClassToLocal(String token,context) async {
   final String appDocumentsPath = appDocumentsDir.path;
   try {
     final Map<String, List<Course>> courseData = await loadClassFormUrl(token,context);
-    print(courseData);
+    //print(courseData);
     await saveCourseDataToJson(courseData);
     return '200';
   } catch (e) {
