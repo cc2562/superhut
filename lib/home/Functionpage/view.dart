@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:superhut/pages/drink/view/view.dart';
+import 'package:superhut/pages/freeroom/building.dart';
 
 import '../../command/token.dart';
 import '../../pages/score/scorepage.dart';
@@ -36,6 +36,10 @@ class _FunctionPageState extends State<FunctionPage> {
             Container(
               padding: EdgeInsets.only(left: 10,right: 10),
               margin: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Theme.of(context).colorScheme.surfaceContainer,
+              ),
               child:Column(
                 children: [
                   ListTile(
@@ -60,14 +64,16 @@ class _FunctionPageState extends State<FunctionPage> {
                     style: ListTileStyle.drawer,
                     title: Text("空教室查询（开发中）"),
                     onTap: () async {
-
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) =>BuildingPage(),
+                        ),
+                      );
                     },
                   ),
                 ],
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Theme.of(context).colorScheme.surfaceContainer,
               ),
             ),
             Text("生活",
@@ -79,6 +85,10 @@ class _FunctionPageState extends State<FunctionPage> {
             Container(
               padding: EdgeInsets.only(left: 10,right: 10),
               margin: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Theme.of(context).colorScheme.surfaceContainer,
+              ),
               child:Column(
                 children: [
                   ListTile(
@@ -97,10 +107,6 @@ class _FunctionPageState extends State<FunctionPage> {
                     },
                   ),
                 ],
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Theme.of(context).colorScheme.surfaceContainer,
               ),
             )
           ],

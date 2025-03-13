@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:superhut/command/token.dart';
 import 'package:superhut/home/Functionpage/view.dart';
 import 'package:superhut/home/coursetable/view.dart';
 import 'package:superhut/home/userpage/view.dart';
-import 'package:superhut/pages/score/scorepage.dart';
 
-import '../../login/webview_login_screen.dart';
 import 'logic.dart';
 
 class HomeviewPage extends StatefulWidget {
@@ -66,6 +61,5 @@ class _HomeviewPageState extends State<HomeviewPage>
   }
 
   @override
-  // TODO: implement wantKeepAlive
   bool get wantKeepAlive => true;
 }

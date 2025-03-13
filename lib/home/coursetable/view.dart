@@ -565,10 +565,6 @@ class _CourseTableViewState extends State<CourseTableView> {
                               onSelected: (re){
 
                               },
-                              child: Text(
-                                showWeekStr,
-                                style: const TextStyle(fontSize: 18),
-                              ),
                               itemBuilder: (BuildContext context) {
                                 return [
                                   PopupMenuItem(
@@ -583,6 +579,10 @@ class _CourseTableViewState extends State<CourseTableView> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
 
+                              ),
+                              child: Text(
+                                showWeekStr,
+                                style: const TextStyle(fontSize: 18),
                               ),
                             ),
                           ],

@@ -5,7 +5,7 @@ import 'package:superhut/welcomepage/view.dart';
 
 import '../../bridge/getCoursePage.dart';
 import '../../command/token.dart';
-import '../../pages/score/scorepage.dart';
+import '../about/view.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -99,12 +99,14 @@ class _UserPageState extends State<UserPage> {
                       },
                     ),
                     ListTile(
-                      //leading: Icon(Ionicons.abou,color: Theme.of(context).primaryColor,),
+                      leading: Icon(Ionicons.information_circle_outline,color: Theme.of(context).primaryColor,),
                       trailing: Icon(Ionicons.chevron_forward_outline,color: Theme.of(context).primaryColor,),
                       style: ListTileStyle.drawer,
                       title: Text("关于软件"),
-                      onTap: () async {
-
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => AboutPage())
+                        );
                       },
                     ),
                   ],

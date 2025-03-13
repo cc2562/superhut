@@ -20,7 +20,6 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
     Get.delete<FunctionDrinkLogic>();
   }

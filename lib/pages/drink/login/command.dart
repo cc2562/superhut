@@ -29,6 +29,7 @@ void to2Login(context,String phoneNumber,String imageCode){
 
 void SendMessageCode(context,String phoneNumber,String imageCode){
   print(doubleRandom);
+  print(imageCode);
   api.userMessageCode(doubleRandom: doubleRandom, photoCode: imageCode, phone: phoneNumber).then((value) {
     if(value){
       to2Login(context,phoneNumber,imageCode);

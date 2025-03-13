@@ -16,7 +16,6 @@ class Getcoursepage extends StatefulWidget {
 class _GetcoursepageState extends State<Getcoursepage> {
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     loadClass();
   }
@@ -45,7 +44,7 @@ class _GetcoursepageState extends State<Getcoursepage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
+      body: SizedBox(
         width: double.infinity,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

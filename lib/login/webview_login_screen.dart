@@ -6,7 +6,6 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../bridge/getCoursePage.dart';
 import '../command/token.dart';
-import 'token_display_page.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 class WebViewLoginScreen extends StatefulWidget {
   final String userNo;

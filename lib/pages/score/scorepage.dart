@@ -2,7 +2,6 @@ import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:superhut/command/token.dart';
 import 'package:superhut/pages/score/logic.dart';
 
 class ScorePage extends StatefulWidget {
@@ -64,7 +63,6 @@ class _ScorePageState extends State<ScorePage> {
   }
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
 
   }
@@ -120,7 +118,7 @@ class _ScorePageState extends State<ScorePage> {
                     ...semesterId.map((e) => DropdownMenuItem(
                         value: e,
                         child: Text(e)
-                    )).toList()
+                    ))
                   ],
                 ),
               ],

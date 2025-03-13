@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="480px" viewBox="0 0 800 480" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <g>
+        <!-- 蓝色条纹 -->
+        <rect x="0" y="0" width="800" height="96" fill="#5BCEFA"/>
+        <!-- 粉色条纹 -->
+        <rect x="0" y="96" width="800" height="96" fill="#F5A9B8"/>
+        <!-- 白色条纹 -->
+        <rect x="0" y="192" width="800" height="96" fill="#FFFFFF"/>
+        <!-- 粉色条纹 -->
+        <rect x="0" y="288" width="800" height="96" fill="#F5A9B8"/>
+        <!-- 蓝色条纹 -->
+        <rect x="0" y="384" width="800" height="96" fill="#5BCEFA"/>
+    </g>
+</svg> 
