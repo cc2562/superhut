@@ -62,8 +62,9 @@ class _FunctionPageState extends State<FunctionPage> {
                     leading: Icon(Ionicons.home_outline,color: Theme.of(context).primaryColor,),
                     trailing: Icon(Ionicons.chevron_forward_outline,color: Theme.of(context).primaryColor,),
                     style: ListTileStyle.drawer,
-                    title: Text("空教室查询（开发中）"),
+                    title: Text("空教室查询"),
                     onTap: () async {
+                      await renewToken(context);
                       Navigator.push(
                         context,
                         MaterialPageRoute(

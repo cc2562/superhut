@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,6 +112,15 @@ class _MyAppState extends State<MyApp> {
     }
 
     return GetMaterialApp(
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('zh', 'CH'),
+          const Locale('en', 'US'),
+        ],
+        locale: Locale('zh'),
       title: '超级湖工大',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

@@ -640,7 +640,7 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                       children: [
                         ListTile(
                           leading: Icon(
-                            Ionicons.person,
+                            Ionicons.person_outline,
                             color: Theme.of(context).primaryColor,
                           ),
                           title: Text(
@@ -651,12 +651,12 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                               color: Theme.of(context).primaryColor,
                             ),
                           ),
-                          subtitle: Text(''),
+                          subtitle: Text('CC米饭'),
                         ),
                         Divider(),
                         SizedBox(height: 10),
                         Text(
-                          "超级APP",
+                          "工大超级APP",
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w500,
@@ -678,7 +678,14 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                 SizedBox(height: 30),
                 // 版本信息
                 Text(
-                  "版本: 0.0.4",
+                  "本项目的诞生离不开开源社区。感谢YiQiuYes提供的喝水以及洗澡代码",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Text(
+                  "版本: 0.0.5",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],

@@ -1,5 +1,10 @@
+import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/freeroom/room.dart';
+import 'package:superhut/command/roomapi.dart';
+
+import 'buildingBridge.dart';
 
 class BuildingPage extends StatefulWidget {
   const BuildingPage({super.key});
@@ -9,6 +14,13 @@ class BuildingPage extends StatefulWidget {
 }
 
 class _BuildingPageState extends State<BuildingPage> {
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    GetBuilding();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,75 +28,83 @@ class _BuildingPageState extends State<BuildingPage> {
       appBar: AppBar(
         title: const Text('选择教学楼'),
       ),
-      body: Center(
-        child: ListView.builder(
-          itemCount: 10,
-          itemBuilder: (context, index) {
-            return Card.filled(
-                color: Theme
-                    .of(context)
-                    .colorScheme
-                    .surfaceContainer,
-                child: InkWell(
-                  onTap: (){
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) =>FreeRoomPage(),
-                      ),
-                    );
-                  },
-                  child: Padding(padding: EdgeInsets.all(10),
-                      child: Flex(
-                          crossAxisAlignment: CrossAxisAlignment
-                              .start,
-                          direction: Axis.horizontal,
-                          children: [
-                            Expanded(
-                              flex: 10,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment
-                                    .start,
-                                children: [
-                                  Text('河西校区-计算机楼',
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Theme
+      body: EnhancedFutureBuilder(
+          future: GetBuilding(),
+          rememberFutureResult: true,
+          whenDone: (data){
+        return Center(
+          child: ListView.builder(
+            itemCount: data.length,
+            itemBuilder: (context, index) {
+              return Card.filled(
+                  color: Theme
+                      .of(context)
+                      .colorScheme
+                      .surfaceContainer,
+                  child: InkWell(
+                    onTap: (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) =>FreeRoomPage(buildingId: data[index].buildingId,buildingName: data[index].name,),
+                        ),
+                      );
+                    },
+                    child: Padding(padding: EdgeInsets.all(10),
+                        child: Flex(
+                            crossAxisAlignment: CrossAxisAlignment
+                                .start,
+                            direction: Axis.horizontal,
+                            children: [
+                              Expanded(
+                                flex: 10,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment
+                                      .start,
+                                  children: [
+                                    Text(data[index].name,
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme
+                                                .of(context)
+                                                .primaryColor
+                                        )
+                                    ),
+                                    Row(
+                                      children: [
+                                        Chip(label: Text(
+                                            '总教室数:${data[index].count}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                            )
+                                        ),
+                                          backgroundColor: Theme
                                               .of(context)
-                                              .primaryColor
-                                      )
-                                  ),
-                                  Row(
-                                    children: [
-                                      Chip(label: Text(
-                                          '总教室数:22',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                          )
-                                      ),
-                                        backgroundColor: Theme
-                                            .of(context)
-                                            .colorScheme
-                                            .surface,
-                                        padding: EdgeInsets.symmetric(
-                                            vertical: 0,
-                                            horizontal: 0),
-                                      ),
-                                    ],
-                                  )
-                                ],
+                                              .colorScheme
+                                              .surface,
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: 0,
+                                              horizontal: 0),
+                                        ),
+                                      ],
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
-                          ]
-                      )
-                  ),
-                )
-            );
-          },
+                            ]
+                        )
+                    ),
+                  )
+              );
+            },
 
-        ),
+          ),
+        );
+          },
+          whenNotDone: Center(child: LoadingAnimationWidget.inkDrop(color: Theme.of(context).primaryColor, size: 40),)
+
       ),
     );
   }
