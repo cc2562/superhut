@@ -61,21 +61,9 @@ class FunctionDrinkLogic extends GetxController {
 
   /// 收藏或取消收藏设备
   Future<bool> favoDevice(String id, bool isUnFavo,BuildContext context) async {
+    print("QHJqqYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY");
     return await drinkApi.favoDevice(id: id, isUnFavo: isUnFavo).then((value) {
-      final snackBar = SnackBar(
-        content: Text(value ? '收藏成功！' : '收藏失败'),
-      );
-      if (value) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(snackBar);
-        getDeviceList();
-      } else {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(snackBar);
-        getDeviceList();
-      }
+
       return value;
     });
   }
@@ -97,19 +85,12 @@ class FunctionDrinkLogic extends GetxController {
 
   /// 开始喝水
   void startDrink(context) {
-
     drinkApi
         .startDrink(id: state.deviceList[state.choiceDevice.value]["id"])
         .then((value) {
       if (value) {
         int count = 0;
         state.drinkStatus.value = true;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text('开启成功'),
-
-          ));
         getDeviceList();
         state.deviceStatusTimer =
             Timer.periodic(const Duration(seconds: 1), (timer) async {
@@ -124,12 +105,20 @@ class FunctionDrinkLogic extends GetxController {
           }
         });
       } else {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text('开启失败'),
-
-          ));
+        Get.snackbar(
+          '失败',
+          '开启失败',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: Duration(seconds: 3),
+          margin: EdgeInsets.all(10),
+          borderRadius: 10,
+          icon: Icon(
+            Icons.error,
+            color: Colors.white,
+          ),
+        );
       }
       update();
     });
@@ -143,19 +132,21 @@ class FunctionDrinkLogic extends GetxController {
       if (value) {
         state.deviceStatusTimer?.cancel();
         state.drinkStatus.value = false;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text('结算成功'),
-
-          ));
       } else {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            content: Text('结算失败'),
-
-          ));
+        Get.snackbar(
+          '失败',
+          '结算失败',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: Duration(seconds: 3),
+          margin: EdgeInsets.all(10),
+          borderRadius: 10,
+          icon: Icon(
+            Icons.error,
+            color: Colors.white,
+          ),
+        );
       }
       update();
     });
@@ -178,34 +169,18 @@ class FunctionDrinkLogic extends GetxController {
             controller = qrController;
             controller!.scannedDataStream.listen((scanData) {
               controller?.stopCamera();
-             Get.back(result: scanData);
-              //Navigator.of(context).pop(scanData);
+              Get.back(result: scanData);
             });
-            // 添加返回按钮
-
           },
         ));
 
     if (result != null) {
       String enc = (result as Barcode).code!;
       enc = enc.split("/").last;
-      bool isFavo = await favoDevice(enc, false,context);
-      final snackBar = SnackBar(
-        content: Text(isFavo ? '收藏成功！' : '收藏失败'),
-       // backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        //behavior: SnackBarBehavior.floating,
-
-      );
+      bool isFavo = await favoDevice(enc, false, context);
+      
       if (isFavo) {
-
-      //  ScaffoldMessenger.of(context)
-      //    ..hideCurrentSnackBar()
-      //    ..showSnackBar(snackBar);
         getDeviceList();
-      } else {
-     //   ScaffoldMessenger.of(context)
-     //     ..hideCurrentSnackBar()
-     //     ..showSnackBar(snackBar);
       }
     }
   }

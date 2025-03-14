@@ -18,103 +18,297 @@ class _UserPageState extends State<UserPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text("功能"),
-        ),
-        body:Container(
-          color: Theme.of(context).colorScheme.surface,
-          padding: EdgeInsets.only(right: 10,left: 10,top: 10),
-          child: ListView(
-            children: [
-              Card.filled(
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                  child: Padding(padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Theme.of(context).colorScheme.surface, // 浅灰蓝色背景，类似图片中的风格
+
+      body: SafeArea(
+        child: ListView(
+          padding: EdgeInsets.all(20),
+          children: [
+            // 顶部标题
+            Text(
+              "学习进度",
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+
+              ),
+            ),
+
+            SizedBox(height: 24),
+
+            // 完成和分数卡片
+            Row(
+              children: [
+                // 完成卡片
+                Expanded(
+                  child: _buildStatCard(
+                    title: "已修学分",
+                    value: "18",
+                    color: Color(0xFFE3F1EC),
+                    textColor: Colors.black87,
+                  ),
+                ),
+
+                SizedBox(width: 12),
+
+                // 分数卡片
+                Expanded(
+                  child: _buildStatCard(
+                    title: "我的分数",
+                    value: "72",
+                    color: Color(0xFFFFF6E0),
+                    textColor: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 20),
+
+            // 生产力卡片
+            /*Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Color(0xFFF1E6F5),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 标题行
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Ionicons.flame_outline, size: 20),
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        "我的生产力",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color:  Colors.black87
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 24),
+
+                  // 进度环
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        Text("我的信息",
-                          style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).primaryColor
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: CircularProgressIndicator(
+                            value: 0.72,
+                            strokeWidth: 12,
+                            backgroundColor: Colors.white.withOpacity(0.5),
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                           ),
                         ),
-                        SizedBox(height: 10,),
-                        Flex(
-                          direction: Axis.vertical,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Column(
                           children: [
-                            Text("好听的名字",style: TextStyle(
-                                fontSize: 20,
+                            Text(
+                              "240",
+                              style: TextStyle(
+                                fontSize: 40,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor
-                            ),),
-                            Text("#学号",style: TextStyle(
-                                fontSize: 15,
-                                color: Theme.of(context).primaryColor
-                            ),),
+                                color: Colors.black87
+                              ),
+                            ),
+                            Text(
+                              "积分",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.black54,
+
+                              ),
+                            ),
                           ],
                         ),
-                        SizedBox(height: 10,),
                       ],
                     ),
-                  )
+                  ),
+
+                  SizedBox(height: 20),
+
+                  // 底部文字
+                  Center(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        "您的生产力高于72%的人",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                            color: Colors.black87
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+*/
+            //SizedBox(height: 24),
+
+            // 功能项
+            _buildFunctionItem(
+              icon: Ionicons.refresh_outline,
+              title: "刷新课表",
+              onTap: () async {
+                await renewToken(context);
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => Getcoursepage(renew: true))
+                );
+              },
+            ),
+
+            _buildFunctionItem(
+              icon: Ionicons.log_out_outline,
+              title: "退出登录",
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                prefs.setString('user', "");
+                prefs.setString('password', "");
+                await prefs.setBool('isFirstOpen', true);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (context) => WelcomepagePage())
+                  );
+                });
+              },
+            ),
+
+            _buildFunctionItem(
+              icon: Ionicons.information_circle_outline,
+              title: "关于软件",
+              onTap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => AboutPage())
+                );
+              },
+            ),
+            SizedBox(height: 100,),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // 构建统计卡片
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required Color color,
+    required Color textColor,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(16),
+       // boxShadow: [
+       //   BoxShadow(
+       //     color: Colors.black.withOpacity(0.05),
+       //     blurRadius: 10,
+       //     offset: Offset(0, 4),
+       //   ),
+       // ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: textColor.withOpacity(0.7),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
               ),
               Container(
-                padding: EdgeInsets.only(left: 10,right: 10),
-                margin: EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  color: Colors.white.withOpacity(0.5),
+                  shape: BoxShape.circle,
                 ),
-                child:Column(
-                  children: [
-                    ListTile(
-                      leading: Icon(Ionicons.refresh_outline,color: Theme.of(context).primaryColor,),
-                      trailing: Icon(Ionicons.chevron_forward_outline,color: Theme.of(context).primaryColor,),
-                      style: ListTileStyle.drawer,
-                      title: Text("刷新课表"),
-                      onTap: () async {
-                        await renewToken(context);
-                        Navigator.of(
-                          context,
-                        ).push(MaterialPageRoute(builder: (context) => Getcoursepage(renew: true,)));
-                      },
-                    ),
-                    ListTile(
-                      leading: Icon(Ionicons.log_out_outline,color: Theme.of(context).primaryColor,),
-                      trailing: Icon(Ionicons.chevron_forward_outline,color: Theme.of(context).primaryColor,),
-                      style: ListTileStyle.drawer,
-                      title: Text("退出登录"),
-                      onTap: () async {
-                        final prefs = await SharedPreferences.getInstance();
-                        prefs.setString('user', "");
-                        prefs.setString('password', "");
-                        await prefs.setBool('isFirstOpen', true);
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          Navigator.of(
-                            context,
-                          ).pushReplacement(MaterialPageRoute(builder: (context) => WelcomepagePage()));
-                        });
-                      },
-                    ),
-                    ListTile(
-                      leading: Icon(Ionicons.information_circle_outline,color: Theme.of(context).primaryColor,),
-                      trailing: Icon(Ionicons.chevron_forward_outline,color: Theme.of(context).primaryColor,),
-                      style: ListTileStyle.drawer,
-                      title: Text("关于软件"),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => AboutPage())
-                        );
-                      },
-                    ),
-                  ],
+                padding: EdgeInsets.all(4),
+                child: Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: textColor,
                 ),
-              )
+              ),
             ],
           ),
-        )
+
+        ],
+      ),
+    );
+  }
+  
+  // 构建功能项
+  Widget _buildFunctionItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Theme
+            .of(context)
+            .colorScheme
+            .surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        //boxShadow: [
+        //  BoxShadow(
+        //    color: Colors.black.withOpacity(0.03),
+        //    blurRadius: 6,
+        //    offset: Offset(0, 2),
+        //  ),
+        //],
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: Theme.of(context).primaryColor),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.w500),
+        ),
+        trailing: Icon(Icons.chevron_right, color: Colors.grey),
+        onTap: onTap,
+      ),
     );
   }
 }
