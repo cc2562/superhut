@@ -57,6 +57,7 @@ dependencies:
   qr_code_scanner:
     git: https://github.com/wizmea/qr_code_scanner.git
   sensors_plus: ^6.1.1
+  encrypt: ^5.0.3
 
 dev_dependencies:
   flutter_test:
