@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart' as tget;
+import 'package:get/get_core/src/get_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/command/withhttp.dart';
+import 'package:superhut/login/loginwithpost.dart';
 
 import '../login/webview_login_screen.dart';
 
@@ -40,10 +43,12 @@ Future<String> renewToken(context) async {
   if(isValid){
 
   }else{
+
     final prefs = await SharedPreferences.getInstance();
     String user = prefs.getString('user')??"1";
     String password = prefs.getString('password')??"1";
     print(1122);
+    /*
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -57,6 +62,16 @@ Future<String> renewToken(context) async {
       ),
     );
 
+     */
+    Get.snackbar(
+      '请稍候',
+      '正在刷新token',
+      snackPosition: tget.SnackPosition.BOTTOM,
+      duration: Duration(seconds: 1),
+      margin: EdgeInsets.all(10),
+      borderRadius: 10,
+    );
+    await loginHut(user, password);
   }
   return "1123";
 }

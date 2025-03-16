@@ -399,56 +399,56 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                         builder: (context, child) {
                           // 翻转动画值 (绕Y轴)
                           final double flipValue = _flipController.value;
-                          
+
                           // 摆动动画 (绕X轴微微摆动)
-                          final double swingAngle = (_swingController.value < 0.5 
+                          final double swingAngle = (_swingController.value < 0.5
                               ? math.sin(_swingController.value * 4 * math.pi) * 0.1
                               : math.sin(_swingController.value * 2 * math.pi) * 0.05);
-                          
+
                           // 计算Y轴旋转角度 - 来自动画、拖动或重力感应
-                          double rotationY = _isAnimating 
+                          double rotationY = _isAnimating
                               ? flipValue * 2 * math.pi  // 动画控制的旋转
                               : _isDragging ? _dragRotationY : _dragRotationY + _gravityRotationY; // 拖动控制的旋转或重力感应
-                          
+
                           // 计算X轴旋转角度 - 用于实现上下凹凸效果
-                          double rotationX = _isAnimating 
+                          double rotationX = _isAnimating
                               ? swingAngle  // 动画控制的旋转
                               : _isDragging ? _dragRotationX : _dragRotationX + _gravityRotationX; // 拖动控制的旋转或重力感应
-                          
+
                           // 使用Matrix4进行3D转换
                           final Matrix4 transform = Matrix4.identity()
                             ..setEntry(3, 2, 0.002) // 透视效果
                             ..rotateX(rotationX) // X轴旋转（上下凹凸效果）
                             ..rotateY(rotationY); // Y轴翻转
-                          
+
                           // 计算当前是否显示背面
                           bool showBack = false;
                           double normalizedRotation = (rotationY % (2 * math.pi)) / (2 * math.pi);
-                          if ((normalizedRotation >= 0.25 && normalizedRotation < 0.75) || 
+                          if ((normalizedRotation >= 0.25 && normalizedRotation < 0.75) ||
                               (normalizedRotation >= 1.25 && normalizedRotation < 1.75)) {
                             showBack = true;
                           }
-                          
+
                           // 计算旗子厚度的显示 - 当旗子从侧面看时显示厚度
                           bool showLeftEdge = normalizedRotation >= 0.125 && normalizedRotation < 0.375;
                           bool showRightEdge = normalizedRotation >= 0.625 && normalizedRotation < 0.875;
-                          
+
                           // 根据旋转角度计算厚度部分的宽度
                           double leftEdgeWidth = 0.0;
                           double rightEdgeWidth = 0.0;
-                          
+
                           if (showLeftEdge) {
                             // 左侧边缘厚度 - 根据旋转角度动态计算
                             double position = (normalizedRotation - 0.125) / 0.25; // 0到1之间的值
                             leftEdgeWidth = 6.0 * math.sin(position * math.pi); // 最大厚度为6逻辑像素
                           }
-                          
+
                           if (showRightEdge) {
                             // 右侧边缘厚度 - 根据旋转角度动态计算
                             double position = (normalizedRotation - 0.625) / 0.25; // 0到1之间的值
                             rightEdgeWidth = 6.0 * math.sin(position * math.pi); // 最大厚度为6逻辑像素
                           }
-                          
+
                           return GestureDetector(
                             onTap: _startAnimation,
                             onPanUpdate: _onPanUpdate,
@@ -513,9 +513,9 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                             ),
                                           ),
                                         ),
-                                        
+
                                         // 左侧厚度边缘
-                                        if (showLeftEdge) 
+                                        if (showLeftEdge)
                                           Positioned(
                                             left: 0,
                                             top: 0,
@@ -539,9 +539,9 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                               ),
                                             ),
                                           ),
-                                        
+
                                         // 右侧厚度边缘
-                                        if (showRightEdge) 
+                                        if (showRightEdge)
                                           Positioned(
                                             right: 0,
                                             top: 0,
@@ -565,7 +565,7 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                               ),
                                             ),
                                           ),
-                                        
+
                                         // 在旗子最上层添加金属质感的高光效果
                                         Positioned.fill(
                                           child: IgnorePointer(
@@ -629,7 +629,8 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                 // 作者信息
                 Card(
                   elevation: 0,
-                  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                color: Colors.transparent,
+                //  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15.0),
                   ),
@@ -678,14 +679,15 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                 SizedBox(height: 30),
                 // 版本信息
                 Text(
-                  "本项目的诞生离不开开源社区。感谢YiQiuYes提供的喝水以及洗澡代码",
+                  textAlign: TextAlign.center,
+                  "本项目的诞生离不开开源社区。\n感谢YiQiuYes提供的喝水以及洗澡代码\n感谢开源项目onexiaolaji/qzjw的密码加密方法",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
                   ),
                 ),
                 Text(
-                  "版本: 0.0.5",
+                  "版本: 0.0.6",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],

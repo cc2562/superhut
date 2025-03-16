@@ -7,6 +7,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:superhut/command/token.dart';
 import 'package:superhut/welcomepage/view.dart';
 
 import 'home/homeview/view.dart';
@@ -27,42 +28,122 @@ import 'home/homeview/view.dart';
 abstract final class AppTheme {
   // The defined light theme.
   static ThemeData light = FlexThemeData.light(
-    scheme: FlexScheme.blumineBlue,
+    scheme: FlexScheme.indigoM3,
+    usedColors: 1,
+    surfaceMode: FlexSurfaceMode.highBackgroundLowScaffold,
+    blendLevel: 1,
+    appBarStyle: FlexAppBarStyle.background,
     subThemesData: const FlexSubThemesData(
+      interactionEffects: true,
+      tintedDisabledControls: true,
+      blendOnLevel: 10,
+      useM2StyleDividerInM3: true,
+      elevatedButtonSchemeColor: SchemeColor.onPrimaryContainer,
+      elevatedButtonSecondarySchemeColor: SchemeColor.primaryContainer,
+      segmentedButtonSchemeColor: SchemeColor.primary,
+      inputDecoratorSchemeColor: SchemeColor.primary,
       inputDecoratorIsFilled: true,
+      inputDecoratorBackgroundAlpha: 21,
+      inputDecoratorBorderType: FlexInputBorderType.outline,
+      inputDecoratorRadius: 8.0,
+      inputDecoratorUnfocusedHasBorder: false,
+      inputDecoratorPrefixIconSchemeColor: SchemeColor.primary,
+      popupMenuRadius: 6.0,
+      popupMenuElevation: 4.0,
       alignedDropdown: true,
-      tooltipRadius: 4,
-      tooltipSchemeColor: SchemeColor.inverseSurface,
-      tooltipOpacity: 0.9,
-      snackBarElevation: 6,
-      snackBarBackgroundSchemeColor: SchemeColor.inverseSurface,
+      dialogElevation: 3.0,
+      dialogRadius: 20.0,
+      drawerIndicatorSchemeColor: SchemeColor.primary,
+      bottomNavigationBarMutedUnselectedLabel: false,
+      bottomNavigationBarMutedUnselectedIcon: false,
+      menuRadius: 6.0,
+      menuElevation: 4.0,
+      menuBarRadius: 0.0,
+      menuBarElevation: 1.0,
+      searchBarElevation: 2.0,
+      searchViewElevation: 2.0,
+      searchUseGlobalShape: true,
+      navigationBarSelectedLabelSchemeColor: SchemeColor.primary,
+      navigationBarSelectedIconSchemeColor: SchemeColor.onPrimary,
+      navigationBarIndicatorSchemeColor: SchemeColor.primary,
+      navigationBarBackgroundSchemeColor: SchemeColor.surfaceContainer,
+      navigationBarElevation: 0.0,
+      navigationRailSelectedLabelSchemeColor: SchemeColor.primary,
+      navigationRailSelectedIconSchemeColor: SchemeColor.onPrimary,
       navigationRailUseIndicator: true,
+      navigationRailIndicatorSchemeColor: SchemeColor.primary,
+      navigationRailIndicatorOpacity: 1.00,
       navigationRailLabelType: NavigationRailLabelType.all,
     ),
-    keyColors: const FlexKeyColors(),
+    keyColors: const FlexKeyColors(
+      useSecondary: true,
+      useTertiary: true,
+      keepPrimary: true,
+    ),
+    tones: FlexSchemeVariant.oneHue.tones(Brightness.light),
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
   );
   // The defined dark theme.
   static ThemeData dark = FlexThemeData.dark(
-    scheme: FlexScheme.blumineBlue,
+    scheme: FlexScheme.indigoM3,
+    usedColors: 1,
+    surfaceMode: FlexSurfaceMode.highBackgroundLowScaffold,
+    blendLevel: 4,
+    appBarStyle: FlexAppBarStyle.background,
     subThemesData: const FlexSubThemesData(
+      interactionEffects: true,
+      tintedDisabledControls: true,
+      blendOnLevel: 10,
       blendOnColors: true,
+      useM2StyleDividerInM3: true,
+      elevatedButtonSchemeColor: SchemeColor.onPrimaryContainer,
+      elevatedButtonSecondarySchemeColor: SchemeColor.primaryContainer,
+      segmentedButtonSchemeColor: SchemeColor.primary,
+      inputDecoratorSchemeColor: SchemeColor.primary,
       inputDecoratorIsFilled: true,
+      inputDecoratorBackgroundAlpha: 43,
+      inputDecoratorBorderType: FlexInputBorderType.outline,
+      inputDecoratorRadius: 8.0,
+      inputDecoratorUnfocusedHasBorder: false,
+      inputDecoratorPrefixIconSchemeColor: SchemeColor.primary,
+      popupMenuRadius: 6.0,
+      popupMenuElevation: 4.0,
       alignedDropdown: true,
-      tooltipRadius: 4,
-      tooltipSchemeColor: SchemeColor.inverseSurface,
-      tooltipOpacity: 0.9,
-      snackBarElevation: 6,
-      snackBarBackgroundSchemeColor: SchemeColor.inverseSurface,
+      dialogElevation: 3.0,
+      dialogRadius: 20.0,
+      drawerIndicatorSchemeColor: SchemeColor.primary,
+      bottomNavigationBarMutedUnselectedLabel: false,
+      bottomNavigationBarMutedUnselectedIcon: false,
+      menuRadius: 6.0,
+      menuElevation: 4.0,
+      menuBarRadius: 0.0,
+      menuBarElevation: 1.0,
+      searchBarElevation: 2.0,
+      searchViewElevation: 2.0,
+      searchUseGlobalShape: true,
+      navigationBarSelectedLabelSchemeColor: SchemeColor.primary,
+      navigationBarSelectedIconSchemeColor: SchemeColor.onPrimary,
+      navigationBarIndicatorSchemeColor: SchemeColor.primary,
+      navigationBarBackgroundSchemeColor: SchemeColor.surfaceContainer,
+      navigationBarElevation: 0.0,
+      navigationRailSelectedLabelSchemeColor: SchemeColor.primary,
+      navigationRailSelectedIconSchemeColor: SchemeColor.onPrimary,
       navigationRailUseIndicator: true,
+      navigationRailIndicatorSchemeColor: SchemeColor.primary,
+      navigationRailIndicatorOpacity: 1.00,
       navigationRailLabelType: NavigationRailLabelType.all,
     ),
-    keyColors: const FlexKeyColors(),
+    keyColors: const FlexKeyColors(
+      useSecondary: true,
+      useTertiary: true,
+    ),
+    tones: FlexSchemeVariant.oneHue.tones(Brightness.dark),
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
   );
 }
+
 
 
 void main() {
@@ -89,7 +170,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _isFirstOpen = true;
   bool _isLoading = true;
-
+  bool _isOldVersion = false;
   @override
   void initState() {
     super.initState();
@@ -99,8 +180,17 @@ class _MyAppState extends State<MyApp> {
   Future<void> _checkFirstOpen() async {
     final prefs = await SharedPreferences.getInstance();
     // await prefs.setBool('isFirstOpen', true);
+    _isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
+    if(_isFirstOpen){
+
+    }else{
+      _isOldVersion = prefs.getString('name')==null?true:false;
+      if(_isOldVersion){
+        await renewToken(context);
+      }
+    }
     setState(() {
-      _isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
+      _isFirstOpen = _isFirstOpen;
       _isLoading = false;
     });
   }

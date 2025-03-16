@@ -160,10 +160,11 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('当前设备'),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('当前设备'),
+
                       Text(
                         '未选择设备',
                         style: TextStyle(

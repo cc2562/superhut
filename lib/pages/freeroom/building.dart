@@ -32,15 +32,15 @@ class _BuildingPageState extends State<BuildingPage> {
           future: GetBuilding(),
           rememberFutureResult: true,
           whenDone: (data){
-        return Center(
+        return Container(
+          margin: EdgeInsets.only(left: 10,right: 10),
           child: ListView.builder(
             itemCount: data.length,
             itemBuilder: (context, index) {
               return Card.filled(
                   color: Theme
                       .of(context)
-                      .colorScheme
-                      .surfaceContainer,
+                      .colorScheme.surfaceContainer,
                   child: InkWell(
                     onTap: (){
                       Navigator.push(
@@ -69,7 +69,7 @@ class _BuildingPageState extends State<BuildingPage> {
                                             fontWeight: FontWeight.bold,
                                             color: Theme
                                                 .of(context)
-                                                .primaryColor
+                                                .colorScheme.onSurface
                                         )
                                     ),
                                     Row(

@@ -146,19 +146,6 @@ class _FunctionPageState extends State<FunctionPage> {
               );
             },
           ),
-          _buildActivityCard(
-            title: "快乐测试",
-            rating: null,
-            iconData: Ionicons.water,
-            color: Colors.pink.shade100,
-            hasArrow: true,
-            onTap: () async {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => FunctionDrinkPage()),
-              );
-            },
-          ),
         ],
       )),
     );

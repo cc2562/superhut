@@ -33,11 +33,13 @@ class _HomeviewPageState extends State<HomeviewPage>
         ],
       ),
       bottomSheet: Container(
-       // margin: EdgeInsets.all(10),
+        color: Colors.transparent,
+        margin: EdgeInsets.all(10),
         padding: EdgeInsets.only(left: 15,right: 15,bottom: 20,top: 10),
         child: GNav(
-          gap: 8,
-          color: Theme.of(context).hintColor,
+
+          gap: 10,
+          color: Theme.of(context).primaryColorDark,
           activeColor: Theme.of(context).primaryColor,
           iconSize: 24,
           tabBackgroundColor:Theme.of(context).primaryColor.withAlpha(20),

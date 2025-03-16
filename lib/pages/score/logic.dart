@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/command/token.dart';
 import 'package:superhut/command/withhttp.dart';
 
@@ -84,6 +85,11 @@ Future<Map<String, Object>> getScore(String semesterId) async {
     );
   }
   print(reList.toString());
+  final prefs = await SharedPreferences.getInstance();
+  prefs.setString('yxzxf', yxzxf);
+  prefs.setString('zxfjd', zxfjd);
+  prefs.setString('pjxfjd', pjxfjd);
+
   return {
     'achievement':reList,
     'yxzxf':yxzxf,

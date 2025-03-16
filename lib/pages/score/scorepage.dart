@@ -168,7 +168,7 @@ class _ScorePageState extends State<ScorePage> {
                                                   fontWeight: FontWeight.bold,
                                                   color: Theme
                                                       .of(context)
-                                                      .primaryColor
+                                                      .colorScheme.onSurface
                                               )
                                           ),
                                           Row(
@@ -239,7 +239,7 @@ class _ScorePageState extends State<ScorePage> {
                                                           .bold,
                                                       color: Theme
                                                           .of(context)
-                                                          .primaryColor
+                                                          .colorScheme.onSurface
                                                   )
                                               ),
                                               Text(scoreList[ins].state,
@@ -248,7 +248,7 @@ class _ScorePageState extends State<ScorePage> {
 
                                                       color: Theme
                                                           .of(context)
-                                                          .primaryColor
+                                                          .colorScheme.onSurface
                                                   )
                                               ),
                                             ],

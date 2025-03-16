@@ -35,8 +35,10 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
           children: [
             Padding(
               padding: EdgeInsets.only(left: 10,right: 10),
-              child: Flex(
-                direction: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+              //  direction: Axis.horizontal,
                 children: [
                   Expanded(
                     child: Row(
@@ -153,214 +155,213 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    ListView.builder(
-                      physics: NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: data.length,
-                      itemBuilder: (context, index) {
-                        return Card.filled(
-                          color: Theme.of(context).colorScheme.surfaceContainer,
-                          child: InkWell(
-                            onTap: () {
-                              showCupertinoModalBottomSheet(
-                                expand: false,
-                                context: context,
-                                builder:
-                                    (context) => Material(
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.fromLTRB(
-                                          20,
-                                          20,
-                                          20,
-                                          10,
-                                        ),
-                                        height: 350,
-                                        child: ListView(
-                                          physics:
-                                          NeverScrollableScrollPhysics(),
-                                          children: [
-                                            Container(
-                                              child: Text(
-                                                data[index].name,
-                                                style:
-                                                Theme.of(
-                                                  context,
-                                                ).textTheme.titleLarge,
-                                              ),
-                                            ),
-                                            SizedBox(height: 10),
+                child: Container(
+                  margin: EdgeInsets.only(left: 10,right: 10),
+                 child: ListView.builder(
+                   physics: NeverScrollableScrollPhysics(),
+                   shrinkWrap: true,
+                   itemCount: data.length,
+                   itemBuilder: (context, index) {
+                     return Card.filled(
+                       color: Theme.of(context).colorScheme.surfaceContainer,
+                       child: InkWell(
+                         onTap: () {
+                           showCupertinoModalBottomSheet(
+                             expand: false,
+                             context: context,
+                             builder:
+                                 (context) => Material(
+                               child: Stack(
+                                 children: [
+                                   Container(
+                                     padding: EdgeInsets.fromLTRB(
+                                       20,
+                                       20,
+                                       20,
+                                       10,
+                                     ),
+                                     height: 350,
+                                     child: ListView(
+                                       physics:
+                                       NeverScrollableScrollPhysics(),
+                                       children: [
+                                         Container(
+                                           child: Text(
+                                             data[index].name,
+                                             style:
+                                             Theme.of(
+                                               context,
+                                             ).textTheme.titleLarge,
+                                           ),
+                                         ),
+                                         SizedBox(height: 10),
 
-                                            Container(
-                                              child: Flex(
-                                                direction: Axis.horizontal,
-                                                children: List.generate(
-                                                  count, // 动态数量，例如设置为7，则会生成7个
-                                                      (indexs){
+                                         Container(
+                                           child: Flex(
+                                             direction: Axis.horizontal,
+                                             children: List.generate(
+                                                 count, // 动态数量，例如设置为7，则会生成7个
+                                                     (indexs){
 
-                                                        String slot = (indexs + 1).toString().padLeft(2, '0');
-                                                        bool isBooked = data[index].free.contains(slot);
-                                                    return Expanded(
-                                                      child: Container(
-                                                        height: 40,
-                                                        decoration: BoxDecoration(
-                                                          color:
-                                                          isBooked
-                                                              ? Theme.of(context).colorScheme.primary
-                                                              : Theme.of(context).colorScheme.secondaryContainer,
-                                                          borderRadius: BorderRadius.only(
-                                                            topLeft:
-                                                            indexs == 0
-                                                                ? Radius.circular(
-                                                              10,
-                                                            )
-                                                                : Radius
-                                                                .zero,
-                                                            bottomLeft:
-                                                            indexs == 0
-                                                                ? Radius.circular(
-                                                              10,
-                                                            )
-                                                                : Radius
-                                                                .zero,
-                                                            topRight:
-                                                            indexs ==
-                                                                count - 1
-                                                                ? Radius.circular(
-                                                              10,
-                                                            )
-                                                                : Radius
-                                                                .zero,
-                                                            // 最后一个索引为 count - 1
-                                                            bottomRight:
-                                                            indexs == count - 1
-                                                                ? Radius.circular(
-                                                              10,
-                                                            )
-                                                                : Radius
-                                                                .zero,
-                                                          ),
-                                                        ),
-                                                        child: Center(
-                                                          child: Text(
-                                                            '${indexs + 1}',
-                                                            // 动态显示数字，从1开始
-                                                            style: TextStyle(
-                                                              color:
-                                                              Theme.of(
-                                                                context,
-                                                              )
-                                                                  .colorScheme
-                                                                  .onPrimary,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                      }
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(height: 10,),
-                                            Row(
-                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                              mainAxisAlignment: MainAxisAlignment.end,
-                                              children: [
-                                                Container(
-                                                    width: 15,
-                                                    height: 15,
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(context).colorScheme.primary,
-                                                      borderRadius: BorderRadius.circular(100),
-                                                    )
-                                                ),
-                                                SizedBox(width: 5,),
-                                                Text('不空闲'),
-                                                SizedBox(width: 10,),
-                                                Container(
-                                                    width: 15,
-                                                    height: 15,
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(context).colorScheme.secondaryContainer,
-                                                      borderRadius: BorderRadius.circular(100),
-                                                    )
-                                                ),
-                                                SizedBox(width: 5,),
-                                                Text('空闲'),
-                                              ],
-                                            ),
-                                            ListTile(
-                                              leading: Icon(Ionicons.location_outline),
-                                              title: Text(
-                                                '${data[index].name}',
-                                              ),
-                                            ),
-                                            ListTile(
-                                              leading: Icon(Ionicons.happy_outline),
-                                              title: Text(
-                                                '座位数：${data[index].seatNumber}',
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Padding(
-                              padding: EdgeInsets.all(10),
-                              child: Flex(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                direction: Axis.horizontal,
-                                children: [
-                                  Expanded(
-                                    flex: 10,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          data[index].name,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Chip(
-                                              label: Text(
-                                                '总座位数：${data[index].seatNumber}',
-                                                style: TextStyle(fontSize: 12),
-                                              ),
-                                              backgroundColor:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.surface,
-                                              padding: EdgeInsets.symmetric(
-                                                vertical: 0,
-                                                horizontal: 0,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                                                   String slot = (indexs + 1).toString().padLeft(2, '0');
+                                                   bool isBooked = data[index].free.contains(slot);
+                                                   return Expanded(
+                                                     child: Container(
+                                                       height: 40,
+                                                       decoration: BoxDecoration(
+                                                         color:
+                                                         isBooked
+                                                             ? Theme.of(context).colorScheme.primary
+                                                             : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                                         borderRadius: BorderRadius.only(
+                                                           topLeft:
+                                                           indexs == 0
+                                                               ? Radius.circular(
+                                                             10,
+                                                           )
+                                                               : Radius
+                                                               .zero,
+                                                           bottomLeft:
+                                                           indexs == 0
+                                                               ? Radius.circular(
+                                                             10,
+                                                           )
+                                                               : Radius
+                                                               .zero,
+                                                           topRight:
+                                                           indexs ==
+                                                               count - 1
+                                                               ? Radius.circular(
+                                                             10,
+                                                           )
+                                                               : Radius
+                                                               .zero,
+                                                           // 最后一个索引为 count - 1
+                                                           bottomRight:
+                                                           indexs == count - 1
+                                                               ? Radius.circular(
+                                                             10,
+                                                           )
+                                                               : Radius
+                                                               .zero,
+                                                         ),
+                                                       ),
+                                                       child: Center(
+                                                         child: Text(
+                                                           '${indexs + 1}',
+                                                           // 动态显示数字，从1开始
+                                                           style: TextStyle(
+                                                             color:
+                                                             Theme.of(
+                                                               context,
+                                                             )
+                                                                 .colorScheme
+                                                                 .onPrimary,
+                                                           ),
+                                                         ),
+                                                       ),
+                                                     ),
+                                                   );
+                                                 }
+                                             ),
+                                           ),
+                                         ),
+                                         SizedBox(height: 10,),
+                                         Row(
+                                           crossAxisAlignment: CrossAxisAlignment.center,
+                                           mainAxisAlignment: MainAxisAlignment.end,
+                                           children: [
+                                             Container(
+                                                 width: 15,
+                                                 height: 15,
+                                                 decoration: BoxDecoration(
+                                                   color: Theme.of(context).colorScheme.primary,
+                                                   borderRadius: BorderRadius.circular(100),
+                                                 )
+                                             ),
+                                             SizedBox(width: 5,),
+                                             Text('不空闲'),
+                                             SizedBox(width: 10,),
+                                             Container(
+                                                 width: 15,
+                                                 height: 15,
+                                                 decoration: BoxDecoration(
+                                                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                                   borderRadius: BorderRadius.circular(100),
+                                                 )
+                                             ),
+                                             SizedBox(width: 5,),
+                                             Text('空闲'),
+                                           ],
+                                         ),
+                                         ListTile(
+                                           leading: Icon(Ionicons.location_outline),
+                                           title: Text(
+                                             '${data[index].name}',
+                                           ),
+                                         ),
+                                         ListTile(
+                                           leading: Icon(Ionicons.happy_outline),
+                                           title: Text(
+                                             '座位数：${data[index].seatNumber}',
+                                           ),
+                                         ),
+                                       ],
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                             ),
+                           );
+                         },
+                         child: Padding(
+                           padding: EdgeInsets.all(10),
+                           child: Flex(
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             direction: Axis.horizontal,
+                             children: [
+                               Expanded(
+                                 flex: 10,
+                                 child: Column(
+                                   crossAxisAlignment:
+                                   CrossAxisAlignment.start,
+                                   children: [
+                                     Text(
+                                       data[index].name,
+                                       style: TextStyle(
+                                         fontSize: 18,
+                                         fontWeight: FontWeight.bold,
+                                         color: Theme.of(context).colorScheme.onSurface,
+                                       ),
+                                     ),
+                                     Row(
+                                       children: [
+                                         Chip(
+                                           label: Text(
+                                             '总座位数：${data[index].seatNumber}',
+                                             style: TextStyle(fontSize: 12),
+                                           ),
+                                           backgroundColor:
+                                           Theme.of(
+                                             context,
+                                           ).colorScheme.surface,
+                                           padding: EdgeInsets.symmetric(
+                                             vertical: 0,
+                                             horizontal: 0,
+                                           ),
+                                         ),
+                                       ],
+                                     ),
+                                   ],
+                                 ),
+                               ),
+                             ],
+                           ),
+                         ),
+                       ),
+                     );
+                   },
+                 ),
                 ),
               ),
             ),
