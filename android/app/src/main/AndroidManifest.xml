@@ -1,9 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 添加权限 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <application
-        android:label="superhut"
+        android:label="超级工大"
         android:name="${applicationName}"
         android:usesCleartextTraffic="true"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -32,6 +35,28 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- 课程表桌面小组件注册 -->
+        <receiver
+            android:name="com.superhut.rice.superhut.CourseTableWidgetProvider"
+            android:label="课程表"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DELETED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.superhut.rice.superhut.ACTION_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/coursetable_widget_info" />
+        </receiver>
+
+        <!-- 课程表小组件服务 -->
+        <service
+            android:name="com.superhut.rice.superhut.CourseTableWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
     </application>
     <!-- 必须：允许应用访问互联网 -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -50,6 +75,4 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
-
-
 </manifest>

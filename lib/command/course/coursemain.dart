@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:superhut/command/course/getCourse.dart';
+import 'package:superhut/widget_refresh_service.dart';
 
 class Course {
   final String name;
@@ -56,10 +57,23 @@ Future<void> saveCourseDataToJson(Map<String, List<Course>> courseData) async {
   String jsonString = jsonEncode(courseDataMap);
   final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
   final String appDocumentsPath = appDocumentsDir.path;
-  // 将 JSON 字符串写入文件
+  
+  // 确保 app_flutter 目录存在
+  final flutterDir = Directory('$appDocumentsPath/app_flutter');
+  if (!flutterDir.existsSync()) {
+    flutterDir.createSync(recursive: true);
+  }
+  
+  // 将 JSON 字符串写入文件（保存在应用文档目录下）
   final file = File('$appDocumentsPath/course_data.json');
- // print(jsonString);
   await file.writeAsString(jsonString);
+  
+  // 同时保存一份到 app_flutter 目录（供桌面小组件访问）
+  final widgetFile = File('${flutterDir.path}/course_data.json');
+  await widgetFile.writeAsString(jsonString);
+  
+  // 刷新桌面小组件
+  await WidgetRefreshService.refreshCourseTableWidget();
 }
 
 // 从 JSON 文件读取并转换为 Map<String, List<Course>>

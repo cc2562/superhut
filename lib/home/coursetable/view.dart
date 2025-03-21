@@ -7,6 +7,7 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../command/course/coursemain.dart';
+import '../../widget_refresh_service.dart';
 import 'logic.dart';
 
 class CourseTableView extends StatefulWidget {
@@ -31,6 +32,8 @@ DateTime getMondayOfCurrentWeek() {
   if (now.weekday == 7) {
     daysToSubtract = 6;
   }
+  // 刷新桌面小组件
+  WidgetRefreshService.refreshCourseTableWidget();
   return now.subtract(Duration(days: daysToSubtract));
 }
 

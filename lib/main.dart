@@ -1,4 +1,5 @@
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -9,6 +10,7 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:superhut/command/token.dart';
 import 'package:superhut/welcomepage/view.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'home/homeview/view.dart';
 /// The [AppTheme] defines light and dark themes for the app.
@@ -171,11 +173,15 @@ class _MyAppState extends State<MyApp> {
   bool _isFirstOpen = true;
   bool _isLoading = true;
   bool _isOldVersion = false;
+
+
   @override
   void initState() {
     super.initState();
     _checkFirstOpen();
   }
+
+
 
   Future<void> _checkFirstOpen() async {
     final prefs = await SharedPreferences.getInstance();
