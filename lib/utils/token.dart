@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart' as tget;
 import 'package:get/get_core/src/get_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:superhut/command/withhttp.dart';
 import 'package:superhut/login/loginwithpost.dart';
+import 'package:superhut/utils/withhttp.dart';
 
 import '../login/webview_login_screen.dart';
 

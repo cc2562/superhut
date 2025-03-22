@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:restart_app/restart_app.dart';
-import 'package:superhut/command/course/coursemain.dart';
-import 'package:superhut/command/token.dart';
 import 'package:superhut/home/homeview/view.dart';
+
+import '../utils/course/coursemain.dart';
+import '../utils/token.dart';
 
 class Getcoursepage extends StatefulWidget {
   final bool renew;

@@ -2,9 +2,10 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:superhut/command/token.dart';
 
-import '../command/pwd.dart';
+
+import '../utils/pwd.dart';
+import '../utils/token.dart';
 
 Future<bool> loginHut(String userNo, String orgPassword) async {
   print("Started");

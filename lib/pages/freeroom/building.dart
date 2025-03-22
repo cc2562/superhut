@@ -2,7 +2,7 @@ import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/freeroom/room.dart';
-import 'package:superhut/command/roomapi.dart';
+import 'package:superhut/utils/roomapi.dart';
 
 import 'buildingBridge.dart';
 

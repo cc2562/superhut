@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:superhut/command/token.dart';
-import 'package:superhut/command/withhttp.dart';
+
+import '../../utils/token.dart';
+import '../../utils/withhttp.dart';
 
 
 

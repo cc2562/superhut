@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:superhut/pages/drink/view/view.dart';
 import 'package:superhut/pages/freeroom/building.dart';
+import 'package:superhut/pages/water/view.dart';
 
-import '../../command/token.dart';
 import '../../pages/score/scorepage.dart';
+import '../../utils/token.dart';
 
 class FunctionPage extends StatefulWidget {
   const FunctionPage({super.key});
@@ -143,6 +144,20 @@ class _FunctionPageState extends State<FunctionPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => FunctionDrinkPage()),
+              );
+            },
+          ),
+          SizedBox(height: 16),
+          _buildActivityCard(
+            title: "洗澡",
+            rating: null,
+            iconData: Ionicons.water,
+            color: Colors.pink.shade100,
+            hasArrow: true,
+            onTap: () async {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FunctionHotWaterPage()),
               );
             },
           ),

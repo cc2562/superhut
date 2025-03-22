@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
-import 'package:superhut/command/course/getCourse.dart';
 import 'package:superhut/widget_refresh_service.dart';
+
+import 'getCourse.dart';
 
 class Course {
   final String name;

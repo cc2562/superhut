@@ -5,8 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../bridge/getCoursePage.dart';
-import '../command/token.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+
+import '../utils/token.dart';
 class WebViewLoginScreen extends StatefulWidget {
   final String userNo;
   final String password;

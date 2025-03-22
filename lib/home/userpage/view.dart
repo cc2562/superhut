@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/welcomepage/view.dart';
 
 import '../../bridge/getCoursePage.dart';
-import '../../command/token.dart';
 import '../../pages/score/scorepage.dart';
+import '../../utils/token.dart';
 import '../about/view.dart';
 
 class UserPage extends StatefulWidget {

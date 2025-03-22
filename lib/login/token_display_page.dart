@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 
 import '../bridge/getCoursePage.dart';
-import '../command/token.dart';
+import '../utils/token.dart';
+
 
 class TokenDisplayPage extends StatefulWidget {
   final String token;
