@@ -9,6 +9,8 @@ class FunctionHotWaterState {
   RxBool waterStatus = false.obs;
   // 余额
   RxString balance = "null".obs;
+  // 加载状态
+  RxBool isLoading = false.obs;
 
   FunctionHotWaterState();
 }

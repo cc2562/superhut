@@ -51,7 +51,7 @@ class FunctionHotWaterLogic extends GetxController {
       _hutUserInfo["username"] = prefs.getString('hutUsername')??"";
       _hutUserInfo["password"] = prefs.getString('hutPassword')??"";
       _hutUserInfo["hutIsLogin"] = prefs.getBool('hutIsLogin')??false;
-      print(_hutUserInfo["username"]);
+    //  print(_hutUserInfo["username"]);
     } catch (e) {
       // Handle errors
       print("Error loading user info: $e");
@@ -98,7 +98,7 @@ class FunctionHotWaterLogic extends GetxController {
    // print("LLLLLLLLLLLLLLLLLLLLLLLLLL:$isV");
     // 尝试首次获取设备列表
     await hutUserApi.getHotWaterDevice().then((value) async {
-      print(value);
+     // print(value);
 
       if (value["code"] == 500) {
         // 处理登录失效情况：尝试自动重新登录
@@ -148,6 +148,8 @@ class FunctionHotWaterLogic extends GetxController {
   /// 检查是否有未关闭的设备
   Future<void> checkHotWaterDevice() async {
     await hutUserApi.checkHotWaterDevice().then((value) {
+  //    print('未关闭！！！！！！！！！！！！！');
+   //   print(value);
       if (value.isNotEmpty) {
         state.waterStatus.value = true;
         state.choiceDevice.value = state.deviceList
@@ -175,10 +177,14 @@ class FunctionHotWaterLogic extends GetxController {
 
   /// 开始洗澡
   void startWater() {
+    state.isLoading.value = true;
+    update();
+    
     hutUserApi
         .startHotWater(
             device: state.deviceList[state.choiceDevice.value]["poscode"])
         .then((value) {
+      state.isLoading.value = false;
       if (value) {
         Get.snackbar(
           '提示',
@@ -205,21 +211,36 @@ class FunctionHotWaterLogic extends GetxController {
         );
       }
       update();
+    }).catchError((error) {
+      state.isLoading.value = false;
+      Get.snackbar(
+        '提示',
+        '发生错误，请稍后再试',
+        backgroundColor: Theme.of(Get.context!).colorScheme.primaryContainer,
+        margin: EdgeInsets.only(
+          top: 30,
+          left: 50,
+          right: 50,
+        ),
+      );
+      update();
     });
   }
 
   /// 结束洗澡
   void endWater() {
-    // logger.i(state.deviceList[state.choiceDevice.value]["poscode"]);
+    state.isLoading.value = true;
+    update();
+    
     hutUserApi
         .stopHotWater(
             device: state.deviceList[state.choiceDevice.value]["poscode"])
         .then((value) {
+      state.isLoading.value = false;
       if (value) {
-        state.waterStatus.value = false;
         Get.snackbar(
           '提示',
-          '结算成功！',
+          '关闭设备成功！',
           backgroundColor: Theme.of(Get.context!).colorScheme.primaryContainer,
           margin: EdgeInsets.only(
             top: 30,
@@ -227,11 +248,12 @@ class FunctionHotWaterLogic extends GetxController {
             right: 50,
           ),
         );
-        getBalance();
+        state.waterStatus.value = false;
+        update();
       } else {
         Get.snackbar(
           '提示',
-          '结算失败！',
+          '关闭设备失败',
           backgroundColor: Theme.of(Get.context!).colorScheme.primaryContainer,
           margin: EdgeInsets.only(
             top: 30,
@@ -241,6 +263,103 @@ class FunctionHotWaterLogic extends GetxController {
         );
       }
       update();
+    }).catchError((error) {
+      state.isLoading.value = false;
+      Get.snackbar(
+        '提示',
+        '发生错误，请稍后再试',
+        backgroundColor: Theme.of(Get.context!).colorScheme.primaryContainer,
+        margin: EdgeInsets.only(
+          top: 30,
+          left: 50,
+          right: 50,
+        ),
+      );
+      update();
+    });
+  }
+  
+  /// 添加热水设备
+  /// [deviceCode] 6位设备号
+  Future<bool> addDevice(String deviceCode) async {
+    if (deviceCode.length != 6 || int.tryParse(deviceCode) == null) {
+      Get.snackbar(
+        '提示',
+        '设备号必须是6位数字',
+        backgroundColor: Theme.of(Get.context!).colorScheme.primaryContainer,
+        margin: EdgeInsets.only(
+          top: 30,
+          left: 50,
+          right: 50,
+        ),
+      );
+      return false;
+    }
+    
+    return await hutUserApi.addWaterDevice(deviceCode).then((value) {
+      if (value['result']) {
+        Get.snackbar(
+          '提示',
+          '添加设备成功！',
+          backgroundColor: Theme.of(Get.context!).colorScheme.primaryContainer,
+          margin: EdgeInsets.only(
+            top: 30,
+            left: 50,
+            right: 50,
+          ),
+        );
+        getDeviceList(); // 刷新设备列表
+        return true;
+      } else {
+        Get.snackbar(
+          '提示',
+          '添加设备失败：${value['msg']}',
+          backgroundColor: Theme.of(Get.context!).colorScheme.primaryContainer,
+          margin: EdgeInsets.only(
+            top: 30,
+            left: 50,
+            right: 50,
+          ),
+        );
+        return false;
+      }
+    });
+  }
+  
+  /// 删除热水设备
+  /// [deviceCode] 设备号
+  Future<bool> deleteDevice(String deviceCode) async {
+    return await hutUserApi.delWaterDevice(deviceCode).then((value) {
+      if(value['result']){
+  //      print(value);
+     //   print("DEEEEEEEEEEEEE");
+        Get.snackbar(
+          '提示',
+          '删除设备成功！',
+          backgroundColor: Theme.of(Get.context!).colorScheme.primaryContainer,
+          margin: EdgeInsets.only(
+            top: 30,
+            left: 50,
+            right: 50,
+          ),
+        );
+        getDeviceList();
+
+        return true;
+      }else{
+        Get.snackbar(
+          '提示',
+          '删除设备失败：${value['msg']}',
+          backgroundColor: Theme.of(Get.context!).colorScheme.primaryContainer,
+          margin: EdgeInsets.only(
+            top: 30,
+            left: 50,
+            right: 50,
+          ),
+        );
+        return false;
+      }
+
     });
   }
 }

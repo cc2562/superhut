@@ -29,7 +29,7 @@ extension SizeExtension on num {
 class S {
   static S of(BuildContext context) => S();
   static S get current => S();
-  
+
   // Localized strings
   String get function_hot_water => "洗澡热水";
   String get snackbar_tip => "提示";
@@ -93,7 +93,7 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                         Colors.orange.withAlpha(70),
                         Colors.transparent,
                       ],
-                      stops: logic.state.waterStatus.value 
+                      stops: logic.state.waterStatus.value
                           ? [0.0, 0.8, 1.0]  // 洗澡时，橙色集中在底部
                           : [0.0, 0.2, 1.0], // 未洗澡时，橙色集中在顶部
                     ),
@@ -179,8 +179,7 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
               width: double.infinity,
               padding: EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.white.withOpacity(0.1),
+
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,8 +214,7 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
             width: double.infinity,
             padding: EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.white.withOpacity(0.1),
+
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,6 +247,11 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
       child: GetBuilder<FunctionHotWaterLogic>(builder: (logic) {
         return GestureDetector(
           onTap: () {
+            if (logic.state.isLoading.value) {
+              // 如果正在加载中，不响应点击
+              return;
+            }
+            
             if (logic.state.choiceDevice.value == -1) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('请先选择设备')),
@@ -286,20 +289,48 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
               ],
             ),
             child: Center(
-              child: Text(
-                logic.state.waterStatus.value
-                    ? S.of(context).function_hot_water_btn_status_disable
-                    : S.of(context).function_hot_water_btn_status_enable,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              child: logic.state.isLoading.value
+                ? _buildLoadingIndicator(logic.state.waterStatus.value)
+                : Text(
+                    logic.state.waterStatus.value
+                        ? S.of(context).function_hot_water_btn_status_disable
+                        : S.of(context).function_hot_water_btn_status_enable,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
             ),
           ),
         );
       }),
+    );
+  }
+
+  // 构建加载指示器
+  Widget _buildLoadingIndicator(bool isWaterOn) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // 旋转的圆圈
+        SizedBox(
+          width: 60,
+          height: 60,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Colors.white,
+            ),
+            strokeWidth: 4,
+          ),
+        ),
+        // 中心的图标
+        Icon(
+          isWaterOn ? Icons.play_arrow : Icons.stop_circle_outlined,
+          color: Colors.white,
+          size: 30,
+        ),
+      ],
     );
   }
 
@@ -313,7 +344,8 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
         }
 
         return Card(
-          elevation: 8,
+          elevation: 0,
+          color: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -325,14 +357,7 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
             ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  Colors.orange.withOpacity(0.1),
-                ],
-              ),
+              color: Colors.white.withAlpha(20)
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -393,19 +418,30 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                 width: 40,
                 height: 4,
                 margin: EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
+
               ),
               Padding(
                 padding: EdgeInsets.all(16),
-                child: Text(
-                  '选择设备',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '选择设备',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    // 添加设备管理按钮
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showDeviceManagementDialog(context);
+                      },
+                      icon: Icon(Icons.settings, color: Colors.orange),
+                      label: Text('管理设备', style: TextStyle(color: Colors.orange)),
+                    ),
+                  ],
                 ),
               ),
               GetBuilder<FunctionHotWaterLogic>(
@@ -424,11 +460,12 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                       ),
                     );
                   }
-                  
+
                   return Container(
                     constraints: BoxConstraints(
                       maxHeight: MediaQuery.of(context).size.height * 0.5,
                     ),
+                    padding: EdgeInsets.fromLTRB(10, 0, 10, 20),
                     child: ListView.builder(
                       shrinkWrap: true,
                       itemCount: logic.state.deviceList.length,
@@ -457,6 +494,282 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                 },
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 显示设备管理对话框
+  void _showDeviceManagementDialog(BuildContext context) {
+    showCupertinoModalBottomSheet(
+      context: context,
+      expand: false,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Material(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(15),
+          topRight: Radius.circular(15),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.symmetric(vertical: 12),
+              ),
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '设备管理',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showAddDevicePage(context);
+                      },
+                      icon: Icon(Icons.add_circle_outline, color: Colors.orange),
+                      label: Text('添加设备', style: TextStyle(color: Colors.orange)),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 设备列表区域
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('我的设备', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    GetBuilder<FunctionHotWaterLogic>(
+                      builder: (logic) {
+                        if (logic.state.deviceList.isEmpty) {
+                          return Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.hot_tub, size: 48, color: Colors.grey),
+                                  SizedBox(height: 10),
+                                  Text('暂无设备，请先添加设备'),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        return Container(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.of(context).size.height * 0.3,
+                          ),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: logic.state.deviceList.length,
+                            itemBuilder: (context, index) {
+                              String deviceName = logic.state.deviceList[index]["posname"];
+                              String deviceCode = logic.state.deviceList[index]["poscode"];
+
+                              return ListTile(
+                                title: Text(deviceName),
+                                subtitle: Text('设备号: $deviceCode'),
+                                trailing: IconButton(
+                                  icon: Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () async {
+                                    // 显示确认对话框
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: Text('删除设备'),
+                                        content: Text('确定要删除设备 "$deviceName" 吗？'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text('取消'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () async {
+                                              Navigator.pop(context);
+                                              await logic.deleteDevice(deviceCode);
+                                              if (!context.mounted) return;
+                                              Navigator.pop(context);
+                                              _showDeviceSelectionDialog(context);
+                                            },
+                                            child: Text('确定', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 显示添加设备页面(底部弹窗形式)
+  void _showAddDevicePage(BuildContext context) {
+    final TextEditingController deviceCodeController = TextEditingController();
+
+    showCupertinoModalBottomSheet(
+      context: context,
+      expand: false,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Material(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(15),
+          topRight: Radius.circular(15),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 标题栏
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '添加新设备',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      '请输入6位设备号码',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+
+                    // 输入框
+                    TextField(
+                      controller: deviceCodeController,
+                      decoration: InputDecoration(
+                        hintText: '输入6位设备号',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.1),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        prefixIcon: Icon(Icons.confirmation_number_outlined, color: Colors.orange),
+                      ),
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    SizedBox(height: 20),
+
+                    // 提交按钮
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          String deviceCode = deviceCodeController.text.trim();
+                          if (deviceCode.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('请输入设备号')),
+                            );
+                            return;
+                          }
+
+                          bool success = await logic.addDevice(deviceCode);
+                          if (success && context.mounted) {
+                            Navigator.pop(context);
+                            _showDeviceSelectionDialog(context);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text('添加设备', style: TextStyle(fontSize: 18)),
+                      ),
+                    ),
+
+                    // 提示信息
+                    SizedBox(height: 20),
+                    Card(
+                      elevation: 0,
+                      color: Colors.transparent,
+                      child: Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.info_outline, color: Colors.orange),
+                                SizedBox(width: 8),
+                                Text('温馨提示', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Text('1. 设备号通常位于设备正门的显示屏中'),
+                            Text('2. 设备号为6位数字'),
+                            Text('3. 如无法添加，请联系学校管理员'),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -523,7 +836,7 @@ class _BubbleAnimationState extends State<BubbleAnimation> with SingleTickerProv
           ));
         });
       }
-      
+
       // Remove bubbles that have completed their animation
       bubbles.removeWhere((bubble) => bubble.isCompleted);
     });

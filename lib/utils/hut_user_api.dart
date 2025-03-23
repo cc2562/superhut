@@ -183,7 +183,7 @@ class HutUserApi {
     Map tokenData =data['data'];
     String idToken = tokenData['idToken'];
     String refreshToken = tokenData['refreshToken'];
-    print(idToken);
+  //  print(idToken);
     // 设置Token
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('hutToken', idToken);
@@ -229,13 +229,13 @@ class HutUserApi {
     response = await dio.post(url, data: {});
     Map data = response.data;
     bool isValid = false;
-    print(data);
+  //  print(data);
     if(data['code']==-1){
       isValid = false;
     }else if(data['code']==0){
       isValid = true;
     }
-    print(data['code']);
+  //  print(data['code']);
     return isValid;
    }
 
@@ -288,12 +288,12 @@ class HutUserApi {
             ? parts[0].split('=')[1]
             : "";
 
-      print("|JJJJJJJJJJJJJSSSSSSSSSSSSSSS");
-      print(jSessionId);
-      print('END');
+   //   print("|JJJJJJJJJJJJJSSSSSSSSSSSSSSS");
+    //  print(jSessionId);
+   //   print('END');
       String url = value.headers.value("location")!;
       // logger.i(url.split("openid=")[1]);
-      print(url.split("openid=")[1]);
+    //  print(url.split("openid=")[1]);
       return [url.split("openid=")[1], jSessionId];
     });
   }
@@ -302,13 +302,13 @@ class HutUserApi {
   /// return 设备列表
   Future<Map<String, dynamic>> getHotWaterDevice() async {
     bool isV = await checkTokenValidity();
-    print(isV);
-    print(isV);
+   // print(isV);
+   // print(isV);
     String token =await getToken();
     List openidls = await getOpenid();
     String openid = openidls[0];
     String JSESSIONID = openidls[1];
-    print(JSESSIONID);
+   // print(JSESSIONID);
     String url = "/bathroom/getOftenUsetermList?openid=$openid";
     final dio = Dio();
     dio.interceptors.clear();
@@ -341,8 +341,8 @@ class HutUserApi {
     response = await dio.post(url, data: {
       "openid": openid,
     });
-    print("DDDDDDDDDDDDDDD");
-    print(response.data);
+ //  print("DDDDDDDDDDDDDDD");
+   // print(response.data);
     if (response.data == "") {
       return {
         "code": 500,
@@ -405,12 +405,20 @@ class HutUserApi {
     return await _request
         .post(url, params: params, data: data, options: options)
         .then((value) {
-      var data = ResponseUtils.transformObj(value);
-      bool isHave = data["result"] == "000000";
+         // print(value.data);
+          if(value.data['result']!="000000"){
+            return [];
+          }
+      List data = value.data['data'];
+      List openCodeList =[];
+      for (var i = 0; i < data.length; i++) {
+        openCodeList.add(data[i]["poscode"].toString());
+      }
+      bool isHave = data.isNotEmpty;
       if (isHave) {
         // logger.i(data["data"].first["poscode"]);
-        String poscode = data["data"].first["poscode"];
-        return [poscode];
+       // print(openCodeList);
+        return openCodeList;
       } else {
         return [];
       }
@@ -510,6 +518,128 @@ class HutUserApi {
       // logger.i(data["resultData"]["result"] == "000000");
       return data["resultData"]["result"] == "000000";
     });
+  }
+
+
+  //添加洗澡设备
+  Future<Map> addWaterDevice(String bindCode) async {
+   // bool isV = await checkTokenValidity();
+    //print(isV);
+    //print(isV);
+    String token =await getToken();
+    List openidls = await getOpenid();
+    String openid = openidls[0];
+    String JSESSIONID = openidls[1];
+  //  print(JSESSIONID);
+    String url = "/bathroom/bindTerm?openid=$openid";
+    final dio = Dio();
+    dio.interceptors.clear();
+    dio.options.baseUrl = 'https://v8mobile.hut.edu.cn';
+    dio.options.connectTimeout = Duration(seconds: 5);
+    dio.options.receiveTimeout = Duration(seconds: 3);
+    dio.options.headers = {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
+      "Connection": "keep-alive",
+      "Accept": "application/json, text/javascript, */*; q=0.01",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Content-Type": "application/json",
+      "sec-ch-ua-platform": "\"Android\"",
+      "x-requested-with": "XMLHttpRequest",
+      "sec-ch-ua": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
+      "sec-ch-ua-mobile": "?1",
+      "Origin": "https://v8mobile.hut.edu.cn",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Dest": "empty",
+      "Referer": "https://v8mobile.hut.edu.cn/waterpage/waterManagePage?openid=$openid",
+      "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+      "Cookie": "userToken=$token; Domain=v8mobile.hut.edu.cn; Path=/; JSESSIONID=$JSESSIONID"
+    };
+    dio.options.followRedirects = true;
+    dio.options.validateStatus = (status) {
+      return status! < 500;
+    };
+    Response response;
+    response = await dio.post(url, data: {
+      "openid": openid,
+      "bindcode": bindCode,
+    });
+    Map data = response.data;
+    Map resultData = data["resultData"];
+    if (resultData["result"] == "000000") {
+      return {
+        'result':true,
+        'msg':resultData["message"],
+      };
+    } else {
+      return {
+        'result':false,
+        'msg':resultData["message"],
+      };
+    }
+  }
+
+  //删除洗澡设备
+  Future<Map<String, dynamic>> delWaterDevice(String bindCode) async {
+    String token =await getToken();
+    List openidls = await getOpenid();
+    String openid = openidls[0];
+    String JSESSIONID = openidls[1];
+    //print(JSESSIONID);
+    String url = "/bathroom/cancelBindTerm?openid=$openid";
+    final dio = Dio();
+    dio.interceptors.clear();
+    dio.options.baseUrl = 'https://v8mobile.hut.edu.cn';
+    dio.options.connectTimeout = Duration(seconds: 5);
+    dio.options.receiveTimeout = Duration(seconds: 3);
+    dio.options.headers = {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
+      "Connection": "keep-alive",
+      "Accept": "application/json, text/javascript, */*; q=0.01",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Content-Type": "application/json",
+      "sec-ch-ua-platform": "\"Android\"",
+      "x-requested-with": "XMLHttpRequest",
+      "sec-ch-ua": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
+      "sec-ch-ua-mobile": "?1",
+      "Origin": "https://v8mobile.hut.edu.cn",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Dest": "empty",
+      "Referer": "https://v8mobile.hut.edu.cn/waterpage/waterManagePage?openid=$openid",
+      "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+      "Cookie": "userToken=$token; Domain=v8mobile.hut.edu.cn; Path=/; JSESSIONID=$JSESSIONID"
+    };
+    dio.options.followRedirects = true;
+    dio.options.validateStatus = (status) {
+      return status! < 500;
+    };
+    Response response;
+    response = await dio.post(url, data: {
+      "openid": openid,
+      "bindcode": bindCode,
+    });
+    Map data = response.data;
+    //print(data);
+    Map resultData = data["resultData"]??{};
+    if(resultData.isEmpty){
+      return {
+        'result':false,
+        'msg':data['message']??"未知错误",
+      };
+    }
+    if (resultData["result"] == "000000") {
+      return {
+        'result':true,
+        'msg':resultData["message"],
+      };
+    } else {
+      return {
+        'result':false,
+        'msg':resultData["message"],
+      };
+    }
+
   }
 
   /// 获取校园卡余额
