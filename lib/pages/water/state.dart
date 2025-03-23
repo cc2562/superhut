@@ -11,6 +11,8 @@ class FunctionHotWaterState {
   RxString balance = "null".obs;
   // 加载状态
   RxBool isLoading = false.obs;
+  // 设备检查状态（是否完成检查未关闭设备）
+  RxBool deviceCheckComplete = false.obs;
 
   FunctionHotWaterState();
 }

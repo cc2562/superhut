@@ -35,8 +35,8 @@ class S {
   String get snackbar_tip => "提示";
   String function_hot_water_campus_balance(String balance) => "校园卡余额: ¥$balance";
   String get function_hot_water_have_device_not_off => "您有设备未关闭";
-  String get function_hot_water_btn_status_enable => "开始";
-  String get function_hot_water_btn_status_disable => "结束";
+  String get function_hot_water_btn_status_enable => "开启";
+  String get function_hot_water_btn_status_disable => "关闭";
   String get function_drink_switch_start_success => "开启成功";
   String get function_drink_switch_start_fail => "开启失败";
   String get function_drink_switch_end_success => "关闭成功";
@@ -245,10 +245,19 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
   Widget deviceHotWaterBtnWidget(BuildContext context) {
     return Center(
       child: GetBuilder<FunctionHotWaterLogic>(builder: (logic) {
+        // 检查是否正在加载或设备检查尚未完成
+        bool isDisabled = logic.state.isLoading.value || !logic.state.deviceCheckComplete.value;
+        
         return GestureDetector(
           onTap: () {
-            if (logic.state.isLoading.value) {
-              // 如果正在加载中，不响应点击
+            // 如果正在加载或设备检查尚未完成，不响应点击
+            if (isDisabled) {
+              // 仅当设备检查未完成时显示提示
+              if (!logic.state.deviceCheckComplete.value && !logic.state.isLoading.value) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('正在检测设备状态，请稍候...')),
+                );
+              }
               return;
             }
             
@@ -274,15 +283,19 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: logic.state.waterStatus.value
-                    ? [Colors.orange.shade300, Colors.red.shade400]
-                    : [Colors.orange.shade200, Colors.orange.shade400],
+                colors: isDisabled 
+                    ? [Colors.grey.shade300, Colors.grey.shade400]  // 禁用状态使用灰色
+                    : logic.state.waterStatus.value
+                        ? [Colors.orange.shade300, Colors.red.shade400]
+                        : [Colors.orange.shade200, Colors.orange.shade400],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: logic.state.waterStatus.value
-                      ? Colors.red.withOpacity(0.6)
-                      : Colors.orange.withOpacity(0.4),
+                  color: isDisabled
+                      ? Colors.grey.withOpacity(0.4)
+                      : logic.state.waterStatus.value
+                          ? Colors.red.withOpacity(0.6)
+                          : Colors.orange.withOpacity(0.4),
                   blurRadius: 15,
                   spreadRadius: 5,
                 ),
@@ -291,16 +304,18 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
             child: Center(
               child: logic.state.isLoading.value
                 ? _buildLoadingIndicator(logic.state.waterStatus.value)
-                : Text(
-                    logic.state.waterStatus.value
-                        ? S.of(context).function_hot_water_btn_status_disable
-                        : S.of(context).function_hot_water_btn_status_enable,
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                : !logic.state.deviceCheckComplete.value
+                    ? _buildCheckingIndicator()  // 设备检查未完成时显示检查指示器
+                    : Text(
+                        logic.state.waterStatus.value
+                            ? S.of(context).function_hot_water_btn_status_disable
+                            : S.of(context).function_hot_water_btn_status_enable,
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
             ),
           ),
         );
@@ -327,6 +342,32 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
         // 中心的图标
         Icon(
           isWaterOn ? Icons.play_arrow : Icons.stop_circle_outlined,
+          color: Colors.white,
+          size: 30,
+        ),
+      ],
+    );
+  }
+  
+  // 构建设备检查指示器
+  Widget _buildCheckingIndicator() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // 旋转的圆圈
+        SizedBox(
+          width: 60,
+          height: 60,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Colors.white,
+            ),
+            strokeWidth: 4,
+          ),
+        ),
+        // 中心的图标
+        Icon(
+          Icons.search,  // 使用搜索图标表示正在检查
           color: Colors.white,
           size: 30,
         ),

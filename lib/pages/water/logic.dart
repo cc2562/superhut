@@ -63,6 +63,8 @@ class FunctionHotWaterLogic extends GetxController {
     super.onInit();
     loadUserInfo();
     checkLogin();
+    // 初始化时设置设备检查状态为未完成
+    state.deviceCheckComplete.value = false;
   }
 
   /// 判断是否需要跳转登录
@@ -147,9 +149,12 @@ class FunctionHotWaterLogic extends GetxController {
 
   /// 检查是否有未关闭的设备
   Future<void> checkHotWaterDevice() async {
+    // 开始检查前设置检查状态为未完成
+    state.deviceCheckComplete.value = false;
+    update();
+    
     await hutUserApi.checkHotWaterDevice().then((value) {
-  //    print('未关闭！！！！！！！！！！！！！');
-   //   print(value);
+      print(value);
       if (value.isNotEmpty) {
         state.waterStatus.value = true;
         state.choiceDevice.value = state.deviceList
@@ -166,6 +171,14 @@ class FunctionHotWaterLogic extends GetxController {
         );
         update();
       }
+      
+      // 设置检查状态为已完成
+      state.deviceCheckComplete.value = true;
+      update();
+    }).catchError((error) {
+      // 发生错误时也标记为已完成，避免用户无法使用功能
+      state.deviceCheckComplete.value = true;
+      update();
     });
   }
 
@@ -176,7 +189,7 @@ class FunctionHotWaterLogic extends GetxController {
   }
 
   /// 开始洗澡
-  void startWater() {
+  Future<void> startWater() async {
     state.isLoading.value = true;
     update();
     
