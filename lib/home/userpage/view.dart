@@ -179,6 +179,7 @@ class _UserPageState extends State<UserPage> {
                 title: "刷新课表",
                 onTap: () async {
                   await renewToken(context);
+                 // print("跳转");
                   Navigator.of(context).push(
                       MaterialPageRoute(builder: (context) => Getcoursepage(renew: true))
                   );

@@ -4,8 +4,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../login/hut/view.dart';
-import '../../utils/hut_user_api.dart';
+import 'package:superhut/login/unified_login_page.dart';
+import 'package:superhut/utils/hut_user_api.dart';
+import 'package:superhut/login/hut/view.dart';
 import 'state.dart';
 
 class FunctionHotWaterLogic extends GetxController {

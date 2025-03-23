@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/login/loginwithpost.dart';
 import 'package:superhut/utils/withhttp.dart';
 
+import '../login/hut_cas_login_page.dart';
 import '../login/webview_login_screen.dart';
 
 Future<void> saveToken(String token) async {
@@ -36,42 +37,39 @@ Future<bool> checkTokenValid() async {
 }
 
 Future<String> renewToken(context) async {
-  bool isValid = await checkTokenValid();
-  var su;
-  print("REEE");
-  print(isValid);
-  if(isValid){
+  final prefs = await SharedPreferences.getInstance();
+  String type = prefs.getString('loginType')??"";
+  if(type=="jwxt") {
+    bool isValid = await checkTokenValid();
+    var su;
+    print("REEE");
+    print(isValid);
+    if (isValid) {
 
+    } else {
+      String user = prefs.getString('user') ?? "1";
+      String password = prefs.getString('password') ?? "1";
+      print(1122);
+      Get.snackbar(
+        '请稍候',
+        '正在刷新token',
+        snackPosition: tget.SnackPosition.BOTTOM,
+        duration: Duration(seconds: 1),
+        margin: EdgeInsets.all(10),
+        borderRadius: 10,
+      );
+      await loginHut(user, password);
+    }
+    return "1123";
   }else{
+    bool isValid = await checkTokenValid();
+    print(isValid);
+    if(isValid){}else {
+      await HutCasTokenRetriever.getJwxtToken(context);
+      print("刷新完成");
 
-    final prefs = await SharedPreferences.getInstance();
-    String user = prefs.getString('user')??"1";
-    String password = prefs.getString('password')??"1";
-    print(1122);
-    /*
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => WebViewLoginScreen(
-          userNo: user,
-          password: password,
-          showText: "正在刷新...",
-              renew: true,
-        ),
-      ),
-    );
-
-     */
-    Get.snackbar(
-      '请稍候',
-      '正在刷新token',
-      snackPosition: tget.SnackPosition.BOTTOM,
-      duration: Duration(seconds: 1),
-      margin: EdgeInsets.all(10),
-      borderRadius: 10,
-    );
-    await loginHut(user, password);
+    }
+    return "1123";
   }
-  return "1123";
+
 }

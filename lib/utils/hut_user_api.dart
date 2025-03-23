@@ -89,6 +89,25 @@ class RequestManager {
 
 /// Data Storage Manager for handling persistent storage operations
 
+class FunctionItem {
+  final String id;
+  final String serviceName;
+  final String servicePicUrl;
+  final String serviceUrl;
+  final String serviceType;
+  final String tokenAccept;
+  final String iconUrl;
+  FunctionItem(
+  {
+    required this.id,
+    required this.serviceName,
+    required this.servicePicUrl,
+    required this.serviceUrl,
+    required this.serviceType,
+    required this.tokenAccept,
+    required this.iconUrl,
+  });
+}
 
 class HutUserApi {
 
@@ -191,8 +210,9 @@ class HutUserApi {
     prefs.setString('deviceId', deviceId);
     prefs.setString('hutUsername', username);
     prefs.setString('hutPassword', password);
+    prefs.setString('loginType', 'hut');
     prefs.setBool('hutIsLogin', true);
-    //print(response.data);
+    print(response.data);
     return true;
 
   }
@@ -202,6 +222,7 @@ class HutUserApi {
   Future<String> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getString('hutToken') != null) {
+      //bool isv =await refreshToken();
       _token["idToken"] = prefs.getString('hutToken')!;
     }
     return _token["idToken"];
@@ -666,5 +687,88 @@ class HutUserApi {
         return "null";
       }
     });
+  }
+
+
+  ///获取功能列明
+  Future<List<Map>> getFunctionList() async {
+    bool isLogin = await checkTokenValidity();
+    if(!isLogin){
+      print("LOG");
+      final prefs = await SharedPreferences.getInstance();
+      String _userName= prefs.getString('hutUsername')??"";
+      print(_userName);
+      String _orgPassword= prefs.getString('hutPassword')??"";
+      print(_orgPassword);
+      await userLogin(username: _userName, password: _orgPassword);
+    }
+    String token = await getToken();
+    String url = "/portal-api/v1/service/list";
+    final dio = Dio();
+    dio.interceptors.clear();
+    dio.options.baseUrl = 'https://portal.hut.edu.cn';
+    dio.options.connectTimeout = Duration(seconds: 5);
+    dio.options.receiveTimeout = Duration(seconds: 3);
+    dio.options.headers = {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 uni-app Html5Plus/1.0 (Immersed/36.923077)",
+      "Connection": "Keep-Alive",
+      "Accept": "application/json",
+      "Accept-Encoding": "gzip",
+      "Content-Type": "application/json",
+      "X-Device-Info": "Xiaomi24129PN74C1.9.9.81096",
+      "X-Device-Infos": "{\"packagename\":__UNI__AA068AD,\"version\":1.1.3,\"system\":Android 15}",
+      "X-Id-Token": token,
+      "X-Terminal-Info": "app"
+    };
+    dio.options.followRedirects = true;
+    dio.options.validateStatus = (status) {
+      return status! < 500;
+    };
+    Response response;
+    response = await dio.post(url, data: {});
+    Map data = response.data;
+    List functionList = data["data"];
+    List<Map> resultList = [];
+    for (var element in functionList) {
+      String label = element["label"];
+      List services = element["services"];
+      List<FunctionItem> tempList = [];
+      if(services.isNotEmpty){
+        //有服务内容 添加
+        for (var service in services) {
+          FunctionItem tempItem =FunctionItem(
+              id: service['id'],
+              serviceName: service['serviceName'],
+              servicePicUrl: service['servicePicUrl'],
+              serviceUrl: service['serviceUrl'],
+              serviceType: service['serviceType'],
+              tokenAccept: service['tokenAccept'],
+              iconUrl: service['iconUrl']
+          );
+          tempList.add(tempItem);
+          //把这个分类下所有服务添加到列表中
+        }
+        resultList.add({
+          "label":label,
+          "services":tempList
+        });
+      }
+    }
+    return resultList;
+  }
+
+  //刷新Token
+  Future<bool> refreshToken() async {
+    print("startRe");
+    bool isLogin = await checkTokenValidity();
+    print("LOG");
+    final prefs = await SharedPreferences.getInstance();
+    String _userName= prefs.getString('hutUsername')??"";
+    print(_userName);
+    String _orgPassword= prefs.getString('hutPassword')??"";
+    print(_orgPassword);
+    await userLogin(username: _userName, password: _orgPassword);
+    return true;
+
   }
 }

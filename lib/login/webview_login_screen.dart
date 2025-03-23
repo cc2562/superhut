@@ -74,6 +74,7 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
               final prefs = await SharedPreferences.getInstance();
               prefs.setString('user', widget.userNo);
               prefs.setString('password', widget.password);
+              prefs.setString('loginType', 'jwxt');
               await prefs.setBool('isFirstOpen', false);
               _handleResponse();
               saveToken(message.message);

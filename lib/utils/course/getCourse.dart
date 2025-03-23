@@ -89,9 +89,10 @@ class GetOrgDataWeb {
     }
     firstWeek = int.parse(weekList[0]);
     maxWeek = int.parse(weekList[weekList.length - 1]);
-   // print('$firstWeek and $maxWeek now $nowWeek');
+    //print('$firstWeek and $maxWeek now $nowWeek');
     prefs.setInt('firstWeek', firstWeek);
     prefs.setInt('maxWeek', maxWeek);
+
     return '200';
   }
 
@@ -103,7 +104,7 @@ class GetOrgDataWeb {
       Response response;
       response = await postDio('/njwhd/student/curriculum?week=$i', {});
       Map data = response.data;
-    //  print(data.toString());
+    // print(data.toString());
       GetSingleWeekClass getsingleweek = GetSingleWeekClass(orgdata: data);
       getsingleweek.initData();
       getsingleweek.getWeekDate();
@@ -112,10 +113,11 @@ class GetOrgDataWeb {
       if (i == 1 && noget) {
         var entry = tempData.entries;
         MapEntry en = entry.first;
-     //   print("开学第一天：${en.key}");
+        print("开学第一天：${en.key}");
         prefs.setString('firstDay', en.key);
         noget = false;
       }
+     /// print(i);
       await Future.delayed(Duration(microseconds: 300));
       ScaffoldMessenger.of(context).removeCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(

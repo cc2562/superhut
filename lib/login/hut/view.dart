@@ -48,7 +48,7 @@ class _HutLoginPageState extends State<HutLoginPage> {
                     ),
                   ),
                   Text(
-                    "一起喝水~",
+                    "登录智慧工大账号~",
                     style: TextStyle(
                       // fontSize: 35,
                       fontWeight: FontWeight.bold,

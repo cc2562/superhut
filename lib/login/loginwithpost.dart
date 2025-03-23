@@ -28,6 +28,7 @@ Future<bool> loginHut(String userNo, String orgPassword) async {
   };
   Response response = await dio.post('/njwhd/login?userNo=$userNo&pwd=$pwd');
   Map data = response.data;
+  print(data);
   Map userData = data['data'];
   String name = userData['name'];
   String token = userData['token'];

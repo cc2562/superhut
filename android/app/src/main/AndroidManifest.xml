@@ -1,12 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:tools="http://schemas.android.com/tools" xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- 添加权限 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <application
-        android:label="超级工大"
-        android:name="${applicationName}"
-        android:usesCleartextTraffic="true"
-        android:icon="@mipmap/launcher_icon">
+            android:label="超级工大"
+            android:name="${applicationName}"
+            android:usesCleartextTraffic="true"
+            android:enableOnBackInvokedCallback="true"
+            android:icon="@mipmap/launcher_icon" tools:targetApi="tiramisu">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:superhut/pages/drink/view/view.dart';
 import 'package:superhut/pages/freeroom/building.dart';
+import 'package:superhut/pages/hutpages/hutmain.dart';
 import 'package:superhut/pages/water/view.dart';
 
+import '../../login/hut_cas_login_page.dart';
 import '../../pages/score/scorepage.dart';
 import '../../utils/token.dart';
 
@@ -151,13 +153,27 @@ class _FunctionPageState extends State<FunctionPage> {
           _buildActivityCard(
             title: "洗澡",
             rating: null,
-            iconData: Ionicons.water,
-            color: Colors.pink.shade100,
+            iconData: Ionicons.sparkles,
+            color: Colors.deepPurpleAccent.shade100,
             hasArrow: true,
             onTap: () async {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => FunctionHotWaterPage()),
+              );
+            },
+          ),
+          SizedBox(height: 16),
+          _buildActivityCard(
+            title: "智慧工大",
+            rating: null,
+            iconData: Ionicons.phone_portrait,
+            color: Colors.orange.shade100,
+            hasArrow: true,
+            onTap: () async {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => HutMainPage()),
               );
             },
           ),
