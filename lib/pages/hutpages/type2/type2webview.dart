@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -22,6 +23,9 @@ class _Type2WebviewState extends State<Type2Webview> {
   InAppWebViewController? _webViewController;
   bool _canGoBack = false;
   bool _isPageLoading = false;
+  bool _isRequestingPermission = false;
+  bool _permissionRequested = false; // 添加标志，表示权限已请求过
+  late Future<bool> _initialSetupFuture;
 
   Map<String, String> headerMap = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
@@ -89,6 +93,60 @@ class _Type2WebviewState extends State<Type2Webview> {
     print(resultUrl);
     doWithAccept();
     return true;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // 在 initState 中初始化而不是在 build 中重复调用
+    _initialSetupFuture = _performInitialSetup();
+  }
+
+  // 初始化设置，包括权限请求和数据加载
+  Future<bool> _performInitialSetup() async {
+    await _handleLocationPermission();
+    return await getDetail();
+  }
+
+  // 处理位置权限一次性请求
+  Future<void> _handleLocationPermission() async {
+    if (_permissionRequested) return; // 如果已经请求过，不再请求
+    
+    setState(() {
+      _isRequestingPermission = true;
+      _permissionRequested = true;
+    });
+    
+    try {
+      final status = await Permission.location.status;
+      
+      // 已经有权限，不需要再请求
+      if (status == PermissionStatus.granted) {
+        return;
+      }
+      
+      // 请求权限
+      final result = await Permission.location.request();
+      if (result != PermissionStatus.granted) {
+        // 只在首次拒绝时显示提示，避免重复显示
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('某些功能可能需要位置权限才能正常使用'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('请求位置权限错误: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRequestingPermission = false;
+        });
+      }
+    }
   }
 
   // 处理WebView的回退逻辑
@@ -295,7 +353,7 @@ class _Type2WebviewState extends State<Type2Webview> {
               // WebView占满整个屏幕
               Positioned.fill(
                 child: EnhancedFutureBuilder(
-                  future: getDetail(),
+                  future: _initialSetupFuture,
                   rememberFutureResult: true,
                   whenDone: (v) {
                     return InAppWebView(
@@ -303,6 +361,23 @@ class _Type2WebviewState extends State<Type2Webview> {
                         url: WebUri(resultUrl),
                         headers: headerMap, // 自定义 Header
                       ),
+                      initialSettings: InAppWebViewSettings(
+                        javaScriptEnabled: true,
+                        geolocationEnabled: true, // 启用地理位置功能
+                        supportZoom: true,
+                        mediaPlaybackRequiresUserGesture: false, // 允许自动播放媒体
+                        allowsInlineMediaPlayback: true,
+                        useShouldOverrideUrlLoading: true,
+                        useOnLoadResource: true,
+                      ),
+                      onGeolocationPermissionsShowPrompt: (controller, origin) async {
+                        // 直接允许所有地理位置请求，不再弹出系统对话框
+                        return GeolocationPermissionShowPromptResponse(
+                          origin: origin,
+                          allow: true,
+                          retain: true
+                        );
+                      },
                       onLoadStart: (controller, url) {
                         setState(() {
                           _isPageLoading = true;
@@ -383,6 +458,32 @@ class _Type2WebviewState extends State<Type2Webview> {
                           const SizedBox(height: 16),
                           Text(
                             '加载中...',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              // 权限请求指示器
+              if (_isRequestingPermission)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.3),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            '请求位置权限...',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,

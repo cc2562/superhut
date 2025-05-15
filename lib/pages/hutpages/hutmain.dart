@@ -110,7 +110,7 @@ class _HutMainPageState extends State<HutMainPage> with WidgetsBindingObserver {
                   child: TextField(
                     autofocus: false,
                     controller: _searchController,
-                    focusNode: _searchFocusNode,
+                    //focusNode: _searchFocusNode,
                     decoration: InputDecoration(
                       filled: false,
                       hintText: '搜索...',
@@ -146,7 +146,7 @@ class _HutMainPageState extends State<HutMainPage> with WidgetsBindingObserver {
                       
                       for (var service in services) {
                         if (service.id != "8aaa866184af29a50185527fddf70dac" && 
-                            service.id != "8aaa84f692e5ae560193f24790e76752" && 
+                            service.id != "8aaa84f692e5ae560193f24790e76752" &&
                             service.serviceType != "4") {
                           allServicesWithCategory.add({
                             'service': service,
@@ -246,8 +246,7 @@ class _HutMainPageState extends State<HutMainPage> with WidgetsBindingObserver {
                         // Filter out services we don't want to show
                         List<FunctionItem> filteredServices = services.where((service) => 
                           service.id != "8aaa866184af29a50185527fddf70dac" && 
-                          service.id != "8aaa84f692e5ae560193f24790e76752" && 
-                          service.serviceType != "4"
+                          service.id != "8aaa84f692e5ae560193f24790e76752"
                         ).toList();
                         
                         // If no services in this category after filtering, don't show the category
@@ -283,7 +282,7 @@ class _HutMainPageState extends State<HutMainPage> with WidgetsBindingObserver {
                                         serviceUrl: service.serviceUrl,
                                         serviceName: service.serviceName,
                                       ));
-                                    } else if (service.serviceType == "2") {
+                                    } else if (service.serviceType == "2"|| service.serviceType == "4") {
                                       Get.to(Type2Webview(
                                         serviceUrl: service.serviceUrl,
                                         serviceName: service.serviceName,

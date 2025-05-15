@@ -19,7 +19,7 @@ class DrinkLoginPage2 extends StatefulWidget {
 
 class _DrinkLoginPage2State extends State<DrinkLoginPage2> {
   final TextEditingController _userNoController = TextEditingController();
-  final TextEditingController _pwdController = TextEditingController();
+
   var api = DrinkApi();
   @override
   Widget build(BuildContext context) {

@@ -206,9 +206,9 @@ class _MyAppState extends State<MyApp> {
 
     }else{
       _isOldVersion = prefs.getString('name')==null?true:false;
-      if(_isOldVersion){
-        await renewToken(context);
-      }
+    //  if(_isOldVersion){
+   //     await renewToken(context);
+   //   }
     }
     setState(() {
       _isFirstOpen = _isFirstOpen;

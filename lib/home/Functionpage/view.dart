@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:superhut/pages/ExamSchedule/exam_schedule_page.dart';
 import 'package:superhut/pages/drink/view/view.dart';
 import 'package:superhut/pages/freeroom/building.dart';
 import 'package:superhut/pages/hutpages/hutmain.dart';
@@ -48,7 +49,7 @@ class _FunctionPageState extends State<FunctionPage> {
 
        */
       body: SafeArea(
-          child: ListView(
+        child: ListView(
         padding: EdgeInsets.all(16),
         children: [
           // 标题
@@ -165,6 +166,20 @@ class _FunctionPageState extends State<FunctionPage> {
           ),
           SizedBox(height: 16),
           _buildActivityCard(
+            title: "考试安排",
+            rating: null,
+            iconData: Ionicons.checkmark,
+            color: Colors.blueGrey.shade100,
+            hasArrow: true,
+            onTap: () async {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ExamSchedulePage()),
+              );
+            },
+          ),
+          SizedBox(height: 16),
+          _buildActivityCard(
             title: "智慧工大",
             rating: null,
             iconData: Ionicons.phone_portrait,
@@ -177,6 +192,7 @@ class _FunctionPageState extends State<FunctionPage> {
               );
             },
           ),
+          SizedBox(height: 100),
         ],
       )),
     );

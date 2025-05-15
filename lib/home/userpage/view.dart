@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/welcomepage/view.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../bridge/getCoursePage.dart';
 import '../../pages/score/scorepage.dart';
+import '../../utils/hut_user_api.dart';
 import '../../utils/token.dart';
 import '../about/view.dart';
 
@@ -21,6 +23,24 @@ class _UserPageState extends State<UserPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    getBalance();
+  }
+  final hutUserApi = HutUserApi();
+  String balance="--";
+  /// 获取余额
+  Future<void> getBalance() async {
+    await hutUserApi.getCardBalance().then((value) {
+      balance = value.toString()??'--';
+      setState(() {
+        balance=balance;
+      });
+    });
+  }
+  final Uri _url = Uri.parse('alipays://platformapi/startapp?appId=2019030163398604&page=pages/index/index');
+  Future<void> _launchUrl() async {
+    if (!await launchUrl(_url)) {
+      throw Exception('Could not launch $_url');
+    }
   }
 
   Future<Map> getBaseData() async {
@@ -166,11 +186,80 @@ class _UserPageState extends State<UserPage> {
                 ],
               ),
 
+              SizedBox(height: 10),
+
+              // 校园卡
+          Card(
+            elevation: 0,
+            color: Colors.purple.shade100,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white.withAlpha(20)
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '校园卡',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black
+                            ),
+                          ),
+                        ],
+                      ),
+
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        balance,
+                        style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black
+                        ),
+                      ),
+                      SizedBox(width: 5,),
+                      Text(
+                        'CNY',
+                        style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w100,
+                            color: Colors.black.withAlpha(150)
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(onPressed: (){
+                    _launchUrl();
+                  },  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(Colors.purple.shade200),
+                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                    shape: WidgetStateProperty.all(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),child: Text('充值'))
+                ],
+              )
+            ),
+          ),
               SizedBox(height: 20),
-
-              // 生产力卡片
-
-
               //SizedBox(height: 24),
 
               // 功能项
