@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:superhut/pages/Electricitybill/electricityPage.dart';
 import 'package:superhut/pages/ExamSchedule/exam_schedule_page.dart';
 import 'package:superhut/pages/drink/view/view.dart';
 import 'package:superhut/pages/freeroom/building.dart';
@@ -172,9 +173,24 @@ class _FunctionPageState extends State<FunctionPage> {
             color: Colors.blueGrey.shade100,
             hasArrow: true,
             onTap: () async {
+              await renewToken(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ExamSchedulePage()),
+              );
+            },
+          ),
+          SizedBox(height: 16),
+          _buildActivityCard(
+            title: "电费充值",
+            rating: null,
+            iconData: Ionicons.flash,
+            color: Colors.lime.shade100,
+            hasArrow: true,
+            onTap: () async {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ElectricityPage()),
               );
             },
           ),
@@ -192,6 +208,7 @@ class _FunctionPageState extends State<FunctionPage> {
               );
             },
           ),
+
           SizedBox(height: 100),
         ],
       )),

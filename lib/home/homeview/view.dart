@@ -5,11 +5,14 @@ import 'package:get/get.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/home/Functionpage/view.dart';
 import 'package:superhut/home/coursetable/view.dart';
 import 'package:superhut/home/userpage/view.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../pages/Electricitybill/electricityApi.dart';
+import '../../pages/Electricitybill/electricityPage.dart';
 import 'logic.dart';
 
 class HomeviewPage extends StatefulWidget {
@@ -34,6 +37,7 @@ class _HomeviewPageState extends State<HomeviewPage>
     _getCurrentVersion().then((_) {
       _checkVersion();
     });
+    checkAlert();
   }
 
   Future<void> _getCurrentVersion() async {
@@ -43,6 +47,62 @@ class _HomeviewPageState extends State<HomeviewPage>
     });
   }
 
+  void checkAlert() async {
+    var electricityApi = ElectricityApi();
+    final prefs = await SharedPreferences.getInstance();
+    bool isEnable = prefs.getBool('enableBillWarning')??false;
+    if(isEnable==false){
+      return;
+    }
+    String checkRoomId = prefs.getString('enableRoomId')??'';
+    //获取电费
+    await electricityApi.onInit();
+    await electricityApi.getHistory();
+    var nowRoomInfo = await electricityApi.getSingleRoomInfo(checkRoomId);
+    var roomCount = nowRoomInfo["eleTail"];
+    var setRoomName = nowRoomInfo["roomName"];
+    double bill = prefs.getDouble('enableBill')??0;
+    if(double.parse(roomCount)>=bill){
+      print("无风险");
+
+    }else{
+      print("有风险");
+      _showAlert('当前电费：${roomCount}元\n设置电费：${bill}元\n房间：${setRoomName}');
+    }
+    print(
+        '当前电费：${roomCount}元\n设置电费：${bill}元\n房间：${setRoomName}\n\n'
+    );
+  }
+
+  void _showAlert(String showDescription) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('电费达到预警值'),
+          content: Text(showDescription),
+          actions: <Widget>[
+              TextButton(
+                child: Text('我知道了'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            TextButton(
+              child: Text('立即充值'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ElectricityPage()),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
   Future<void> _checkVersion() async {
     print("DO");
     final dio = Dio();

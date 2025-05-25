@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final dio = Dio(); // With default `Options`.
-
+final hutDio = Dio(); // With default `Options`.
 void configureDio(String token) {
   // Update default configs.
   dio.options.baseUrl = 'https://jwxtsj.hut.edu.cn';
@@ -22,3 +23,11 @@ Future<Response> postDio(String path, Map postData) async {
   //print(response.data);
   return response;
 }
+
+
+
+
+
+
+
+
