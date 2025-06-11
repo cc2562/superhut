@@ -6,7 +6,6 @@ import 'package:ionicons/ionicons.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 import '../../utils/course/coursemain.dart';
 import '../../widget_refresh_service.dart';
 import 'logic.dart';
@@ -43,18 +42,22 @@ class _CourseTableViewState extends State<CourseTableView> {
 
   // DateTime _currentDate = DateTime.now();
   DateTime _currentDate = getMondayOfCurrentWeek();
+
   //设置周数
   //当前显示周数
   int _currentWeek = 1;
   int _allWeek = 100;
+
   //当前实际周数
   int _currentRealWeek = 1;
+
   /*
    * 课程数据存储器
    * Key格式：yyyy-MM-dd 的日期字符串
    * Value：当天课程列表
    */
   late Map<String, List<Course>> _courseData = {};
+
   // 定义一个映射来存储 weekday 数字到中文星期名称的对应关系
   final Map<int, String> _weekdayMap = {
     1: '周一',
@@ -65,6 +68,7 @@ class _CourseTableViewState extends State<CourseTableView> {
     6: '周六',
     7: '周日',
   };
+
   @override
   void initState() {
     super.initState();
@@ -104,9 +108,7 @@ class _CourseTableViewState extends State<CourseTableView> {
       _currentWeek = calculateSchoolWeek(firstDay);
       _currentRealWeek = _currentWeek;
     });
-
   }
-
 
   /*
    * 获取指定日期所在周的起始日期（周一）
@@ -116,19 +118,21 @@ class _CourseTableViewState extends State<CourseTableView> {
   DateTime _getStartOfWeek(DateTime date) {
     return date.subtract(Duration(days: date.weekday - 1));
   }
+
   void _backToRealWeek() {
-    if (_currentWeek ==_currentRealWeek) {
+    if (_currentWeek == _currentRealWeek) {
       return;
     }
     setState(() {
       _currentDate = DateTime(
         _currentDate.year,
         _currentDate.month,
-        _currentDate.day - 7*(_currentWeek -_currentRealWeek),
+        _currentDate.day - 7 * (_currentWeek - _currentRealWeek),
       );
       _currentWeek = _currentRealWeek;
     });
   }
+
   /*
    * 切换到上个月视图
    * 更新_currentDate为上月第一天
@@ -251,7 +255,9 @@ class _CourseTableViewState extends State<CourseTableView> {
       alignment: Alignment.topLeft,
       height: 60 * courses[0].duration.toDouble() + marginTB,
       decoration: BoxDecoration(
-        border: Border.all(color: _getCourseColor(courses[0].name).withAlpha(100)),
+        border: Border.all(
+          color: _getCourseColor(courses[0].name).withAlpha(100),
+        ),
         color: _getCourseColor(courses[0].name),
         borderRadius: BorderRadius.circular(4),
       ),
@@ -259,108 +265,113 @@ class _CourseTableViewState extends State<CourseTableView> {
       padding: EdgeInsets.all(1),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: courses.map((course) {
-          return Expanded(
-            child: InkWell(
-              onTap: () {
-                showCupertinoModalBottomSheet(
-                  expand: false,
-                  context: context,
-                  builder: (context) => Material(
-                    child: Stack(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
-                          height: 350,
-                          child: ListView(
-                            physics: NeverScrollableScrollPhysics(),
-                            children: [
-                              Container(
-                                child: Text(
-                                  course.name,
-                                  style: Theme.of(context).textTheme.titleLarge,
+        children:
+            courses.map((course) {
+              return Expanded(
+                child: InkWell(
+                  onTap: () {
+                    showCupertinoModalBottomSheet(
+                      expand: false,
+                      context: context,
+                      builder:
+                          (context) => Material(
+                            child: Stack(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+                                  height: 350,
+                                  child: ListView(
+                                    physics: NeverScrollableScrollPhysics(),
+                                    children: [
+                                      Container(
+                                        child: Text(
+                                          course.name,
+                                          style:
+                                              Theme.of(
+                                                context,
+                                              ).textTheme.titleLarge,
+                                        ),
+                                      ),
+                                      SizedBox(height: 10),
+                                      ListTile(
+                                        leading: Icon(
+                                          Ionicons.calendar_outline,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                        title: Text(course.weekDuration),
+                                      ),
+                                      ListTile(
+                                        leading: Icon(
+                                          Ionicons.time_outline,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                        title: Text(
+                                          '第${course.startSection}-${(course.duration + course.startSection - 1)}节',
+                                        ),
+                                      ),
+                                      ListTile(
+                                        leading: Icon(
+                                          Ionicons.person_outline,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                        title: Text(course.teacherName),
+                                      ),
+                                      ListTile(
+                                        leading: Icon(
+                                          Ionicons.location_outline,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                        title: Text(course.location),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 10,),
-                              ListTile(
-                                leading: Icon(
-                                  Ionicons.calendar_outline,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                title: Text(course.weekDuration),
-                              ),
-                              ListTile(
-                                leading: Icon(
-                                  Ionicons.time_outline,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                title: Text(
-                                  '第${course.startSection}-${(course.duration + course.startSection - 1)}节',
-                                ),
-                              ),
-                              ListTile(
-                                leading: Icon(
-                                  Ionicons.person_outline,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                title: Text(course.teacherName),
-                              ),
-                              ListTile(
-                                leading: Icon(
-                                  Ionicons.location_outline,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                title: Text(course.location),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                    );
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        course.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
+                        textAlign: TextAlign.left,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        course.location,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.normal,
+                        ),
+                        textAlign: TextAlign.left,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        course.teacherName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.normal,
+                        ),
+                        textAlign: TextAlign.left,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                );
-              },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    course.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.left,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    course.location,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.normal,
-                    ),
-                    textAlign: TextAlign.left,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    course.teacherName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.normal,
-                    ),
-                    textAlign: TextAlign.left,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
+                ),
+              );
+            }).toList(),
       ),
     );
   }
@@ -412,7 +423,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                             ),
-                            SizedBox(height: 10,),
+                            SizedBox(height: 10),
                             ListTile(
                               leading: Icon(
                                 Ionicons.calendar_outline,
@@ -518,6 +529,7 @@ class _CourseTableViewState extends State<CourseTableView> {
   }
 
   bool firstload = true;
+
   Future<void> doOnlyOne() async {
     if (firstload) {
       firstload = false;
@@ -541,196 +553,195 @@ class _CourseTableViewState extends State<CourseTableView> {
     }
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: SafeArea(child: EnhancedFutureBuilder(
-        future: doOnlyOne(),
-        rememberFutureResult: true,
-        whenDone: (da) {
-          //_courseData = da;
-          return Padding(
-            padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-            child: Column(
-              children: [
-                /* 月份切换控制区域 */
-                Padding(
-                  padding: const EdgeInsets.all(1.0),
-                  child: Row(
-                    children: [
-                      //日期显示
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              DateFormat('yyyy/M/dd').format(_currentDate),
-                              style: const TextStyle(fontSize: 18),
-                            ),
-                            PopupMenuButton(
-                              onSelected: (re){
-
-                              },
-                              itemBuilder: (BuildContext context) {
-                                return [
-                                  PopupMenuItem(
-                                    value: "1",
-                                    child: Text('回到当前周'),
-                                    onTap: (){
-                                      _backToRealWeek();
-                                    },
-                                  ),
-                                ];
-                              },
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-
-                              ),
-                              child: Text(
-                                showWeekStr,
+      body: SafeArea(
+        child: EnhancedFutureBuilder(
+          future: doOnlyOne(),
+          rememberFutureResult: true,
+          whenDone: (da) {
+            //_courseData = da;
+            return Padding(
+              padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+              child: Column(
+                children: [
+                  /* 月份切换控制区域 */
+                  Padding(
+                    padding: const EdgeInsets.all(1.0),
+                    child: Row(
+                      children: [
+                        //日期显示
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                DateFormat('yyyy/M/dd').format(_currentDate),
                                 style: const TextStyle(fontSize: 18),
                               ),
+                              PopupMenuButton(
+                                onSelected: (re) {},
+                                itemBuilder: (BuildContext context) {
+                                  return [
+                                    PopupMenuItem(
+                                      value: "1",
+                                      child: Text('回到当前周'),
+                                      onTap: () {
+                                        _backToRealWeek();
+                                      },
+                                    ),
+                                  ];
+                                },
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  showWeekStr,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        //上下切换按钮
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.chevron_left),
+                              onPressed: _previousWeek,
+                            ),
+
+                            IconButton(
+                              icon: const Icon(Icons.chevron_right),
+                              onPressed: _nextWeek,
                             ),
                           ],
                         ),
-                      ),
-                      //上下切换按钮
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.chevron_left),
-                            onPressed: _previousWeek,
-                          ),
-
-                          IconButton(
-                            icon: const Icon(Icons.chevron_right),
-                            onPressed: _nextWeek,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                /* 周视图表头（星期几） */
-                Row(
-                  children: [
-                    // 添加一个空的Container作为课程编号列的表头占位符
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          //   border: Border.all(color: Colors.grey),
-                          // color: Colors.blue[200],
-                        ),
-                        child: Text(
-                          "",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                      ],
                     ),
-                    ...weekDays.map((day) {
-                      String showText =
-                          '${_weekdayMap[day.weekday]!}\n${DateFormat('M-d').format(day)}';
-                      return Expanded(
-                        flex: 4,
+                  ),
+
+                  /* 周视图表头（星期几） */
+                  Row(
+                    children: [
+                      // 添加一个空的Container作为课程编号列的表头占位符
+                      Expanded(
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
-                            // border: Border.all(color: Colors.grey),
+                            //   border: Border.all(color: Colors.grey),
                             // color: Colors.blue[200],
                           ),
                           child: Text(
-                            showText ?? '',
+                            "",
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
-                            ),
-                            maxLines: 2,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
-                      );
-                    }),
-                  ],
-                ),
+                      ),
+                      ...weekDays.map((day) {
+                        String showText =
+                            '${_weekdayMap[day.weekday]!}\n${DateFormat('M-d').format(day)}';
+                        return Expanded(
+                          flex: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              // border: Border.all(color: Colors.grey),
+                              // color: Colors.blue[200],
+                            ),
+                            child: Text(
+                              showText ?? '',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                              ),
+                              maxLines: 2,
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
 
-                /* 课程表主体内容区域 */
-                Expanded(
-                  child: GestureDetector(
-                    onHorizontalDragEnd: (details) {
-                      if (details.primaryVelocity! > 10) {
-                        _previousWeek();
-                      } else {
-                        _nextWeek();
-                      }
-                    },
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: 100),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 添加课程编号列
-                            Expanded(
-                              child: SizedBox(
-                                width: 40,
-                                child: Column(
-                                  children: List.generate(10, (index) {
-                                    return Container(
-                                      height: 60,
-                                      decoration: BoxDecoration(),
-                                      margin: const EdgeInsets.fromLTRB(
-                                        0,
-                                        1,
-                                        0,
-                                        1,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '${index + 1}',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 10,
+                  /* 课程表主体内容区域 */
+                  Expanded(
+                    child: GestureDetector(
+                      onHorizontalDragEnd: (details) {
+                        if (details.primaryVelocity! > 10) {
+                          _previousWeek();
+                        } else {
+                          _nextWeek();
+                        }
+                      },
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 100),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 添加课程编号列
+                              Expanded(
+                                child: SizedBox(
+                                  width: 40,
+                                  child: Column(
+                                    children: List.generate(10, (index) {
+                                      return Container(
+                                        height: 60,
+                                        decoration: BoxDecoration(),
+                                        margin: const EdgeInsets.fromLTRB(
+                                          0,
+                                          1,
+                                          0,
+                                          1,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${index + 1}',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 10,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    );
-                                  }),
+                                      );
+                                    }),
+                                  ),
                                 ),
                               ),
-                            ),
-                            ...weekDays.map((day) {
-                              return Expanded(
-                                flex: 4,
-                                child: Container(
-                                  padding: EdgeInsets.only(top: 1),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      //right: BorderSide(color: Colors.grey),
-                                      // top: BorderSide(color: Colors.grey),
+                              ...weekDays.map((day) {
+                                return Expanded(
+                                  flex: 4,
+                                  child: Container(
+                                    padding: EdgeInsets.only(top: 1),
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        //right: BorderSide(color: Colors.grey),
+                                        // top: BorderSide(color: Colors.grey),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: _buildDayCourses(
+                                        _courseData[_dateKey(day)] ?? [],
+                                      ),
                                     ),
                                   ),
-                                  child: Column(
-                                    children: _buildDayCourses(
-                                      _courseData[_dateKey(day)] ?? [],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
+                                );
+                              }),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        },
-        whenNotDone: Center(child: Text('Waiting...')),
-      )),
+                ],
+              ),
+            );
+          },
+          whenNotDone: Center(child: Text('Waiting...')),
+        ),
+      ),
     );
   }
 }

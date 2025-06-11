@@ -4,9 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/token.dart';
 import '../../utils/withhttp.dart';
 
-
-
-class Score{
+class Score {
   final String curriculumAttributes;
   final String state;
   final String examName;
@@ -27,9 +25,9 @@ class Score{
     required this.examinationNature,
     required this.gradePoints,
     required this.credit,
-});
-
+  });
 }
+
 Future<Map> semesterIdfc() async {
   String token = await getToken();
   configureDio(token);
@@ -38,29 +36,28 @@ Future<Map> semesterIdfc() async {
   Map data = response.data;
   List iddata = data['data'];
   List idlist = [];
-  String nowid ='';
-  for(var i=0;i<iddata.length;i++){
+  String nowid = '';
+  for (var i = 0; i < iddata.length; i++) {
     Map tempMap = iddata[i];
     idlist.add(tempMap['semesterId']);
     print(tempMap['semesterId']);
-    if(tempMap['nowXq']=='1'){
+    if (tempMap['nowXq'] == '1') {
       nowid = tempMap['semesterId'];
     }
   }
-  return {
-    'idlist':idlist,
-    'nowid':nowid
-  };
+  return {'idlist': idlist, 'nowid': nowid};
 }
-
 
 Future<Map<String, Object>> getScore(String semesterId) async {
   String token = await getToken();
   configureDio(token);
   Response response;
-  response = await postDio('/njwhd/student/termGPA?semester=$semesterId&type=1', {});
+  response = await postDio(
+    '/njwhd/student/termGPA?semester=$semesterId&type=1',
+    {},
+  );
   Map data = response.data;
-  List<Score> reList =[];
+  List<Score> reList = [];
   List scorelist = data['data'];
 
   List achievementList = scorelist[0]['achievement'];
@@ -69,8 +66,7 @@ Future<Map<String, Object>> getScore(String semesterId) async {
   String zxfjd = scorelist[0]['zxfjd'];
   String pjxfjd = scorelist[0]['pjxfjd'];
 
-  for(Map data in achievementList){
-
+  for (Map data in achievementList) {
     reList.add(
       Score(
         curriculumAttributes: data['curriculumAttributes'],
@@ -82,7 +78,7 @@ Future<Map<String, Object>> getScore(String semesterId) async {
         examinationNature: data['examinationNature'],
         gradePoints: data['jd'].toString(),
         credit: data['credit'].toString(),
-      )
+      ),
     );
   }
   print(reList.toString());
@@ -92,9 +88,9 @@ Future<Map<String, Object>> getScore(String semesterId) async {
   prefs.setString('pjxfjd', pjxfjd);
 
   return {
-    'achievement':reList,
-    'yxzxf':yxzxf,
-    'zxfjd':zxfjd,
-    'pjxfjd':pjxfjd
+    'achievement': reList,
+    'yxzxf': yxzxf,
+    'zxfjd': zxfjd,
+    'pjxfjd': pjxfjd,
   };
 }

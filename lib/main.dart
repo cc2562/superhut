@@ -1,5 +1,5 @@
-
-import 'package:dio/dio.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,13 +8,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flex_color_scheme/flex_color_scheme.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:superhut/utils/token.dart';
 import 'package:superhut/welcomepage/view.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'home/homeview/view.dart';
+
 /// The [AppTheme] defines light and dark themes for the app.
 ///
 /// Theme setup for FlexColorScheme package v8.
@@ -88,6 +85,7 @@ abstract final class AppTheme {
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
   );
+
   // The defined dark theme.
   static ThemeData dark = FlexThemeData.dark(
     scheme: FlexScheme.indigoM3,
@@ -138,29 +136,28 @@ abstract final class AppTheme {
       navigationRailIndicatorOpacity: 1.00,
       navigationRailLabelType: NavigationRailLabelType.all,
     ),
-    keyColors: const FlexKeyColors(
-      useSecondary: true,
-      useTertiary: true,
-    ),
+    keyColors: const FlexKeyColors(useSecondary: true, useTertiary: true),
     tones: FlexSchemeVariant.oneHue.tones(Brightness.dark),
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
   );
 }
 
-
 WebViewEnvironment? webViewEnvironment;
-Future<void> main() async {
 
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
     final availableVersion = await WebViewEnvironment.getAvailableVersion();
-    assert(availableVersion != null,
-    'Failed to find an installed WebView2 Runtime or non-stable Microsoft Edge installation.');
+    assert(
+      availableVersion != null,
+      'Failed to find an installed WebView2 Runtime or non-stable Microsoft Edge installation.',
+    );
 
     webViewEnvironment = await WebViewEnvironment.create(
-        settings: WebViewEnvironmentSettings(userDataFolder: 'YOUR_CUSTOM_PATH'));
+      settings: WebViewEnvironmentSettings(userDataFolder: 'YOUR_CUSTOM_PATH'),
+    );
   }
 
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
@@ -173,8 +170,6 @@ Future<void> main() async {
     ),
   );
   runApp(const MyApp());
-
-
 }
 
 class MyApp extends StatefulWidget {
@@ -189,26 +184,22 @@ class _MyAppState extends State<MyApp> {
   bool _isLoading = true;
   bool _isOldVersion = false;
 
-
   @override
   void initState() {
     super.initState();
     _checkFirstOpen();
   }
 
-
-
   Future<void> _checkFirstOpen() async {
     final prefs = await SharedPreferences.getInstance();
     // await prefs.setBool('isFirstOpen', true);
     _isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
-    if(_isFirstOpen){
-
-    }else{
-      _isOldVersion = prefs.getString('name')==null?true:false;
-    //  if(_isOldVersion){
-   //     await renewToken(context);
-   //   }
+    if (_isFirstOpen) {
+    } else {
+      _isOldVersion = prefs.getString('name') == null ? true : false;
+      //  if(_isOldVersion){
+      //     await renewToken(context);
+      //   }
     }
     setState(() {
       _isFirstOpen = _isFirstOpen;
@@ -223,20 +214,17 @@ class _MyAppState extends State<MyApp> {
     }
 
     return GetMaterialApp(
-        localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
-        supportedLocales: [
-          const Locale('zh', 'CH'),
-          const Locale('en', 'US'),
-        ],
-        locale: Locale('zh'),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: [const Locale('zh', 'CH'), const Locale('en', 'US')],
+      locale: Locale('zh'),
       title: '超级湖工大',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       home: _isFirstOpen ? WelcomepagePage() : const HomeviewPage(),
-     // home: LoginPage(),
+      // home: LoginPage(),
       builder: (context, child) {
         return ResponsiveBreakpoints.builder(
           breakpoints: [

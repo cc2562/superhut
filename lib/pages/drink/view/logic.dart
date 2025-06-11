@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/pages/drink/login/view.dart';
+
 import '../api/drink_api.dart';
 import 'state.dart';
 
@@ -60,10 +62,15 @@ class FunctionDrinkLogic extends GetxController {
   }
 
   /// 收藏或取消收藏设备
-  Future<bool> favoDevice(String id, bool isUnFavo,BuildContext context) async {
-    print("QHJqqYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY");
+  Future<bool> favoDevice(
+    String id,
+    bool isUnFavo,
+    BuildContext context,
+  ) async {
+    print(
+      "QHJqqYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
+    );
     return await drinkApi.favoDevice(id: id, isUnFavo: isUnFavo).then((value) {
-
       return value;
     });
   }
@@ -88,40 +95,40 @@ class FunctionDrinkLogic extends GetxController {
     drinkApi
         .startDrink(id: state.deviceList[state.choiceDevice.value]["id"])
         .then((value) {
-      if (value) {
-        int count = 0;
-        state.drinkStatus.value = true;
-        getDeviceList();
-        state.deviceStatusTimer =
-            Timer.periodic(const Duration(seconds: 1), (timer) async {
-          bool isAvailable = await drinkApi.isAvailableDevice(
-              id: state.deviceList[state.choiceDevice.value]["id"]);
-          if (isAvailable && count > 3) {
-            state.drinkStatus.value = false;
-            state.deviceStatusTimer?.cancel();
-            update();
-          } else if (isAvailable) {
-            count++;
+          if (value) {
+            int count = 0;
+            state.drinkStatus.value = true;
+            getDeviceList();
+            state.deviceStatusTimer = Timer.periodic(
+              const Duration(seconds: 1),
+              (timer) async {
+                bool isAvailable = await drinkApi.isAvailableDevice(
+                  id: state.deviceList[state.choiceDevice.value]["id"],
+                );
+                if (isAvailable && count > 3) {
+                  state.drinkStatus.value = false;
+                  state.deviceStatusTimer?.cancel();
+                  update();
+                } else if (isAvailable) {
+                  count++;
+                }
+              },
+            );
+          } else {
+            Get.snackbar(
+              '失败',
+              '开启失败',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+              duration: Duration(seconds: 3),
+              margin: EdgeInsets.all(10),
+              borderRadius: 10,
+              icon: Icon(Icons.error, color: Colors.white),
+            );
           }
+          update();
         });
-      } else {
-        Get.snackbar(
-          '失败',
-          '开启失败',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: Duration(seconds: 3),
-          margin: EdgeInsets.all(10),
-          borderRadius: 10,
-          icon: Icon(
-            Icons.error,
-            color: Colors.white,
-          ),
-        );
-      }
-      update();
-    });
   }
 
   /// 结束喝水
@@ -129,27 +136,24 @@ class FunctionDrinkLogic extends GetxController {
     drinkApi
         .endDrink(id: state.deviceList[state.choiceDevice.value]["id"])
         .then((value) {
-      if (value) {
-        state.deviceStatusTimer?.cancel();
-        state.drinkStatus.value = false;
-      } else {
-        Get.snackbar(
-          '失败',
-          '结算失败',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: Duration(seconds: 3),
-          margin: EdgeInsets.all(10),
-          borderRadius: 10,
-          icon: Icon(
-            Icons.error,
-            color: Colors.white,
-          ),
-        );
-      }
-      update();
-    });
+          if (value) {
+            state.deviceStatusTimer?.cancel();
+            state.drinkStatus.value = false;
+          } else {
+            Get.snackbar(
+              '失败',
+              '结算失败',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+              duration: Duration(seconds: 3),
+              margin: EdgeInsets.all(10),
+              borderRadius: 10,
+              icon: Icon(Icons.error, color: Colors.white),
+            );
+          }
+          update();
+        });
   }
 
   /// 删除相对应的device
@@ -163,22 +167,24 @@ class FunctionDrinkLogic extends GetxController {
     final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
     QRViewController? controller;
 
-    var result = await Get.to(() => QRView(
-          key: qrKey,
-          onQRViewCreated: (QRViewController qrController) {
-            controller = qrController;
-            controller!.scannedDataStream.listen((scanData) {
-              controller?.stopCamera();
-              Get.back(result: scanData);
-            });
-          },
-        ));
+    var result = await Get.to(
+      () => QRView(
+        key: qrKey,
+        onQRViewCreated: (QRViewController qrController) {
+          controller = qrController;
+          controller!.scannedDataStream.listen((scanData) {
+            controller?.stopCamera();
+            Get.back(result: scanData);
+          });
+        },
+      ),
+    );
 
     if (result != null) {
       String enc = (result as Barcode).code!;
       enc = enc.split("/").last;
       bool isFavo = await favoDevice(enc, false, context);
-      
+
       if (isFavo) {
         getDeviceList();
       }

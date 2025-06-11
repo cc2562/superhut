@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:superhut/pages/Commentary/CommentaryPage1.dart';
 import 'package:superhut/pages/Electricitybill/electricityPage.dart';
 import 'package:superhut/pages/ExamSchedule/exam_schedule_page.dart';
 import 'package:superhut/pages/drink/view/view.dart';
@@ -7,7 +8,6 @@ import 'package:superhut/pages/freeroom/building.dart';
 import 'package:superhut/pages/hutpages/hutmain.dart';
 import 'package:superhut/pages/water/view.dart';
 
-import '../../login/hut_cas_login_page.dart';
 import '../../pages/score/scorepage.dart';
 import '../../utils/token.dart';
 
@@ -51,21 +51,18 @@ class _FunctionPageState extends State<FunctionPage> {
        */
       body: SafeArea(
         child: ListView(
-        padding: EdgeInsets.all(16),
-        children: [
-          // 标题
-          Text(
-            "功能",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+          padding: EdgeInsets.all(16),
+          children: [
+            // 标题
+            Text(
+              "功能",
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
-          ),
 
-          SizedBox(height: 16),
+            SizedBox(height: 16),
 
-          // 搜索和筛选栏
-          /*Row(
+            // 搜索和筛选栏
+            /*Row(
             children: [
               // 课程标签
               Container(
@@ -98,123 +95,140 @@ class _FunctionPageState extends State<FunctionPage> {
           ),
 
            */
+            SizedBox(height: 24),
 
-          SizedBox(height: 24),
+            // IT & 软件卡片
+            _buildActivityCard(
+              title: "空教室查询",
+              rating: null,
+              iconData: Ionicons.school,
+              color: Colors.blue.shade100,
+              hasArrow: true,
+              onTap: () async {
+                await renewToken(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => BuildingPage()),
+                );
+              },
+            ),
 
-          // IT & 软件卡片
-          _buildActivityCard(
-            title: "空教室查询",
-            rating: null,
-            iconData: Ionicons.school,
-            color: Colors.blue.shade100,
-            hasArrow: true,
-            onTap: () async {
-              await renewToken(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => BuildingPage()),
-              );
-            },
-          ),
+            SizedBox(height: 16),
 
-          SizedBox(height: 16),
+            // UX/UI 设计卡片
+            _buildActivityCard(
+              title: "成绩查询",
+              rating: null,
+              iconData: Ionicons.document,
+              color: Colors.green.shade100,
+              hasArrow: true,
+              onTap: () async {
+                await renewToken(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ScorePage()),
+                );
+              },
+            ),
 
-          // UX/UI 设计卡片
-          _buildActivityCard(
-            title: "成绩查询",
-            rating: null,
-            iconData: Ionicons.document,
-            color: Colors.green.shade100,
-            hasArrow: true,
-            onTap: () async {
-              await renewToken(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ScorePage()),
-              );
-            },
-          ),
+            SizedBox(height: 16),
 
-          SizedBox(height: 16),
+            // 数据分析卡片
+            _buildActivityCard(
+              title: "宿舍喝水",
+              rating: null,
+              iconData: Ionicons.water,
+              color: Colors.pink.shade100,
+              hasArrow: true,
+              onTap: () async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FunctionDrinkPage()),
+                );
+              },
+            ),
+            SizedBox(height: 16),
+            _buildActivityCard(
+              title: "洗澡",
+              rating: null,
+              iconData: Ionicons.sparkles,
+              color: Colors.deepPurpleAccent.shade100,
+              hasArrow: true,
+              onTap: () async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FunctionHotWaterPage(),
+                  ),
+                );
+              },
+            ),
+            SizedBox(height: 16),
+            _buildActivityCard(
+              title: "考试安排",
+              rating: null,
+              iconData: Ionicons.checkmark,
+              color: Colors.blueGrey.shade100,
+              hasArrow: true,
+              onTap: () async {
+                await renewToken(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ExamSchedulePage()),
+                );
+              },
+            ),
+            SizedBox(height: 16),
+            _buildActivityCard(
+              title: "电费充值",
+              rating: null,
+              iconData: Ionicons.flash,
+              color: Colors.lime.shade100,
+              hasArrow: true,
+              onTap: () async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ElectricityPage()),
+                );
+              },
+            ),
+            SizedBox(height: 16),
+            _buildActivityCard(
+              title: "学生评教",
+              rating: null,
+              iconData: Ionicons.checkbox_outline,
+              color: Colors.pinkAccent.shade100,
+              hasArrow: true,
+              onTap: () async {
+                await renewToken(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => commentaryPage1()),
+                );
+              },
+            ),
+            SizedBox(height: 16),
+            _buildActivityCard(
+              title: "智慧工大",
+              rating: null,
+              iconData: Ionicons.phone_portrait,
+              color: Colors.orange.shade100,
+              hasArrow: true,
+              onTap: () async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => HutMainPage()),
+                );
+              },
+            ),
 
-          // 数据分析卡片
-          _buildActivityCard(
-            title: "宿舍喝水",
-            rating: null,
-            iconData: Ionicons.water,
-            color: Colors.pink.shade100,
-            hasArrow: true,
-            onTap: () async {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => FunctionDrinkPage()),
-              );
-            },
-          ),
-          SizedBox(height: 16),
-          _buildActivityCard(
-            title: "洗澡",
-            rating: null,
-            iconData: Ionicons.sparkles,
-            color: Colors.deepPurpleAccent.shade100,
-            hasArrow: true,
-            onTap: () async {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => FunctionHotWaterPage()),
-              );
-            },
-          ),
-          SizedBox(height: 16),
-          _buildActivityCard(
-            title: "考试安排",
-            rating: null,
-            iconData: Ionicons.checkmark,
-            color: Colors.blueGrey.shade100,
-            hasArrow: true,
-            onTap: () async {
-              await renewToken(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ExamSchedulePage()),
-              );
-            },
-          ),
-          SizedBox(height: 16),
-          _buildActivityCard(
-            title: "电费充值",
-            rating: null,
-            iconData: Ionicons.flash,
-            color: Colors.lime.shade100,
-            hasArrow: true,
-            onTap: () async {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ElectricityPage()),
-              );
-            },
-          ),
-          SizedBox(height: 16),
-          _buildActivityCard(
-            title: "智慧工大",
-            rating: null,
-            iconData: Ionicons.phone_portrait,
-            color: Colors.orange.shade100,
-            hasArrow: true,
-            onTap: () async {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => HutMainPage()),
-              );
-            },
-          ),
-
-          SizedBox(height: 100),
-        ],
-      )),
+            SizedBox(height: 100),
+          ],
+        ),
+      ),
     );
   }
-  
+
   // 构建活动卡片
   Widget _buildActivityCard({
     required String title,
@@ -228,18 +242,15 @@ class _FunctionPageState extends State<FunctionPage> {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme
-              .of(context)
-              .colorScheme
-              .surfaceContainer,
+          color: Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(16),
           //boxShadow: [
           //  BoxShadow(
           //    color: Colors.black.withOpacity(0.05),
           //    blurRadius: 10,
           //    offset: Offset(0, 4),
-         //   ),
-         // ],
+          //   ),
+          // ],
         ),
         child: Column(
           children: [
@@ -255,11 +266,11 @@ class _FunctionPageState extends State<FunctionPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: EdgeInsets.all(12),
-                    child: Icon(iconData, size: 28,color: Colors.white,),
+                    child: Icon(iconData, size: 28, color: Colors.white),
                   ),
-                  
+
                   SizedBox(width: 16),
-                  
+
                   // 标题和评分
                   Expanded(
                     child: Column(
@@ -275,12 +286,16 @@ class _FunctionPageState extends State<FunctionPage> {
                         if (rating != null)
                           Row(
                             children: [
-                              Icon(Ionicons.star, color: Colors.amber, size: 16),
+                              Icon(
+                                Ionicons.star,
+                                color: Colors.amber,
+                                size: 16,
+                              ),
                               SizedBox(width: 4),
                               Text(
                                 rating.toString(),
                                 style: TextStyle(
-                                 // color: Colors.grey.shade700,
+                                  // color: Colors.grey.shade700,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -289,14 +304,11 @@ class _FunctionPageState extends State<FunctionPage> {
                       ],
                     ),
                   ),
-                  
+
                   // 右侧箭头或人员头像
                   if (hasArrow)
                     Container(
-                      decoration: BoxDecoration(
-
-                        shape: BoxShape.circle,
-                      ),
+                      decoration: BoxDecoration(shape: BoxShape.circle),
                       padding: EdgeInsets.all(8),
                       child: Icon(Ionicons.arrow_forward, size: 16),
                     )
@@ -305,7 +317,7 @@ class _FunctionPageState extends State<FunctionPage> {
                 ],
               ),
             ),
-            
+
             // 底部分隔线和+6显示
             if (!hasArrow)
               Container(
@@ -332,7 +344,7 @@ class _FunctionPageState extends State<FunctionPage> {
       ),
     );
   }
-  
+
   // 构建头像组
   Widget _buildAvatarGroup() {
     return SizedBox(
@@ -349,7 +361,8 @@ class _FunctionPageState extends State<FunctionPage> {
               ),
               child: CircleAvatar(
                 radius: 12,
-                backgroundColor: Colors.primaries[index % Colors.primaries.length],
+                backgroundColor:
+                    Colors.primaries[index % Colors.primaries.length],
                 child: Text(
                   String.fromCharCode(65 + index),
                   style: TextStyle(color: Colors.white, fontSize: 10),

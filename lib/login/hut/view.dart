@@ -1,15 +1,9 @@
-import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:superhut/login/loginwithpost.dart';
-
 
 import '../../../generated/assets.dart';
 import '../../utils/hut_user_api.dart';
 import 'command.dart';
-
-
-
 
 class HutLoginPage extends StatefulWidget {
   const HutLoginPage({super.key});
@@ -22,6 +16,7 @@ class _HutLoginPageState extends State<HutLoginPage> {
   final TextEditingController _userNoController = TextEditingController();
   final TextEditingController _pwdController = TextEditingController();
   var api = HutUserApi();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,19 +121,20 @@ class _HutLoginPageState extends State<HutLoginPage> {
                                 child: Flex(
                                   direction: Axis.horizontal,
                                   children: [
-                                    Expanded(child: TextField(
-                                      style: TextStyle(fontSize: 18),
-                                      maxLength: 40,
-                                      decoration: InputDecoration(
-                                        filled: false,
-                                        hintText: "密码",
-                                        border: InputBorder.none,
-                                        counterText: '',
+                                    Expanded(
+                                      child: TextField(
+                                        style: TextStyle(fontSize: 18),
+                                        maxLength: 40,
+                                        decoration: InputDecoration(
+                                          filled: false,
+                                          hintText: "密码",
+                                          border: InputBorder.none,
+                                          counterText: '',
+                                        ),
+                                        controller: _pwdController,
+                                        obscureText: false,
                                       ),
-                                      controller: _pwdController,
-                                      obscureText: false,
-                                    ),),
-
+                                    ),
                                   ],
                                 ),
                               ),
@@ -162,8 +158,11 @@ class _HutLoginPageState extends State<HutLoginPage> {
                                           return;
                                         }
                                         //SendMessageCode(context, _userNoController.text, _pwdController.text);
-                                        loginToHuT(_userNoController.text, _pwdController.text,context);
-
+                                        loginToHuT(
+                                          _userNoController.text,
+                                          _pwdController.text,
+                                          context,
+                                        );
                                       },
                                       child: const Text('下一步'),
                                     ),

@@ -6,7 +6,6 @@ import 'package:superhut/pages/drink/login/command.dart';
 import '../../../generated/assets.dart';
 import '../api/drink_api.dart';
 
-
 class DrinkLoginPage extends StatefulWidget {
   const DrinkLoginPage({super.key});
 
@@ -18,6 +17,7 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
   final TextEditingController _userNoController = TextEditingController();
   final TextEditingController _pwdController = TextEditingController();
   var api = DrinkApi();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,29 +122,32 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
                                 child: Flex(
                                   direction: Axis.horizontal,
                                   children: [
-                                    Expanded(child: TextField(
-                                      style: TextStyle(fontSize: 18),
-                                      maxLength: 40,
-                                      decoration: InputDecoration(
-                                        filled: false,
-                                        hintText: "验证码",
-                                        border: InputBorder.none,
-                                        counterText: '',
+                                    Expanded(
+                                      child: TextField(
+                                        style: TextStyle(fontSize: 18),
+                                        maxLength: 40,
+                                        decoration: InputDecoration(
+                                          filled: false,
+                                          hintText: "验证码",
+                                          border: InputBorder.none,
+                                          counterText: '',
+                                        ),
+                                        controller: _pwdController,
+                                        obscureText: false,
                                       ),
-                                      controller: _pwdController,
-                                      obscureText: false,
-                                    ),),
+                                    ),
                                     EnhancedFutureBuilder(
                                       future: GetImageCaptcha(),
                                       whenDone: (snapshot) {
                                         if (snapshot.isNotEmpty) {
                                           return ClipRRect(
                                             borderRadius: BorderRadius.circular(
-                                                10),
+                                              10,
+                                            ),
                                             child: InkWell(
-                                              onTap: () {
-                                              },
-                                              highlightColor: Colors.transparent,
+                                              onTap: () {},
+                                              highlightColor:
+                                                  Colors.transparent,
                                               splashColor: Colors.transparent,
                                               child: Image.memory(
                                                 snapshot,
@@ -153,18 +156,23 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
                                               ),
                                             ),
                                           );
-                                        }else{
+                                        } else {
                                           return SizedBox(
                                             width: 10,
-                                            child: const Center(child: CircularProgressIndicator()),
+                                            child: const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
                                           );
                                         }
-
-
-                                      }, rememberFutureResult: true, whenNotDone:  SizedBox(
-                                      width: 10,
-                                      child: const Center(child: CircularProgressIndicator()),
-                                    ),
+                                      },
+                                      rememberFutureResult: true,
+                                      whenNotDone: SizedBox(
+                                        width: 10,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -188,9 +196,11 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
                                           );
                                           return;
                                         }
-                                        SendMessageCode(context, _userNoController.text, _pwdController.text);
-
-
+                                        SendMessageCode(
+                                          context,
+                                          _userNoController.text,
+                                          _pwdController.text,
+                                        );
                                       },
                                       child: const Text('下一步'),
                                     ),

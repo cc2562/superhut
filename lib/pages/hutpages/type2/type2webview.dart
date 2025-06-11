@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -12,7 +11,12 @@ import 'package:url_launcher/url_launcher.dart';
 class Type2Webview extends StatefulWidget {
   final String serviceUrl, serviceName, tokenAccept;
 
-  const Type2Webview({super.key, required this.serviceUrl, required this.serviceName, required this.tokenAccept});
+  const Type2Webview({
+    super.key,
+    required this.serviceUrl,
+    required this.serviceName,
+    required this.tokenAccept,
+  });
 
   @override
   State<Type2Webview> createState() => _Type2WebviewState();
@@ -28,11 +32,14 @@ class _Type2WebviewState extends State<Type2Webview> {
   late Future<bool> _initialSetupFuture;
 
   Map<String, String> headerMap = {
-    "User-Agent": "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
+    "User-Agent":
+        "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
     "Connection": "keep-alive",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "Accept":
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Accept-Encoding": "gzip, deflate, br, zstd",
-    "sec-ch-ua": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
+    "sec-ch-ua":
+        "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
     "sec-ch-ua-mobile": "?1",
     "sec-ch-ua-platform": "\"Android\"",
     "upgrade-insecure-requests": "1",
@@ -43,10 +50,11 @@ class _Type2WebviewState extends State<Type2Webview> {
     "sec-fetch-dest": "document",
     "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
     "cookie": "userToken=; Domain=xzhngydx.hut.edu.cn; Path=/",
-    "priority": "u=0, i"
+    "priority": "u=0, i",
   };
   String resultUrl = '';
   String token = '';
+
   String enCodeUrl(String url) {
     String encoded = Uri.encodeComponent(url);
     print(encoded);
@@ -56,7 +64,8 @@ class _Type2WebviewState extends State<Type2Webview> {
   List getTokenAccept(String tokenAccept) {
     try {
       List<dynamic> parsedList = json.decode(tokenAccept);
-      List<Map<String, dynamic>> result = parsedList.cast<Map<String, dynamic>>();
+      List<Map<String, dynamic>> result =
+          parsedList.cast<Map<String, dynamic>>();
       return result;
     } catch (e) {
       return [];
@@ -69,9 +78,7 @@ class _Type2WebviewState extends State<Type2Webview> {
     for (var item in tokenAcceptList) {
       print(item);
       if (item['tokenType'] == 'header') {
-        headerMap.addAll({
-          item['tokenKey']: token
-        });
+        headerMap.addAll({item['tokenKey']: token});
       } else if (item['tokenType'] == 'url') {
         Uri uri = Uri.parse(resultUrl);
 
@@ -111,20 +118,20 @@ class _Type2WebviewState extends State<Type2Webview> {
   // 处理位置权限一次性请求
   Future<void> _handleLocationPermission() async {
     if (_permissionRequested) return; // 如果已经请求过，不再请求
-    
+
     setState(() {
       _isRequestingPermission = true;
       _permissionRequested = true;
     });
-    
+
     try {
       final status = await Permission.location.status;
-      
+
       // 已经有权限，不需要再请求
       if (status == PermissionStatus.granted) {
         return;
       }
-      
+
       // 请求权限
       final result = await Permission.location.request();
       if (result != PermissionStatus.granted) {
@@ -175,7 +182,8 @@ class _Type2WebviewState extends State<Type2Webview> {
   void _removeNavigationElement() async {
     if (_webViewController != null) {
       // 使用JavaScript删除指定元素
-      await _webViewController!.evaluateJavascript(source: '''
+      await _webViewController!.evaluateJavascript(
+        source: '''
         (function() {
           function removeElement() {
             var elements = document.querySelectorAll('.van-nav-bar__left');
@@ -208,14 +216,16 @@ class _Type2WebviewState extends State<Type2Webview> {
             }, 60000);
           }
         })();
-      ''');
+      ''',
+      );
     }
   }
 
   // 监听页面中的支付宝链接
   void _setupAlipayLinkListener() async {
     if (_webViewController != null) {
-      await _webViewController!.evaluateJavascript(source: '''
+      await _webViewController!.evaluateJavascript(
+        source: '''
         (function() {
           // 拦截所有的a标签点击
           document.addEventListener('click', function(e) {
@@ -287,11 +297,12 @@ class _Type2WebviewState extends State<Type2Webview> {
             subtree: true
           });
         })();
-      ''');
-      
+      ''',
+      );
+
       // 注册处理程序来接收JavaScript的回调
       _webViewController!.addJavaScriptHandler(
-        handlerName: 'alipayLink', 
+        handlerName: 'alipayLink',
         callback: (args) {
           if (args.isNotEmpty && args[0] is String) {
             String url = args[0];
@@ -302,7 +313,7 @@ class _Type2WebviewState extends State<Type2Webview> {
           }
           // 确保回调始终返回一个值给JavaScript
           return true;
-        }
+        },
       );
     }
   }
@@ -312,21 +323,20 @@ class _Type2WebviewState extends State<Type2Webview> {
       final Uri uri = Uri.parse(url);
       print(url);
       if (!await launchUrl(uri)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('无法打开支付宝: $url')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('无法打开支付宝: $url')));
         throw Exception('Could not launch $uri');
-      }else{
+      } else {
         if (context.mounted) {
           Navigator.of(context).pop();
         }
       }
-
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('打开链接时发生错误: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('打开链接时发生错误: $e')));
       }
       print('Error launching URL: $e');
     }
@@ -338,7 +348,7 @@ class _Type2WebviewState extends State<Type2Webview> {
       canPop: !_canGoBack,
       onPopInvoked: (didPop) async {
         if (didPop) return;
-        
+
         final shouldPop = await _handleBackPressed();
         if (shouldPop && context.mounted) {
           Navigator.of(context).pop();
@@ -363,19 +373,24 @@ class _Type2WebviewState extends State<Type2Webview> {
                       ),
                       initialSettings: InAppWebViewSettings(
                         javaScriptEnabled: true,
-                        geolocationEnabled: true, // 启用地理位置功能
+                        geolocationEnabled: true,
+                        // 启用地理位置功能
                         supportZoom: true,
-                        mediaPlaybackRequiresUserGesture: false, // 允许自动播放媒体
+                        mediaPlaybackRequiresUserGesture: false,
+                        // 允许自动播放媒体
                         allowsInlineMediaPlayback: true,
                         useShouldOverrideUrlLoading: true,
                         useOnLoadResource: true,
                       ),
-                      onGeolocationPermissionsShowPrompt: (controller, origin) async {
+                      onGeolocationPermissionsShowPrompt: (
+                        controller,
+                        origin,
+                      ) async {
                         // 直接允许所有地理位置请求，不再弹出系统对话框
                         return GeolocationPermissionShowPromptResponse(
                           origin: origin,
                           allow: true,
-                          retain: true
+                          retain: true,
                         );
                       },
                       onLoadStart: (controller, url) {
@@ -396,19 +411,26 @@ class _Type2WebviewState extends State<Type2Webview> {
                         _setupAlipayLinkListener(); // 添加支付宝链接监听
                         print('Stop loading: $url');
                       },
-                      onUpdateVisitedHistory: (controller, url, androidIsReload) {
+                      onUpdateVisitedHistory: (
+                        controller,
+                        url,
+                        androidIsReload,
+                      ) {
                         _updateCanGoBackState();
                         print('History updated: $url');
                       },
-                      shouldOverrideUrlLoading: (controller, navigationAction) async {
+                      shouldOverrideUrlLoading: (
+                        controller,
+                        navigationAction,
+                      ) async {
                         final url = navigationAction.request.url.toString();
-                        
+
                         // 检查是否是支付宝协议链接
                         if (url.startsWith('alipays://')) {
                           _handleAlipayUrl(url);
                           return NavigationActionPolicy.CANCEL;
                         }
-                        
+
                         return NavigationActionPolicy.ALLOW;
                       },
                     );
@@ -416,7 +438,7 @@ class _Type2WebviewState extends State<Type2Webview> {
                   whenNotDone: const Center(child: CircularProgressIndicator()),
                 ),
               ),
-              
+
               // 悬浮返回按钮，放在左上角，不会阻挡其他内容的点击
               Positioned(
                 top: 8,
@@ -428,7 +450,7 @@ class _Type2WebviewState extends State<Type2Webview> {
                   ),
                   child: IconButton(
                     icon: const Icon(
-                      Ionicons.arrow_back_circle_outline, 
+                      Ionicons.arrow_back_circle_outline,
                       color: Colors.white,
                       size: 28,
                     ),
@@ -442,7 +464,7 @@ class _Type2WebviewState extends State<Type2Webview> {
                   ),
                 ),
               ),
-              
+
               // 网页加载指示器
               if (_isPageLoading)
                 Positioned.fill(
@@ -453,7 +475,9 @@ class _Type2WebviewState extends State<Type2Webview> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -479,7 +503,9 @@ class _Type2WebviewState extends State<Type2Webview> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           const Text(

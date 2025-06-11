@@ -4,15 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 import 'package:superhut/utils/token.dart';
+
 import 'hut_login_system.dart';
 
 class HutCasLoginPage extends StatefulWidget {
   /// 登录完成后的回调函数
   final Function(String)? onLoginComplete;
-  
+
   /// 是否在登录成功后自动返回
   final bool popOnSuccess;
-  
+
   /// 用于储存和获取token的键名
   final String tokenKey;
 
@@ -47,7 +48,6 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
         if (!isValid) {
           await _api.refreshToken();
           _idToken = await _api.getToken();
-
         }
       });
       setState(() {
@@ -66,19 +66,19 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(widget.tokenKey, token);
-      
+
       if (widget.onLoginComplete != null) {
         widget.onLoginComplete!(token);
       }
-      
+
       if (widget.popOnSuccess && mounted) {
         Navigator.of(context).pop(token);
       }
     } catch (e) {
       if (mounted) {
-       // ScaffoldMessenger.of(context).showSnackBar(
-       //   SnackBar(content: Text('保存token失败: $e'), backgroundColor: Colors.red),
-       // );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('保存token失败: $e'), backgroundColor: Colors.red),
+        // );
       }
     }
   }
@@ -87,16 +87,14 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('HUT统一认证'),
-        ),
+        appBar: AppBar(title: const Text('HUT统一认证')),
         body: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('正在准备登录...')
+              Text('正在准备登录...'),
             ],
           ),
         ),
@@ -105,9 +103,7 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
 
     if (_errorMessage != null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('HUT统一认证'),
-        ),
+        appBar: AppBar(title: const Text('HUT统一认证')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -156,12 +152,10 @@ class HutCasLoginExample extends StatelessWidget {
       onPressed: () async {
         final result = await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const HutCasLoginPage(
-              tokenKey: 'token',
-            ),
+            builder: (context) => const HutCasLoginPage(tokenKey: 'token'),
           ),
         );
-        
+
         if (result != null) {
           // 使用获取到的token
           print('获取到的教务系统Token: $result');
@@ -177,7 +171,7 @@ class HutCasTokenRetriever {
   static Future<String?> getJwxtToken(BuildContext context) async {
     // 先检查是否有缓存的token
     final prefs = await SharedPreferences.getInstance();
-    final cachedToken = prefs.getString('token')??'';
+    final cachedToken = prefs.getString('token') ?? '';
     print('开始');
     if (cachedToken.isNotEmpty) {
       // 使用token.dart中的checkTokenValid方法验证token有效性
@@ -191,23 +185,26 @@ class HutCasTokenRetriever {
     print('流程');
     // 如果没有缓存或缓存无效，进行登录流程
     final completer = Completer<String?>();
-    
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => HutCasLoginPage(
-          popOnSuccess: true,
-          onLoginComplete: (token) {
-            completer.complete(token);
-          },
-        ),
-      ),
-    ).then((value) {
-      // 如果用户取消或返回，且completer尚未完成，则完成completer为null
-      if (!completer.isCompleted) {
-        completer.complete(value as String?);
-      }
-    });
-    
+
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder:
+                (context) => HutCasLoginPage(
+                  popOnSuccess: true,
+                  onLoginComplete: (token) {
+                    completer.complete(token);
+                  },
+                ),
+          ),
+        )
+        .then((value) {
+          // 如果用户取消或返回，且completer尚未完成，则完成completer为null
+          if (!completer.isCompleted) {
+            completer.complete(value as String?);
+          }
+        });
+
     return completer.future;
   }
 }

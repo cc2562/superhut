@@ -6,7 +6,4 @@ import 'package:get/get.dart';
  * @param duration 课程持续节数
  */
 
-class CourseTableViewLogic extends GetxController {
-
-
-}
+class CourseTableViewLogic extends GetxController {}

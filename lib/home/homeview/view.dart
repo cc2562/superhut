@@ -50,28 +50,25 @@ class _HomeviewPageState extends State<HomeviewPage>
   void checkAlert() async {
     var electricityApi = ElectricityApi();
     final prefs = await SharedPreferences.getInstance();
-    bool isEnable = prefs.getBool('enableBillWarning')??false;
-    if(isEnable==false){
+    bool isEnable = prefs.getBool('enableBillWarning') ?? false;
+    if (isEnable == false) {
       return;
     }
-    String checkRoomId = prefs.getString('enableRoomId')??'';
+    String checkRoomId = prefs.getString('enableRoomId') ?? '';
     //获取电费
     await electricityApi.onInit();
     await electricityApi.getHistory();
     var nowRoomInfo = await electricityApi.getSingleRoomInfo(checkRoomId);
     var roomCount = nowRoomInfo["eleTail"];
     var setRoomName = nowRoomInfo["roomName"];
-    double bill = prefs.getDouble('enableBill')??0;
-    if(double.parse(roomCount)>=bill){
+    double bill = prefs.getDouble('enableBill') ?? 0;
+    if (double.parse(roomCount) >= bill) {
       print("无风险");
-
-    }else{
+    } else {
       print("有风险");
       _showAlert('当前电费：${roomCount}元\n设置电费：${bill}元\n房间：${setRoomName}');
     }
-    print(
-        '当前电费：${roomCount}元\n设置电费：${bill}元\n房间：${setRoomName}\n\n'
-    );
+    print('当前电费：${roomCount}元\n设置电费：${bill}元\n房间：${setRoomName}\n\n');
   }
 
   void _showAlert(String showDescription) {
@@ -83,12 +80,12 @@ class _HomeviewPageState extends State<HomeviewPage>
           title: Text('电费达到预警值'),
           content: Text(showDescription),
           actions: <Widget>[
-              TextButton(
-                child: Text('我知道了'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
+            TextButton(
+              child: Text('我知道了'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
             TextButton(
               child: Text('立即充值'),
               onPressed: () {
@@ -103,10 +100,13 @@ class _HomeviewPageState extends State<HomeviewPage>
       },
     );
   }
+
   Future<void> _checkVersion() async {
     print("DO");
     final dio = Dio();
-    final response = await dio.get('https://super.ccrice.com/api/check_version.php?version=$_currentVersion');
+    final response = await dio.get(
+      'https://super.ccrice.com/api/check_version.php?version=$_currentVersion',
+    );
     print(_currentVersion);
     print(response.data);
     final Map<String, dynamic> data = response.data;
@@ -153,32 +153,28 @@ class _HomeviewPageState extends State<HomeviewPage>
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final HomeviewLogic logic = Get.put(HomeviewLogic());
     return Scaffold(
       //extendBodyBehindAppBar: true,
-      body:PageView(
+      body: PageView(
         physics: NeverScrollableScrollPhysics(),
         controller: logic.homePageController,
-        children: [
-          CourseTableView(),
-          FunctionPage(),
-          UserPage()
-        ],
+        children: [CourseTableView(), FunctionPage(), UserPage()],
       ),
       bottomSheet: Container(
         color: Colors.transparent,
         margin: EdgeInsets.all(10),
-        padding: EdgeInsets.only(left: 15,right: 15,bottom: 20,top: 10),
+        padding: EdgeInsets.only(left: 15, right: 15, bottom: 20, top: 10),
         child: GNav(
-
           gap: 10,
           color: Theme.of(context).primaryColorDark,
           activeColor: Theme.of(context).primaryColor,
           iconSize: 24,
-          tabBackgroundColor:Theme.of(context).primaryColor.withAlpha(20),
+          tabBackgroundColor: Theme.of(context).primaryColor.withAlpha(20),
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           duration: Duration(milliseconds: 200),
           tabs: [

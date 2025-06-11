@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 import '../bridge/getCoursePage.dart';
 import '../utils/token.dart';
 
-
 class TokenDisplayPage extends StatefulWidget {
   final String token;
   final bool renew;
-  const TokenDisplayPage({super.key, required this.token,required this.renew});
+
+  const TokenDisplayPage({super.key, required this.token, required this.renew});
+
   @override
   State<TokenDisplayPage> createState() => _TokenDisplayPageState();
 }
@@ -18,13 +19,13 @@ class _TokenDisplayPageState extends State<TokenDisplayPage> {
   void initState() {
     super.initState();
     saveToken(widget.token);
-    if(widget.renew){
-    //  Navigator.pop(context,"200");
-    }else {
+    if (widget.renew) {
+      //  Navigator.pop(context,"200");
+    } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => Getcoursepage(renew: false,)));
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => Getcoursepage(renew: false)),
+        );
       });
     }
   }

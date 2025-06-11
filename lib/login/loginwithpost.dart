@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 import '../utils/pwd.dart';
 import '../utils/token.dart';
 
@@ -22,7 +21,7 @@ Future<bool> loginHut(String userNo, String orgPassword) async {
   dio.options.receiveTimeout = Duration(seconds: 3);
   dio.options.headers = {
     'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64',
     'Accept': '*/*',
     'Accept-Encoding': 'gzip, deflate, br',
   };

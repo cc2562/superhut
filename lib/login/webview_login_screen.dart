@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../bridge/getCoursePage.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
-
 import '../utils/token.dart';
+
 class WebViewLoginScreen extends StatefulWidget {
   final String userNo;
   final String password;
@@ -30,6 +30,7 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
   late final WebViewController _webViewController;
   Timer? _timeoutTimer;
   bool _hasResponse = false;
+
   // 统一响应处理方法
   void _handleResponse() {
     _hasResponse = true;
@@ -79,17 +80,18 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
               _handleResponse();
               saveToken(message.message);
               Navigator.of(context).pop();
-              if(widget.renew){
-
-              }else{
+              if (widget.renew) {
+              } else {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute(builder: (context) => Getcoursepage(renew: false,)));
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => Getcoursepage(renew: false),
+                    ),
+                  );
                 });
               }
               //Navigator.push(
-             //   context,
+              //   context,
               //  MaterialPageRoute(
               //    builder: (_) => TokenDisplayPage(token: message.message,renew: widget.renew,),
               //  ),
@@ -192,8 +194,11 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
             width: double.infinity,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children:  [
-                LoadingAnimationWidget.inkDrop(color: Theme.of(context).primaryColor, size: 40),
+              children: [
+                LoadingAnimationWidget.inkDrop(
+                  color: Theme.of(context).primaryColor,
+                  size: 40,
+                ),
                 SizedBox(height: 16),
                 Text(widget.showText),
               ],

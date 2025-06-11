@@ -7,6 +7,6 @@ class Assets {
   static const String iconLogo = 'assets/icon/logo.png';
   static const String iconLogodark = 'assets/icon/logodark.png';
   static const String illustrationLogin = 'assets/illustration/Login.svg';
-  static const String illustrationTransgenderFlag = 'assets/illustration/transgender_flag.svg';
-
+  static const String illustrationTransgenderFlag =
+      'assets/illustration/transgender_flag.svg';
 }

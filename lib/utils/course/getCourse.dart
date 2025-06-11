@@ -9,6 +9,7 @@ class GetSingleWeekClass {
   final Map orgdata;
 
   GetSingleWeekClass({required this.orgdata});
+
   late Map data;
   late int week;
   late List orgclassList, dateList;
@@ -16,6 +17,7 @@ class GetSingleWeekClass {
   late Map<String, List<Course>> courseData = {};
   late Map<int, String> courseKey = {};
   late String firstDay;
+
   void initData() {
     data = orgdata['data'][0];
     week = data['week'];
@@ -33,8 +35,7 @@ class GetSingleWeekClass {
       courseData[tempDate['mxrq']] = [];
       courseKey[tempDate['xqid']] = tempDate['mxrq'];
     }
-   // print(courseData.toString());
-
+    // print(courseData.toString());
   }
 
   Future<Map<String, List<Course>>> getSingleClass() async {
@@ -43,7 +44,9 @@ class GetSingleWeekClass {
       tempClass = orgclassList[i];
       int atday = (int.parse(tempClass['classTime'].substring(0, 1))).toInt();
       int startSection = int.parse(tempClass['classTime'].substring(1, 3));
-      int endSection = int.parse(tempClass['classTime'].substring(tempClass['classTime'].length - 2));
+      int endSection = int.parse(
+        tempClass['classTime'].substring(tempClass['classTime'].length - 2),
+      );
       int duration = endSection - startSection + 1;
       String saveDate = courseKey[atday]!;
       courseData[saveDate]!.add(
@@ -56,9 +59,7 @@ class GetSingleWeekClass {
           duration: duration,
         ),
       );
-
     }
-
 
     return courseData;
   }
@@ -71,10 +72,10 @@ class GetOrgDataWeb {
   late Map<String, List<Course>> courseData = {};
 
   GetOrgDataWeb({required this.token});
+
   void initData() {
     configureDio(token);
   }
-
 
   //获取总周数和当前周数
   Future<String> getTeachingWeek() async {
@@ -104,7 +105,7 @@ class GetOrgDataWeb {
       Response response;
       response = await postDio('/njwhd/student/curriculum?week=$i', {});
       Map data = response.data;
-    // print(data.toString());
+      // print(data.toString());
       GetSingleWeekClass getsingleweek = GetSingleWeekClass(orgdata: data);
       getsingleweek.initData();
       getsingleweek.getWeekDate();
@@ -117,7 +118,8 @@ class GetOrgDataWeb {
         prefs.setString('firstDay', en.key);
         noget = false;
       }
-     /// print(i);
+
+      /// print(i);
       await Future.delayed(Duration(microseconds: 300));
       ScaffoldMessenger.of(context).removeCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -126,7 +128,7 @@ class GetOrgDataWeb {
           content: Text('正在获取第$i周课表'),
         ),
       );
-     // print(i);
+      // print(i);
     }
     //print(courseData.length);
     return courseData;

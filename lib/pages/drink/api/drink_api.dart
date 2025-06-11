@@ -16,11 +16,7 @@ class DrinkApi {
   }
 
   final Dio _dio = Dio();
-  final Map<String, dynamic> _token = {
-    "uid": "",
-    "eid": "",
-    "token": "",
-  };
+  final Map<String, dynamic> _token = {"uid": "", "eid": "", "token": ""};
 
   Future<void> _initToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -36,23 +32,27 @@ class DrinkApi {
   }
 
   /// 获取慧生活798登录验证码
-  Future<Uint8List> userCaptcha(
-      {required String doubleRandom, required String timestamp}) async {
+  Future<Uint8List> userCaptcha({
+    required String doubleRandom,
+    required String timestamp,
+  }) async {
     Options options = Options(responseType: ResponseType.bytes);
     String url = "https://i.ilife798.com/api/v1/captcha/";
-    Map<String, dynamic> params = {
-      "s": doubleRandom,
-      "r": timestamp,
-    };
-    Response response = await _dio.get(url, queryParameters: params, options: options);
+    Map<String, dynamic> params = {"s": doubleRandom, "r": timestamp};
+    Response response = await _dio.get(
+      url,
+      queryParameters: params,
+      options: options,
+    );
     return response.data;
   }
 
   /// 获取短信验证码
-  Future<bool> userMessageCode(
-      {required String doubleRandom,
-        required String photoCode,
-        required String phone}) async {
+  Future<bool> userMessageCode({
+    required String doubleRandom,
+    required String photoCode,
+    required String phone,
+  }) async {
     String url = "https://i.ilife798.com/api/v1/acc/login/code";
     Map<String, dynamic> data = {
       "s": doubleRandom,
@@ -65,8 +65,10 @@ class DrinkApi {
   }
 
   /// 开始登录
-  Future<bool> userLogin(
-      {required String phone, required String messageCode}) async {
+  Future<bool> userLogin({
+    required String phone,
+    required String messageCode,
+  }) async {
     String url = "https://i.ilife798.com/api/v1/acc/login";
     Map<String, dynamic> data = {
       "openCode": "",
@@ -81,25 +83,20 @@ class DrinkApi {
     _token["token"] = result["data"]["al"]["token"];
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString("drink798UsrApiToken", jsonEncode(_token));
-    prefs.setBool("hui798IsLogin",true);
+    prefs.setBool("hui798IsLogin", true);
     return result["code"] == 0;
   }
 
   /// 获取设备列表
   Future<List<Map>> deviceList() async {
     String url = "https://i.ilife798.com/api/v1/ui/app/master";
-    Options options = Options(headers: {
-      "Authorization": _token["token"],
-    });
+    Options options = Options(headers: {"Authorization": _token["token"]});
 
     Response response = await _dio.get(url, options: options);
     final result = response.data;
     if (result["data"]["account"] == null) {
       return [
-        {
-          "id": "404",
-          "name": "Account failure",
-        }
+        {"id": "404", "name": "Account failure"},
       ];
     }
 
@@ -110,11 +107,8 @@ class DrinkApi {
     final List favos = result["data"]["favos"];
     return favos
         .map((e) {
-      return {
-        "id": e["id"],
-        "name": e["name"],
-      };
-    })
+          return {"id": e["id"], "name": e["name"]};
+        })
         .toList()
         .reversed
         .toList();
@@ -123,25 +117,22 @@ class DrinkApi {
   /// 收藏或取消收藏设备
   Future<bool> favoDevice({required String id, required bool isUnFavo}) async {
     String url = "https://i.ilife798.com/api/v1/dev/favo";
-    Options options = Options(headers: {
-      "Authorization": _token["token"],
-    });
+    Options options = Options(headers: {"Authorization": _token["token"]});
 
-    Map<String, dynamic> params = {
-      "did": id,
-      "remove": isUnFavo,
-    };
+    Map<String, dynamic> params = {"did": id, "remove": isUnFavo};
 
-    Response response = await _dio.get(url, queryParameters: params, options: options);
+    Response response = await _dio.get(
+      url,
+      queryParameters: params,
+      options: options,
+    );
     return response.data["code"] == 0;
   }
 
   /// 开始喝水
   Future<bool> startDrink({required String id}) async {
     String url = "https://i.ilife798.com/api/v1/dev/start";
-    Options options = Options(headers: {
-      "Authorization": _token["token"],
-    });
+    Options options = Options(headers: {"Authorization": _token["token"]});
 
     Map<String, dynamic> params = {
       "did": id,
@@ -150,39 +141,41 @@ class DrinkApi {
       "stype": 5,
     };
 
-    Response response = await _dio.get(url, queryParameters: params, options: options);
+    Response response = await _dio.get(
+      url,
+      queryParameters: params,
+      options: options,
+    );
     return response.data["code"] == 0;
   }
 
   /// 结束喝水
   Future<bool> endDrink({required String id}) async {
     String url = "https://i.ilife798.com/api/v1/dev/end";
-    Options options = Options(headers: {
-      "Authorization": _token["token"],
-    });
+    Options options = Options(headers: {"Authorization": _token["token"]});
 
-    Map<String, dynamic> params = {
-      "did": id,
-    };
+    Map<String, dynamic> params = {"did": id};
 
-    Response response = await _dio.get(url, queryParameters: params, options: options);
+    Response response = await _dio.get(
+      url,
+      queryParameters: params,
+      options: options,
+    );
     return response.data["code"] == 0;
   }
 
   /// 检测设备状态
   Future<bool> isAvailableDevice({required String id}) async {
     String url = "https://i.ilife798.com/api/v1/ui/app/dev/status";
-    Options options = Options(headers: {
-      "Authorization": _token["token"],
-    });
+    Options options = Options(headers: {"Authorization": _token["token"]});
 
-    Map<String, dynamic> params = {
-      "did": id,
-      "more": true,
-      "promo": false,
-    };
+    Map<String, dynamic> params = {"did": id, "more": true, "promo": false};
 
-    Response response = await _dio.get(url, queryParameters: params, options: options);
+    Response response = await _dio.get(
+      url,
+      queryParameters: params,
+      options: options,
+    );
     return response.data["data"]["device"]["gene"]["status"] == 99;
   }
 

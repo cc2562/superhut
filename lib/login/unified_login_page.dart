@@ -6,7 +6,6 @@ import 'package:superhut/generated/assets.dart';
 import 'package:superhut/login/hut_cas_login_page.dart';
 import 'package:superhut/login/webview_login_screen.dart';
 import 'package:superhut/utils/hut_user_api.dart';
-import 'package:superhut/utils/token.dart';
 
 class UnifiedLoginPage extends StatefulWidget {
   const UnifiedLoginPage({Key? key}) : super(key: key);
@@ -15,7 +14,8 @@ class UnifiedLoginPage extends StatefulWidget {
   _UnifiedLoginPageState createState() => _UnifiedLoginPageState();
 }
 
-class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerProviderStateMixin {
+class _UnifiedLoginPageState extends State<UnifiedLoginPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _userNoController = TextEditingController();
   final TextEditingController _pwdController = TextEditingController();
   late TabController _tabController;
@@ -43,7 +43,7 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
     final savedUser = prefs.getString('user');
     if (savedUser != null && savedUser.isNotEmpty) {
       _userNoController.text = savedUser;
-      
+
       // 密码通常不应自动填充，但这里根据应用需求处理
       final savedPassword = prefs.getString('password');
       if (savedPassword != null && savedPassword.isNotEmpty) {
@@ -55,9 +55,9 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
   // 教务系统直接登录
   void _loginWithCredentials() async {
     if (_userNoController.text.isEmpty || _pwdController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入账号和密码')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请输入账号和密码')));
       return;
     }
 
@@ -70,16 +70,19 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => WebViewLoginScreen(
-            userNo: _userNoController.text,
-            password: _pwdController.text, showText: '登录中', renew: false,
-          ),
+          builder:
+              (context) => WebViewLoginScreen(
+                userNo: _userNoController.text,
+                password: _pwdController.text,
+                showText: '登录中',
+                renew: false,
+              ),
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('登录失败: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('登录失败: $e')));
     } finally {
       setState(() {
         _isLoading = false;
@@ -90,9 +93,9 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
   // 智慧工大平台登录
   void _loginWithCAS() async {
     if (_userNoController.text.isEmpty || _pwdController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入账号和密码')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请输入账号和密码')));
       return;
     }
 
@@ -104,7 +107,8 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
       // 使用LoginWithPost进行工大平台登录，内部会调用统一认证
       print('开始');
       await HutUserApi().userLogin(
-        username: _userNoController.text, password:_pwdController.text,
+        username: _userNoController.text,
+        password: _pwdController.text,
       );
       print('获取Token');
       String? token = await HutCasTokenRetriever.getJwxtToken(context);
@@ -116,18 +120,17 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
       await prefs.setBool('isFirstOpen', false);
       Navigator.of(context).pop();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => Getcoursepage(renew: false,)));
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => Getcoursepage(renew: false)),
+        );
       });
       // 登录成功后返回
       //Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('登录失败: 也许是密码或账户不正确')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('登录失败: 也许是密码或账户不正确')));
     } finally {
-
       setState(() {
         _isLoading = false;
       });
@@ -138,9 +141,7 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
   void _loginWithHutPlatform() async {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const HutCasLoginPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const HutCasLoginPage()),
     );
   }
 
@@ -178,7 +179,7 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
               ],
             ),
           ),
-          
+
           // 主内容
           MediaQuery.removePadding(
             context: context,
@@ -223,7 +224,12 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
                                 // 账号输入框
                                 Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    10,
+                                    0,
+                                    10,
+                                    0,
+                                  ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(15),
                                     color: Theme.of(context).highlightColor,
@@ -246,7 +252,12 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
                                 // 密码输入框
                                 Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    10,
+                                    0,
+                                    10,
+                                    0,
+                                  ),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(15),
                                     color: Theme.of(context).highlightColor,
@@ -282,16 +293,18 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
                                         style: FilledButton.styleFrom(
                                           backgroundColor: Colors.orangeAccent,
                                         ),
-                                        child: _isLoading
-                                            ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                            : const Text('工大平台登录'),
+                                        child:
+                                            _isLoading
+                                                ? const SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        color: Colors.white,
+                                                        strokeWidth: 2,
+                                                      ),
+                                                )
+                                                : const Text('工大平台登录'),
                                       ),
                                     ),
                                   ],
@@ -299,11 +312,14 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage> with SingleTickerPr
                               ],
                             ),
                             const SizedBox(height: 20),
-                            Text('使用教务系统登录后如果需要使用智慧工大相关功能例如洗澡和其他学工服务需要额外登录智慧工大账户\n推荐优先使用智慧工大登录',style: TextStyle(color: Colors.grey),)
+                            Text(
+                              '使用教务系统登录后如果需要使用智慧工大相关功能例如洗澡和其他学工服务需要额外登录智慧工大账户\n推荐优先使用智慧工大登录',
+                              style: TextStyle(color: Colors.grey),
+                            ),
                           ],
                         ),
                       ),
-                      
+
                       // 右上角装饰图标
                       Container(
                         padding: const EdgeInsets.only(right: 20),

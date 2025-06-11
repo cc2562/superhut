@@ -22,6 +22,7 @@ class Course {
     required this.startSection,
     required this.duration,
   });
+
   // 将 Course 对象转换为 Map
   Map<String, dynamic> toJson() {
     return {
@@ -58,21 +59,21 @@ Future<void> saveCourseDataToJson(Map<String, List<Course>> courseData) async {
   String jsonString = jsonEncode(courseDataMap);
   final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
   final String appDocumentsPath = appDocumentsDir.path;
-  
+
   // 确保 app_flutter 目录存在
   final flutterDir = Directory('$appDocumentsPath/app_flutter');
   if (!flutterDir.existsSync()) {
     flutterDir.createSync(recursive: true);
   }
-  
+
   // 将 JSON 字符串写入文件（保存在应用文档目录下）
   final file = File('$appDocumentsPath/course_data.json');
   await file.writeAsString(jsonString);
-  
+
   // 同时保存一份到 app_flutter 目录（供桌面小组件访问）
   final widgetFile = File('${flutterDir.path}/course_data.json');
   await widgetFile.writeAsString(jsonString);
-  
+
   // 刷新桌面小组件
   await WidgetRefreshService.refreshCourseTableWidget();
 }
@@ -108,7 +109,7 @@ Future<Map<String, List<Course>>> loadClassFromLocal() async {
     final Map<String, List<Course>> courseData = await readCourseDataFromJson(
       '$appDocumentsPath/course_data.json',
     );
-   // print(courseData);
+    // print(courseData);
     return courseData;
   } catch (e) {
     print('Error reading JSON file: $e');
@@ -116,12 +117,15 @@ Future<Map<String, List<Course>>> loadClassFromLocal() async {
   }
 }
 
-Future<String> saveClassToLocal(String token,context) async {
+Future<String> saveClassToLocal(String token, context) async {
   final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
   final String appDocumentsPath = appDocumentsDir.path;
   try {
-    final Map<String, List<Course>> courseData = await loadClassFormUrl(token,context);
-  //  print(courseData);
+    final Map<String, List<Course>> courseData = await loadClassFormUrl(
+      token,
+      context,
+    );
+    //  print(courseData);
     await saveCourseDataToJson(courseData);
     return '200';
   } catch (e) {
@@ -144,12 +148,17 @@ Future<Map<String, List<Course>>> testc() async {
   return courseData;
 }
 
-Future<Map<String, List<Course>>> loadClassFormUrl(String token,context) async {
+Future<Map<String, List<Course>>> loadClassFormUrl(
+  String token,
+  context,
+) async {
   print("SSSSSSSSSSSSSSSSS");
   GetOrgDataWeb getOrgDataWeb = GetOrgDataWeb(token: token);
   getOrgDataWeb.initData();
   await getOrgDataWeb.getTeachingWeek();
-  Map<String, List<Course>> courseData = await getOrgDataWeb.getAllWeekClass(context);
- // print(courseData);
+  Map<String, List<Course>> courseData = await getOrgDataWeb.getAllWeekClass(
+    context,
+  );
+  // print(courseData);
   return courseData;
 }
