@@ -5,13 +5,19 @@ import 'package:superhut/pages/drink/login/command.dart';
 import '../../../generated/assets.dart';
 import '../api/drink_api.dart';
 
-
 class DrinkLoginPage2 extends StatefulWidget {
   final String phoneNumber;
   final String doubleRandom;
   final String timestamp;
   final String imageCode;
-  const DrinkLoginPage2({super.key,required this.phoneNumber,required this.doubleRandom,required this.timestamp,required this.imageCode});
+
+  const DrinkLoginPage2({
+    super.key,
+    required this.phoneNumber,
+    required this.doubleRandom,
+    required this.timestamp,
+    required this.imageCode,
+  });
 
   @override
   _DrinkLoginPage2State createState() => _DrinkLoginPage2State();
@@ -21,6 +27,7 @@ class _DrinkLoginPage2State extends State<DrinkLoginPage2> {
   final TextEditingController _userNoController = TextEditingController();
 
   var api = DrinkApi();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,7 +138,11 @@ class _DrinkLoginPage2State extends State<DrinkLoginPage2> {
                                           );
                                           return;
                                         }
-                                        Login(widget.phoneNumber,_userNoController.text,context);
+                                        Login(
+                                          widget.phoneNumber,
+                                          _userNoController.text,
+                                          context,
+                                        );
                                       },
                                       child: const Text('登录'),
                                     ),
