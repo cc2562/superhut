@@ -2,20 +2,19 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:superhut/pages/water/view.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 
-import '../../utils/token.dart';
-
 class ElectricityApi {
-  var hutApi =HutUserApi();
+  var hutApi = HutUserApi();
   late List openids;
-  late String openid,JSESSIONID;
+  late String openid, JSESSIONID;
   late String token;
   late String username;
   final dio = Dio();
+
   //基础电费信息设置
-  late String factorycode,areaid,roomid,buildingid;
+  late String factorycode, areaid, roomid, buildingid;
+
   //初始化API
   onInit() async {
     openids = await hutApi.getOpenid();
@@ -25,7 +24,7 @@ class ElectricityApi {
       //bool isv =await refreshToken();
       token = prefs.getString('hutToken')!;
     }
-    JSESSIONID =openids[1];
+    JSESSIONID = openids[1];
     await getUserInfo();
     configureHutDio();
     print(openids[0]);
@@ -39,14 +38,13 @@ class ElectricityApi {
     dio.options.followRedirects = false;
     dio.options.headers = {
       'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64',
       'Accept': 'application/json, text/javascript, */*; q=0.01',
       'Accept-Encoding': 'gzip, deflate, br',
-      'Cookie': "userToken=${token}; Domain=v8mobile.hut.edu.cn; Path=/; JSESSIONID=${JSESSIONID}",
+      'Cookie':
+          "userToken=${token}; Domain=v8mobile.hut.edu.cn; Path=/; JSESSIONID=${JSESSIONID}",
     };
   }
-
-
 
   Future<Response> postDio(String path, Map postData) async {
     Response response;
@@ -63,29 +61,27 @@ class ElectricityApi {
     userDio.options.followRedirects = false;
     userDio.options.headers = {
       'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64',
       'Accept': 'application/json, text/javascript, */*; q=0.01',
       'Accept-Encoding': 'gzip, deflate, br',
-      'X-Id-Token':token,
+      'X-Id-Token': token,
     };
     Response response;
     response = await userDio.get('/personal/api/v1/personal/me/user');
     Map data = response.data;
     Map user = data['data'];
-    username= user['username'];
+    username = user['username'];
     print(username);
     return 1;
   }
 
-
-
   //获取历史记录
   Future<Map> getHistory() async {
     Response response;
-    response = await postDio('/myaccount/querywechatUserLastInfo?openid=${openid}', {
-      "idserial":username,
-      "openid":openid
-    });
+    response = await postDio(
+      '/myaccount/querywechatUserLastInfo?openid=${openid}',
+      {"idserial": username, "openid": openid},
+    );
     Map data = response.data;
     Map history = data['resultData'];
     String elelastBindStr = history['elelastbind'];
@@ -95,10 +91,10 @@ class ElectricityApi {
     roomid = elelastbind['roomid'];
     buildingid = elelastbind['buildingid'];
     return {
-      "factorycode":factorycode,
-      "areaid":areaid,
-      "roomid":roomid,
-      "buildingid":buildingid
+      "factorycode": factorycode,
+      "areaid": areaid,
+      "roomid": roomid,
+      "buildingid": buildingid,
     };
   }
 
@@ -107,20 +103,17 @@ class ElectricityApi {
     print("GETING");
     Response response;
     response = await postDio('/channel/queryRoomDetail?openid=${openid}', {
-      "areaid":areaid,
-      "buildingid":buildingid,
-      "factorycode":factorycode,
-      "roomid":troomid
+      "areaid": areaid,
+      "buildingid": buildingid,
+      "factorycode": factorycode,
+      "roomid": troomid,
     });
-  Map data = response.data;
-  Map roomInfo = data['resultData'];
-  String eleTail = roomInfo['eledetail'];
-  String roomName = roomInfo['accname'];
-  print(roomInfo);
-  return {
-    "roomName":roomName,
-    "eleTail":eleTail
-  };
+    Map data = response.data;
+    Map roomInfo = data['resultData'];
+    String eleTail = roomInfo['eledetail'];
+    String roomName = roomInfo['accname'];
+    print(roomInfo);
+    return {"roomName": roomName, "eleTail": eleTail};
   }
 
   //获取所有房间列表
@@ -141,30 +134,41 @@ class ElectricityApi {
   //充值前检测
   Future<bool> checkBeforeRecharge(String payRoomId) async {
     Response response;
-    response = await postDio('/myaccount/userlastbind?openid=${openid}', {"payinfo":{"elepayWay":"6"},
-      "eleinfo":{"buildingid":buildingid,"areaid":areaid,"roomid":payRoomId,"factorycode":factorycode},
-      "idserial":username
+    response = await postDio('/myaccount/userlastbind?openid=${openid}', {
+      "payinfo": {"elepayWay": "6"},
+      "eleinfo": {
+        "buildingid": buildingid,
+        "areaid": areaid,
+        "roomid": payRoomId,
+        "factorycode": factorycode,
+      },
+      "idserial": username,
     });
     Map data = response.data;
-    if(data['success'] == true){
+    if (data['success'] == true) {
       return true;
-    }else{
+    } else {
       return false;
     }
   }
+
   //创建订单
-  Future<Map> createOrder(String payRoomId,String count,String payRoomName) async {
+  Future<Map> createOrder(
+    String payRoomId,
+    String count,
+    String payRoomName,
+  ) async {
     Response response;
     response = await postDio('/elepay/createPreThirdTrade?openid=${openid}', {
-      "payamt":count,
-      "openid":openid,
-      "idserial":username,
-      "factorycode":factorycode,
-      "buildingid":buildingid,
-      "areaid":areaid,
-      "roomid":payRoomId,
-      "roomvalue":payRoomName,
-      "paytype":"6"
+      "payamt": count,
+      "openid": openid,
+      "idserial": username,
+      "factorycode": factorycode,
+      "buildingid": buildingid,
+      "areaid": areaid,
+      "roomid": payRoomId,
+      "roomvalue": payRoomName,
+      "paytype": "6",
     });
     Map data = response.data;
     Map resultData = data['resultData'];
@@ -172,26 +176,26 @@ class ElectricityApi {
     String payorderno = resultData['payorderno'];
     String txdate = resultData['txdate'];
     return {
-      "partnerjourno":partnerjourno,
-      "payorderno":payorderno,
-      "txdate":txdate
+      "partnerjourno": partnerjourno,
+      "payorderno": payorderno,
+      "txdate": txdate,
     };
   }
+
   //完成充值
-  finishRecharge(String payorderno,String count,String payRoomName) async {
+  finishRecharge(String payorderno, String count, String payRoomName) async {
     Response response;
     response = await postDio('/elepay/consumeFromYktToEle?openid=${openid}', {
-      "paytxamt":count,
-      "payWay":"6",
-      "openid":openid,
-      "idserial":username,
-      "payorderno":payorderno,
-      "factorycode":factorycode,
-      "roomname":payRoomName,
+      "paytxamt": count,
+      "payWay": "6",
+      "openid": openid,
+      "idserial": username,
+      "payorderno": payorderno,
+      "factorycode": factorycode,
+      "roomname": payRoomName,
     });
     Map data = response.data;
     String message = data['message'];
     print(message);
   }
-
 }
