@@ -120,7 +120,7 @@ flutter build ios --release
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](https://github.com/cc2562/superhut/blob/master/LICENSE) 文件了解详情
+本项目采用 GPL-3.0 license - 查看 [LICENSE](https://github.com/cc2562/superhut/blob/master/LICENSE) 文件了解详情
 
 ## 🙏 致谢
 
