@@ -202,7 +202,7 @@ class FunctionHotWaterLogic extends GetxController {
         )
         .then((value) {
           state.isLoading.value = false;
-          if (value) {
+          if (value['success']&&value['result']=="000000") {
             Get.snackbar(
               '提示',
               '开启设备成功！',
@@ -214,8 +214,8 @@ class FunctionHotWaterLogic extends GetxController {
             update();
           } else {
             Get.snackbar(
-              '提示',
-              '开启设备失败',
+              '出错啦',
+              '开启设备失败,${value['message']}',
               backgroundColor:
                   Theme.of(Get.context!).colorScheme.primaryContainer,
               margin: EdgeInsets.only(top: 30, left: 50, right: 50),

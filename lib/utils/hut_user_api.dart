@@ -426,7 +426,7 @@ class HutUserApi {
   /// 开始洗澡
   /// [device] 设备
   /// return 是否成功
-  Future<bool> startHotWater({required String device}) async {
+  Future<Map> startHotWater({required String device}) async {
     String token = await getToken();
     String url = "https://v8mobile.hut.edu.cn/boiling/termcodeOpenValve";
     Options options =
@@ -463,9 +463,17 @@ class HutUserApi {
         .post(url, params: params, data: data, options: options)
         .then((value) {
           // logger.i(value);
+
           var data = ResponseUtils.transformObj(value);
           // logger.i(data["resultData"]["result"] == "000000");
-          return data["success"];
+          //print(data);
+          //print(data["resultData"]["result"] == "000000");
+          Map resultData = {
+            "result": data["resultData"]["result"],
+            "message": data["resultData"]["message"],
+            "success": data["success"]
+          };
+          return resultData;
         });
   }
 
