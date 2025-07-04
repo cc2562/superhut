@@ -712,11 +712,12 @@ packages:
   qr_code_scanner:
     dependency: "direct main"
     description:
-      name: qr_code_scanner
-      sha256: f23b68d893505a424f0bd2e324ebea71ed88465d572d26bb8d2e78a4749591fd
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.0.1"
+      path: "."
+      ref: HEAD
+      resolved-ref: "1907961a8b40e3d5a975a579c415d663fe631554"
+      url: "https://github.com/wizmea/qr_code_scanner.git"
+    source: git
+    version: "1.0.0"
   responsive_framework:
     dependency: "direct main"
     description:

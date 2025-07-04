@@ -54,7 +54,8 @@ dependencies:
   loading_animation_widget: ^1.3.0
   restart_app: ^1.3.2
   confetti: ^0.7.0
-  qr_code_scanner: ^1.0.1
+  qr_code_scanner:
+    git: https://github.com/wizmea/qr_code_scanner.git
   sensors_plus: ^6.1.1
   encrypt: ^5.0.3
   url_launcher: ^6.3.1
