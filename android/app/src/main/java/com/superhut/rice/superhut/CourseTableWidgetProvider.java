@@ -1,6 +1,5 @@
 package com.superhut.rice.superhut;
 
-import android.annotation.TargetApi;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -35,7 +34,6 @@ import java.util.Locale;
  * 课程表桌面小组件提供者
  * 实现每日课程的显示功能
  */
-@TargetApi(Build.VERSION_CODES.CUPCAKE)
 public class CourseTableWidgetProvider extends AppWidgetProvider {
 
     public static final String ACTION_REFRESH = "com.superhut.rice.superhut.ACTION_REFRESH";
@@ -122,30 +120,14 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
             // 设置标题点击刷新的Intent
             Intent refreshIntent = new Intent(context, CourseTableWidgetProvider.class);
             refreshIntent.setAction(ACTION_REFRESH);
-            PendingIntent refreshPendingIntent;
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                refreshPendingIntent = PendingIntent.getBroadcast(
-                        context, 0, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            } else {
-                refreshPendingIntent = PendingIntent.getBroadcast(
-                        context, 0, refreshIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            }
+            PendingIntent refreshPendingIntent = createPendingIntent(context, refreshIntent, 0, true);
 
             views.setOnClickPendingIntent(R.id.widget_title, refreshPendingIntent);
 
             // 设置点击打开应用的Intent
             Intent openAppIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
             if (openAppIntent != null) {
-                PendingIntent openAppPendingIntent;
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    openAppPendingIntent = PendingIntent.getActivity(
-                            context, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                } else {
-                    openAppPendingIntent = PendingIntent.getActivity(
-                            context, 0, openAppIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                }
+                PendingIntent openAppPendingIntent = createPendingIntent(context, openAppIntent, 0, false);
 
                 // 为空视图设置点击事件
                 views.setOnClickPendingIntent(R.id.widget_empty_view, openAppPendingIntent);
@@ -170,22 +152,14 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
                 serviceIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
                 serviceIntent.putExtra("today_date", todayDate);
                 // 确保intent是唯一的
-                serviceIntent.setData(Uri.parse(serviceIntent.toUri(Intent.URI_INTENT_SCHEME)));
+                serviceIntent.setData(Uri.parse("content://widget/" + appWidgetId + "/" + System.currentTimeMillis()));
 
                 views.setRemoteAdapter(R.id.widget_course_list, serviceIntent);
 
                 // 设置列表项点击事件模板
                 Intent clickIntent = new Intent(context, MainActivity.class);
                 clickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-                PendingIntent clickPendingIntent;
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    clickPendingIntent = PendingIntent.getActivity(
-                            context, 0, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                } else {
-                    clickPendingIntent = PendingIntent.getActivity(
-                            context, 0, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                }
+                PendingIntent clickPendingIntent = createPendingIntent(context, clickIntent, 0, false);
 
                 views.setPendingIntentTemplate(R.id.widget_course_list, clickPendingIntent);
 
@@ -202,6 +176,23 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
             Log.d(TAG, "小组件更新完成");
         } catch (Exception e) {
             Log.e(TAG, "更新小组件视图时出错: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 创建PendingIntent的统一方法，处理不同Android版本的兼容性
+     */
+    private static PendingIntent createPendingIntent(Context context, Intent intent, int requestCode, boolean isBroadcast) {
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+
+        if (isBroadcast) {
+            return PendingIntent.getBroadcast(context, requestCode, intent, flags);
+        } else {
+            return PendingIntent.getActivity(context, requestCode, intent, flags);
         }
     }
 
@@ -339,20 +330,14 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
         Intent intent = new Intent(context, CourseTableWidgetProvider.class);
         intent.setAction(ACTION_AUTO_UPDATE);
 
-        PendingIntent pendingIntent;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            pendingIntent = PendingIntent.getBroadcast(
-                    context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        } else {
-            pendingIntent = PendingIntent.getBroadcast(
-                    context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        }
+        PendingIntent pendingIntent = createPendingIntent(context, intent, 0, true);
 
         // 取消可能已存在的任务
         alarmManager.cancel(pendingIntent);
 
         // 设置新的定时任务
         long firstTrigger = System.currentTimeMillis() + UPDATE_INTERVAL_MS;
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // 对于Android 6.0及以上版本，使用省电的方式
             alarmManager.setAndAllowWhileIdle(AlarmManager.RTC, firstTrigger, pendingIntent);
@@ -360,8 +345,8 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
             // 对于Android 4.4及以上版本
             alarmManager.setExact(AlarmManager.RTC, firstTrigger, pendingIntent);
         } else {
-            // 对于旧版本
-            alarmManager.setRepeating(AlarmManager.RTC, firstTrigger, UPDATE_INTERVAL_MS, pendingIntent);
+            // 对于旧版本Android（基本不会遇到）
+            alarmManager.set(AlarmManager.RTC, firstTrigger, pendingIntent);
         }
 
         Log.d(TAG, "定时刷新任务设置完成");
@@ -380,14 +365,7 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
         Intent intent = new Intent(context, CourseTableWidgetProvider.class);
         intent.setAction(ACTION_AUTO_UPDATE);
 
-        PendingIntent pendingIntent;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            pendingIntent = PendingIntent.getBroadcast(
-                    context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        } else {
-            pendingIntent = PendingIntent.getBroadcast(
-                    context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        }
+        PendingIntent pendingIntent = createPendingIntent(context, intent, 0, true);
 
         alarmManager.cancel(pendingIntent);
         Log.d(TAG, "定时刷新任务已取消");
