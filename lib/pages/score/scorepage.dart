@@ -41,16 +41,20 @@ class _ScorePageState extends State<ScorePage> {
   Future<void> getTimeList() async {
     if (first) {
       Map timeMap = await semesterIdfc();
-      Map scoreMap = await getScore(nowSemesterId);
       setState(() {
         semesterId = timeMap['idlist'];
         nowSemesterId = timeMap['nowid'];
-        selectedId = nowSemesterId;
-        scoreList = scoreMap['achievement'];
-        zxf = scoreMap['yxzxf'];
-        zxfjd = scoreMap['zxfjd'];
-        pjjd = scoreMap['pjxfjd'];
       });
+        Map scoreMap = await getScore(nowSemesterId);
+        setState(() {
+          selectedId = nowSemesterId;
+          scoreList = scoreMap['achievement'];
+          zxf = scoreMap['yxzxf'];
+          zxfjd = scoreMap['zxfjd'];
+          pjjd = scoreMap['pjxfjd'];
+        });
+
+
       first = false;
     } else {
       return;
