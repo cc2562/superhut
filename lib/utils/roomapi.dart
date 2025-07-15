@@ -27,18 +27,15 @@ class Room {
 }
 
 class FreeBuildingApi {
-  late String token;
-
   List<Building> buildingList = [];
 
   Future<void> initData() async {
-    token = await getToken();
-    configureDio(token);
+    await configureDioFromStorage();
   }
 
   Future<String> getCurrentTerm() async {
     Response response;
-    response = await postDio('/njwhd/currentTerm', {});
+    response = await postDioWithCookie('/njwhd/currentTerm', {});
     Map data = response.data;
     Map termData = data['data'][0];
     currentTerm = termData['semesterId'];
@@ -47,7 +44,7 @@ class FreeBuildingApi {
 
   Future<List<Building>> getBuildingList() async {
     Response response;
-    response = await postDio(
+    response = await postDioWithCookie(
       '/njwhd/student/getIdleClassroom?campusId=&jiaoxueloumc=&zhouci=40&xnxq=$currentTerm&searchType=lylv',
       {},
     );
@@ -73,12 +70,10 @@ class FreeBuildingApi {
 }
 
 class FreeRoomApi {
-  late String token;
   List<Room> roomList = [];
 
   Future<void> initData() async {
-    token = await getToken();
-    configureDio(token);
+    await configureDioFromStorage();
   }
 
   String processString(String input) {
@@ -106,7 +101,7 @@ class FreeRoomApi {
     String buildingId,
   ) async {
     Response response;
-    response = await postDio(
+    response = await postDioWithCookie(
       '/njwhd/student/getIdleClassroom?date=$date&nodeId=$nodeId&buildingId=$buildingId&campusId=&jsmc=&xnxq=$currentTerm&jiaoxueloumc=',
       {},
     );

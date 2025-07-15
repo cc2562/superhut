@@ -59,9 +59,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
     //初始化API
     await electricityApi.onInit();
     baseInfo = await electricityApi.getHistory();
-    print("the base::::$baseInfo");
     nowRoomInfo = await electricityApi.getSingleRoomInfo(baseInfo["roomid"]);
-    print("the now::::$nowRoomInfo");
     setState(() {
       setRoomName = nowRoomInfo["roomName"];
       roomCount = nowRoomInfo["eleTail"];
@@ -73,7 +71,6 @@ class _ElectricityPageState extends State<ElectricityPage> {
 
   Future<bool> getNewRoomInfo(String roomIds) async {
     nowRoomInfo = await electricityApi.getSingleRoomInfo(roomIds);
-    print("the now::::$nowRoomInfo");
     setState(() {
       setRoomName = nowRoomInfo["roomName"];
       roomCount = nowRoomInfo["eleTail"];
@@ -90,7 +87,6 @@ class _ElectricityPageState extends State<ElectricityPage> {
 
   Future<List> getRoomList() async {
     List roomList = await electricityApi.getRoomList();
-    print(roomList);
     return roomList;
   }
 
@@ -101,9 +97,6 @@ class _ElectricityPageState extends State<ElectricityPage> {
     var _roomToChargeId = nowRoomId;
     var _payment = _paymentController.text;
     _paymentController.clear();
-    print("the roomToCharge::::$_roomToChargeName");
-    print("the roomToChargeId::::$_roomToChargeId");
-    print("the payment::::$_payment");
     //充值前检测
     if (double.parse(balance) < double.parse(_payment)) {
       ScaffoldMessenger.of(
@@ -323,7 +316,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         return;
                       }
 
-                      bool statue = await chargeMoney();
+                      
                       isinit = false;
                       getHisRoomInfo();
                     },
@@ -458,7 +451,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                             hintText: '搜索房间名称或ID',
                             prefixIcon: Icon(Icons.search, size: 24),
                             filled: true,
-                            fillColor: Colors.grey.withOpacity(0.1),
+                            fillColor: Colors.grey.withAlpha(20),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                               borderSide: BorderSide.none,
@@ -570,7 +563,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
+                            fillColor: Colors.white.withAlpha(20),
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 12,
@@ -632,7 +625,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                                 child: Container(
                                   padding: EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
+                                    color: Colors.white.withAlpha(20),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Column(
@@ -679,7 +672,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.withAlpha(20),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Column(

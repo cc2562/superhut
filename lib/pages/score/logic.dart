@@ -30,9 +30,10 @@ class Score {
 
 Future<Map> semesterIdfc() async {
   String token = await getToken();
-  configureDio(token);
+  //configureDio(token);
+  configureDioFromStorage();
   Response response;
-  response = await postDio('/njwhd/semesterList', {});
+  response = await postDioWithCookie('/njwhd/semesterList', {});
   Map data = response.data;
   List iddata = data['data'];
   List idlist = [];
@@ -50,9 +51,10 @@ Future<Map> semesterIdfc() async {
 
 Future<Map<String, Object>> getScore(String semesterId) async {
   String token = await getToken();
-  configureDio(token);
+  //configureDio(token);
+  configureDioFromStorage();
   Response response;
-  response = await postDio(
+  response = await postDioWithCookie(
     '/njwhd/student/termGPA?semester=$semesterId&type=1',
     {},
   );

@@ -5,8 +5,8 @@ class HutLoginSystem extends StatefulWidget {
   /// The initial idToken to pass to the CAS login URL
   final String initialIdToken;
 
-  /// Callback function when token is successfully extracted
-  final Function(String) onTokenExtracted;
+  /// Callback function when token and cookie are successfully extracted
+  final Function(Map<String, String>) onTokenAndCookieExtracted;
 
   /// Callback function when an error occurs during the login process
   final Function(String)? onError;
@@ -14,7 +14,7 @@ class HutLoginSystem extends StatefulWidget {
   const HutLoginSystem({
     Key? key,
     required this.initialIdToken,
-    required this.onTokenExtracted,
+    required this.onTokenAndCookieExtracted,
     this.onError,
   }) : super(key: key);
 
@@ -34,14 +34,15 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
     super.initState();
   }
 
-  // 检查URL并提取token
-  void _checkUrlAndExtractToken(String url) {
+  // 检查URL并提取token和cookie
+  void _checkUrlAndExtractTokenAndCookie(String url) async {
     _currentUrl = url;
 
     if (url.contains(_targetDomain) && url.contains('token=')) {
       try {
-        // 解析URL
+        // 解析URL获取token
         Uri uri = Uri.parse(url);
+        String? token;
 
         // 如果URL包含片段(#)，需要特殊处理
         String fragment = uri.fragment;
@@ -56,22 +57,74 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
             tokenEndIndex = fragment.length;
           }
 
-          String token = fragment.substring(tokenStartIndex, tokenEndIndex);
-          if (token.isNotEmpty) {
-            widget.onTokenExtracted(token);
-          }
+          token = fragment.substring(tokenStartIndex, tokenEndIndex);
         } else {
           // 正常查询参数处理
-          String? token = uri.queryParameters['token'];
-          if (token != null && token.isNotEmpty) {
-            widget.onTokenExtracted(token);
-          }
+          token = uri.queryParameters['token'];
+        }
+
+        if (token != null && token.isNotEmpty && _webViewController != null) {
+          // 获取cookie
+          String? myClientTicket = await _getCookie('my_client_ticket');
+          
+          // 创建结果Map
+          Map<String, String> result = {
+            'token': token,
+            'my_client_ticket': myClientTicket ?? '',
+          };
+          
+          widget.onTokenAndCookieExtracted(result);
         }
       } catch (e) {
         if (widget.onError != null) {
-          widget.onError!('Token提取错误: $e');
+          widget.onError!('Token和Cookie提取错误: $e');
         }
       }
+    }
+  }
+
+  // 获取指定名称的cookie
+  Future<String?> _getCookie(String cookieName) async {
+    if (_webViewController == null) return null;
+    
+    try {
+      CookieManager cookieManager = CookieManager.instance();
+      List<Cookie> cookies = await cookieManager.getCookies(
+        url: WebUri(_currentUrl),
+      );
+      
+      for (Cookie cookie in cookies) {
+        if (cookie.name == cookieName) {
+          return cookie.value;
+        }
+      }
+      
+      // 如果在当前域名没找到，尝试从其他相关域名获取
+      List<String> relatedDomains = [
+        'https://mycas.hut.edu.cn',
+        'https://jwxtsj.hut.edu.cn',
+      ];
+      
+      for (String domain in relatedDomains) {
+        try {
+          List<Cookie> domainCookies = await cookieManager.getCookies(
+            url: WebUri(domain),
+          );
+          for (Cookie cookie in domainCookies) {
+            if (cookie.name == cookieName) {
+              return cookie.value;
+            }
+          }
+        } catch (e) {
+          // 忽略单个域名的错误，继续尝试下一个
+          print('获取域名 $domain 的cookie时出错: $e');
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      print('获取cookie时出错: $e');
+      return null;
     }
   }
 
@@ -132,7 +185,7 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
             },
             shouldOverrideUrlLoading: (controller, navigationAction) async {
               final url = navigationAction.request.url.toString();
-              _checkUrlAndExtractToken(url);
+              _checkUrlAndExtractTokenAndCookie(url);
               return NavigationActionPolicy.ALLOW;
             },
             onLoadStart: (controller, url) {
@@ -141,7 +194,7 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
                   _isLoading = true;
                   _currentUrl = url.toString();
                 });
-                _checkUrlAndExtractToken(_currentUrl);
+                _checkUrlAndExtractTokenAndCookie(_currentUrl);
               }
             },
             onLoadStop: (controller, url) {
@@ -150,7 +203,7 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
                   _isLoading = false;
                   _currentUrl = url.toString();
                 });
-                _checkUrlAndExtractToken(_currentUrl);
+                _checkUrlAndExtractTokenAndCookie(_currentUrl);
 
                 // 输出当前URL到控制台，便于调试
                 print('页面加载完成: $_currentUrl');
@@ -190,14 +243,17 @@ class HutLoginExample extends StatelessWidget {
   Widget build(BuildContext context) {
     return HutLoginSystem(
       initialIdToken: idToken,
-      onTokenExtracted: (token) {
-        // 处理提取到的token
+      onTokenAndCookieExtracted: (result) {
+        // 处理提取到的token和cookie
+        String token = result['token'] ?? '';
+        String myClientTicket = result['my_client_ticket'] ?? '';
         print('提取到的token: $token');
-        // 这里可以保存token或导航到其他页面
+        print('提取到的my_client_ticket: $myClientTicket');
+        // 这里可以保存token和cookie或导航到其他页面
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('登录成功！')));
-        Navigator.of(context).pop(token); // 返回token并关闭页面
+        Navigator.of(context).pop(result); // 返回包含token和cookie的Map并关闭页面
       },
       onError: (errorMessage) {
         // ScaffoldMessenger.of(context).showSnackBar(

@@ -20,11 +20,9 @@ class QuestionOption {
 
 //获取评教批次
 Future<List> getCommentaryBatch() async {
-  late String token;
-  token = await getToken();
-  configureDio(token);
+  await configureDioFromStorage();
   Response response;
-  response = await postDio('/njwhd/student/studentEvaluate', {});
+  response = await postDioWithCookie('/njwhd/student/studentEvaluate', {});
   Map data = response.data;
   List commentaryBatches = data['data'];
   return commentaryBatches;
@@ -36,11 +34,9 @@ Future<List> getCommentaryList(
   String batchId,
   String pj05id,
 ) async {
-  late String token;
-  token = await getToken();
-  configureDio(token);
+  await configureDioFromStorage();
   Response response;
-  response = await postDio(
+  response = await postDioWithCookie(
     '/njwhd/student/teachingEvaluation?pj01id=${pj01id}&batchId=${batchId}&pj05id=${pj05id}&issubmit=all',
     {},
   );
@@ -58,11 +54,9 @@ Future<List> getCommentaryQuestion(
   String teacherId,
   String noticeId,
 ) async {
-  late String token;
-  token = await getToken();
-  configureDio(token);
+  await configureDioFromStorage();
   Response response;
-  response = await postDio(
+  response = await postDioWithCookie(
     '/njwhd/student/evaluationIndex?batchId=${batchId}&evaluationCategoriesId=${evaluationCategoriesId}&courseId=${courseId}&teacherId=${teacherId}&noticeId=${noticeId}&schoolClassificationId=""',
     {},
   );
@@ -113,11 +107,9 @@ Future<String> submitCommentary(
   //  };
   //  toPostList.add(tempMap);
   // }
-  late String token;
-  token = await getToken();
-  configureDio(token);
+  await configureDioFromStorage();
   Response response;
-  response = await postDio('/njwhd/student/saveEvaluate', {
+  response = await postDioWithCookie('/njwhd/student/saveEvaluate', {
     "batchId": batchId,
     "courseId": courseId,
     "evaluationCategoriesId": evaluationCategoriesId,

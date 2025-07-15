@@ -280,6 +280,7 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
                                 // 登录按钮
                                 Row(
                                   children: [
+                                    /*
                                     Expanded(
                                       child: FilledButton(
                                         onPressed: _loginWithCredentials,
@@ -287,6 +288,9 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
                                       ),
                                     ),
                                     const SizedBox(width: 10),
+
+
+                                     */
                                     Expanded(
                                       child: FilledButton(
                                         onPressed: _loginWithCAS,
@@ -313,7 +317,7 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
                             ),
                             const SizedBox(height: 20),
                             Text(
-                              '使用教务系统登录后如果需要使用智慧工大相关功能例如洗澡和其他学工服务需要额外登录智慧工大账户\n推荐优先使用智慧工大登录',
+                              '请使用智慧工大账号进行登录',
                               style: TextStyle(color: Colors.grey),
                             ),
                           ],

@@ -182,7 +182,7 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
   // 初始化加速度计监听
   void _initAccelerometer() {
     // 使用加速度计数据来实现重力感应
-    _accelerometerSubscription = accelerometerEvents.listen((
+    _accelerometerSubscription = accelerometerEventStream().listen((
       AccelerometerEvent event,
     ) {
       if (mounted && _useGravity && !_isAnimating && !_isDragging) {
@@ -550,7 +550,7 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                                                 .bottomRight,
                                                         colors: [
                                                           Colors.white
-                                                              .withOpacity(0.3),
+                                                              .withAlpha(150),
                                                           Colors.transparent,
                                                         ],
                                                       ),
@@ -629,13 +629,9 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                                   begin: Alignment.topCenter,
                                                   end: Alignment.bottomCenter,
                                                   colors: [
-                                                    Colors.white.withOpacity(
-                                                      0.15,
-                                                    ),
+                                                    Colors.white.withAlpha(150),
                                                     Colors.transparent,
-                                                    Colors.black.withOpacity(
-                                                      0.05,
-                                                    ),
+                                                    Colors.black.withAlpha(150),
                                                   ],
                                                   stops: [0.0, 0.5, 1.0],
                                                 ),

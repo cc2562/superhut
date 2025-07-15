@@ -20,16 +20,17 @@ Future<String> getToken() async {
 }
 
 Future<bool> checkTokenValid() async {
-  String token = await getToken();
-  print(token);
-  configureDio(token);
-  Response response;
-  response = await postDio('/njwhd/noticeTab', {});
-  Map data = response.data;
-  print(data);
-  if (data['code'] == "1") {
-    return true;
-  } else {
+  try {
+    await configureDioFromStorage();
+    Response response;
+    response = await postDioWithCookie('/njwhd/noticeTab', {});
+    Map data = response.data;
+    if (data['code'] == "1") {
+      return true;
+    } else {
+      return false;
+    }
+  } catch(e) {
     return false;
   }
 }
@@ -63,7 +64,7 @@ Future<String> renewToken(context) async {
     print(isValid);
     if (isValid) {
     } else {
-      await HutCasTokenRetriever.getJwxtToken(context);
+      await HutCasTokenRetriever.getJwxtTokenAndCookie(context);
       print("刷新完成");
     }
     return "1123";

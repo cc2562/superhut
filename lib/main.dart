@@ -9,23 +9,8 @@ import 'package:get/get.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/welcomepage/view.dart';
-
 import 'home/homeview/view.dart';
 
-/// The [AppTheme] defines light and dark themes for the app.
-///
-/// Theme setup for FlexColorScheme package v8.
-/// Use same major flex_color_scheme package version. If you use a
-/// lower minor version, some properties may not be supported.
-/// In that case, remove them after copying this theme to your
-/// app or upgrade package to version 8.1.1.
-///
-/// Use in [MaterialApp] like this:
-///
-/// MaterialApp(
-///   theme: AppTheme.light,
-///   darkTheme: AppTheme.dark,
-/// );
 abstract final class AppTheme {
   // The defined light theme.
   static ThemeData light = FlexThemeData.light(
@@ -197,9 +182,6 @@ class _MyAppState extends State<MyApp> {
     if (_isFirstOpen) {
     } else {
       _isOldVersion = prefs.getString('name') == null ? true : false;
-      //  if(_isOldVersion){
-      //     await renewToken(context);
-      //   }
     }
     setState(() {
       _isFirstOpen = _isFirstOpen;

@@ -104,14 +104,12 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
                                                     CrossAxisAlignment.start,
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  Container(
-                                                    child: Text(
-                                                      '选择节次范围',
-                                                      style:
-                                                          Theme.of(context)
-                                                              .textTheme
-                                                              .titleLarge,
-                                                    ),
+                                                  Text(
+                                                    '选择节次范围',
+                                                    style:
+                                                        Theme.of(context)
+                                                            .textTheme
+                                                            .titleLarge,
                                                   ),
                                                   SizedBox(height: 10),
                                                   RangeSlider(
@@ -221,95 +219,91 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
                                               physics:
                                                   NeverScrollableScrollPhysics(),
                                               children: [
-                                                Container(
-                                                  child: Text(
-                                                    data[index].name,
-                                                    style:
-                                                        Theme.of(
-                                                          context,
-                                                        ).textTheme.titleLarge,
-                                                  ),
+                                                Text(
+                                                  data[index].name,
+                                                  style:
+                                                      Theme.of(
+                                                        context,
+                                                      ).textTheme.titleLarge,
                                                 ),
                                                 SizedBox(height: 10),
 
-                                                Container(
-                                                  child: Flex(
-                                                    direction: Axis.horizontal,
-                                                    children: List.generate(
-                                                      count,
-                                                      // 动态数量，例如设置为7，则会生成7个
-                                                      (indexs) {
-                                                        String slot = (indexs +
-                                                                1)
-                                                            .toString()
-                                                            .padLeft(2, '0');
-                                                        bool isBooked =
-                                                            data[index].free
-                                                                .contains(slot);
-                                                        return Expanded(
-                                                          child: Container(
-                                                            height: 40,
-                                                            decoration: BoxDecoration(
-                                                              color:
-                                                                  isBooked
-                                                                      ? Theme.of(
-                                                                        context,
-                                                                      ).colorScheme.primary
-                                                                      : Theme.of(
-                                                                        context,
-                                                                      ).colorScheme.surfaceContainerHighest,
-                                                              borderRadius: BorderRadius.only(
-                                                                topLeft:
-                                                                    indexs == 0
-                                                                        ? Radius.circular(
-                                                                          10,
-                                                                        )
-                                                                        : Radius
-                                                                            .zero,
-                                                                bottomLeft:
-                                                                    indexs == 0
-                                                                        ? Radius.circular(
-                                                                          10,
-                                                                        )
-                                                                        : Radius
-                                                                            .zero,
-                                                                topRight:
-                                                                    indexs ==
-                                                                            count -
-                                                                                1
-                                                                        ? Radius.circular(
-                                                                          10,
-                                                                        )
-                                                                        : Radius
-                                                                            .zero,
-                                                                // 最后一个索引为 count - 1
-                                                                bottomRight:
-                                                                    indexs ==
-                                                                            count -
-                                                                                1
-                                                                        ? Radius.circular(
-                                                                          10,
-                                                                        )
-                                                                        : Radius
-                                                                            .zero,
-                                                              ),
+                                                Flex(
+                                                  direction: Axis.horizontal,
+                                                  children: List.generate(
+                                                    count,
+                                                    // 动态数量，例如设置为7，则会生成7个
+                                                    (indexs) {
+                                                      String slot = (indexs +
+                                                              1)
+                                                          .toString()
+                                                          .padLeft(2, '0');
+                                                      bool isBooked =
+                                                          data[index].free
+                                                              .contains(slot);
+                                                      return Expanded(
+                                                        child: Container(
+                                                          height: 40,
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                isBooked
+                                                                    ? Theme.of(
+                                                                      context,
+                                                                    ).colorScheme.primary
+                                                                    : Theme.of(
+                                                                      context,
+                                                                    ).colorScheme.surfaceContainerHighest,
+                                                            borderRadius: BorderRadius.only(
+                                                              topLeft:
+                                                                  indexs == 0
+                                                                      ? Radius.circular(
+                                                                        10,
+                                                                      )
+                                                                      : Radius
+                                                                          .zero,
+                                                              bottomLeft:
+                                                                  indexs == 0
+                                                                      ? Radius.circular(
+                                                                        10,
+                                                                      )
+                                                                      : Radius
+                                                                          .zero,
+                                                              topRight:
+                                                                  indexs ==
+                                                                          count -
+                                                                              1
+                                                                      ? Radius.circular(
+                                                                        10,
+                                                                      )
+                                                                      : Radius
+                                                                          .zero,
+                                                              // 最后一个索引为 count - 1
+                                                              bottomRight:
+                                                                  indexs ==
+                                                                          count -
+                                                                              1
+                                                                      ? Radius.circular(
+                                                                        10,
+                                                                      )
+                                                                      : Radius
+                                                                          .zero,
                                                             ),
-                                                            child: Center(
-                                                              child: Text(
-                                                                '${indexs + 1}',
-                                                                // 动态显示数字，从1开始
-                                                                style: TextStyle(
-                                                                  color:
-                                                                      Theme.of(
-                                                                        context,
-                                                                      ).colorScheme.onPrimary,
-                                                                ),
+                                                          ),
+                                                          child: Center(
+                                                            child: Text(
+                                                              '${indexs + 1}',
+                                                              // 动态显示数字，从1开始
+                                                              style: TextStyle(
+                                                                color:
+                                                                    Theme.of(
+                                                                      context,
+                                                                    ).colorScheme.onPrimary,
                                                               ),
                                                             ),
                                                           ),
-                                                        );
-                                                      },
-                                                    ),
+                                                        ),
+                                                      );
+                                                    },
                                                   ),
                                                 ),
                                                 SizedBox(height: 10),
@@ -359,7 +353,7 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
                                                     Ionicons.location_outline,
                                                   ),
                                                   title: Text(
-                                                    '${data[index].name}',
+                                                    data[index].name,
                                                   ),
                                                 ),
                                                 ListTile(

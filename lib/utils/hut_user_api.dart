@@ -171,6 +171,7 @@ class HutUserApi {
     String passwordBase = Uri.encodeComponent(password);
     String deviceId = generateDeviceIdAlphabet();
     String clientId = generateUuidV4();
+    print("开始登录");
     String loginUrl =
         "/token/password/passwordLogin?username=$username&password=$passwordBase&appId=com.supwisdom.hut&geo&deviceId=$deviceId&osType=android&clientId=$clientId&mfaState";
     final dio = Dio();
@@ -197,7 +198,7 @@ class HutUserApi {
     Map tokenData = data['data'];
     String idToken = tokenData['idToken'];
     String refreshToken = tokenData['refreshToken'];
-    //  print(idToken);
+    print(idToken);
     // 设置Token
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('hutToken', idToken);
@@ -208,6 +209,7 @@ class HutUserApi {
     prefs.setString('loginType', 'hut');
     prefs.setBool('hutIsLogin', true);
     print(response.data);
+    print("结束！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！");
     return true;
   }
 
@@ -733,7 +735,7 @@ class HutUserApi {
   //刷新Token
   Future<bool> refreshToken() async {
     print("startRe");
-    bool isLogin = await checkTokenValidity();
+    //bool isLogin = await checkTokenValidity();
     print("LOG");
     final prefs = await SharedPreferences.getInstance();
     String _userName = prefs.getString('hutUsername') ?? "";

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:superhut/login/hut_cas_login_page.dart';
 import 'package:superhut/pages/Commentary/CommentaryPage1.dart';
 import 'package:superhut/pages/Electricitybill/electricityPage.dart';
 import 'package:superhut/pages/ExamSchedule/exam_schedule_page.dart';
@@ -19,6 +21,25 @@ class FunctionPage extends StatefulWidget {
 }
 
 class _FunctionPageState extends State<FunctionPage> {
+  // 用于跟踪正在加载的功能
+  final Set<String> _loadingFunctions = <String>{};
+
+  // 设置加载状态
+  void _setLoading(String functionId, bool isLoading) {
+    setState(() {
+      if (isLoading) {
+        _loadingFunctions.add(functionId);
+      } else {
+        _loadingFunctions.remove(functionId);
+      }
+    });
+  }
+
+  // 检查是否正在加载
+  bool _isLoading(String functionId) {
+    return _loadingFunctions.contains(functionId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,37 +118,47 @@ class _FunctionPageState extends State<FunctionPage> {
            */
             SizedBox(height: 24),
 
-            // IT & 软件卡片
             _buildActivityCard(
+              id: "empty_room",
               title: "空教室查询",
               rating: null,
               iconData: Ionicons.school,
               color: Colors.blue.shade100,
               hasArrow: true,
               onTap: () async {
-                await renewToken(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => BuildingPage()),
-                );
+                _setLoading("empty_room", true);
+                try {
+                  await renewToken(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => BuildingPage()),
+                  );
+                } finally {
+                  _setLoading("empty_room", false);
+                }
               },
             ),
-
             SizedBox(height: 16),
 
             // UX/UI 设计卡片
             _buildActivityCard(
+              id: "score",
               title: "成绩查询",
               rating: null,
               iconData: Ionicons.document,
               color: Colors.green.shade100,
               hasArrow: true,
               onTap: () async {
-                await renewToken(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ScorePage()),
-                );
+                _setLoading("score", true);
+                try {
+                  await renewToken(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ScorePage()),
+                  );
+                } finally {
+                  _setLoading("score", false);
+                }
               },
             ),
 
@@ -135,6 +166,7 @@ class _FunctionPageState extends State<FunctionPage> {
 
             // 数据分析卡片
             _buildActivityCard(
+              id: "drink",
               title: "宿舍喝水",
               rating: null,
               iconData: Ionicons.water,
@@ -149,6 +181,7 @@ class _FunctionPageState extends State<FunctionPage> {
             ),
             SizedBox(height: 16),
             _buildActivityCard(
+              id: "hot_water",
               title: "洗澡",
               rating: null,
               iconData: Ionicons.sparkles,
@@ -165,21 +198,28 @@ class _FunctionPageState extends State<FunctionPage> {
             ),
             SizedBox(height: 16),
             _buildActivityCard(
+              id: "exam",
               title: "考试安排",
               rating: null,
               iconData: Ionicons.checkmark,
               color: Colors.blueGrey.shade100,
               hasArrow: true,
               onTap: () async {
-                await renewToken(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ExamSchedulePage()),
-                );
+                _setLoading("exam", true);
+                try {
+                  await renewToken(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ExamSchedulePage()),
+                  );
+                } finally {
+                  _setLoading("exam", false);
+                }
               },
             ),
             SizedBox(height: 16),
             _buildActivityCard(
+              id: "electricity",
               title: "电费充值",
               rating: null,
               iconData: Ionicons.flash,
@@ -194,21 +234,28 @@ class _FunctionPageState extends State<FunctionPage> {
             ),
             SizedBox(height: 16),
             _buildActivityCard(
+              id: "commentary",
               title: "学生评教",
               rating: null,
               iconData: Ionicons.checkbox_outline,
               color: Colors.pinkAccent.shade100,
               hasArrow: true,
               onTap: () async {
-                await renewToken(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => commentaryPage1()),
-                );
+                _setLoading("commentary", true);
+                try {
+                  await renewToken(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => commentaryPage1()),
+                  );
+                } finally {
+                  _setLoading("commentary", false);
+                }
               },
             ),
             SizedBox(height: 16),
             _buildActivityCard(
+              id: "hut_main",
               title: "智慧工大",
               rating: null,
               iconData: Ionicons.phone_portrait,
@@ -231,6 +278,7 @@ class _FunctionPageState extends State<FunctionPage> {
 
   // 构建活动卡片
   Widget _buildActivityCard({
+    required String id,
     required String title,
     required IconData iconData,
     required Color color,
@@ -238,8 +286,10 @@ class _FunctionPageState extends State<FunctionPage> {
     bool hasArrow = false,
     required VoidCallback onTap,
   }) {
+    final isLoading = _isLoading(id);
+    
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap, // 如果正在加载则禁用点击
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainer,
@@ -305,12 +355,17 @@ class _FunctionPageState extends State<FunctionPage> {
                     ),
                   ),
 
-                  // 右侧箭头或人员头像
+                  // 右侧箭头或加载动画或人员头像
                   if (hasArrow)
                     Container(
                       decoration: BoxDecoration(shape: BoxShape.circle),
                       padding: EdgeInsets.all(8),
-                      child: Icon(Ionicons.arrow_forward, size: 16),
+                      child: isLoading 
+                        ? LoadingAnimationWidget.inkDrop(
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 16,
+                          )
+                        : Icon(Ionicons.arrow_forward, size: 16),
                     )
                   else
                     _buildAvatarGroup(),

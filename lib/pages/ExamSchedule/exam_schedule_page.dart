@@ -15,7 +15,7 @@ class _ExamSchedulePageState extends State<ExamSchedulePage> {
   //定义安排MAP
   List examSchedules = [];
 
-  void ShowLoadingDialog() {
+  void showLoadingDialog() {
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -36,7 +36,6 @@ class _ExamSchedulePageState extends State<ExamSchedulePage> {
 
   Future getExamSchedule() async {
     examSchedules = await getSchedule();
-    print(examSchedules);
     return true;
   }
 
@@ -59,7 +58,6 @@ class _ExamSchedulePageState extends State<ExamSchedulePage> {
             child: ListView.builder(
               itemCount: examSchedules.length,
               itemBuilder: (context, index) {
-                print(examSchedules.length);
                 if (examSchedules.isEmpty) {
                   return Column(
                     children: [SizedBox(height: 10), Text("当前学期暂时没有考试安排")],
