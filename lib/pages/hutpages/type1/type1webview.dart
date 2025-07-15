@@ -1,6 +1,7 @@
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 
 class Type1Webview extends StatefulWidget {
@@ -94,11 +95,10 @@ class _Type1WebviewState extends State<Type1Webview> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
+                           LoadingAnimationWidget.inkDrop(
+                        color: Theme.of(context).primaryColor,
+          size: 40,
+          ),
                           const SizedBox(height: 16),
                           Text(
                             '加载中...',

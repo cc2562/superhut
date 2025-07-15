@@ -1,6 +1,7 @@
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/hutpages/hutmainLogic.dart';
 import 'package:superhut/pages/hutpages/type1/type1webview.dart';
 import 'package:superhut/pages/hutpages/type2/type2webview.dart';
@@ -324,7 +325,10 @@ class _HutMainPageState extends State<HutMainPage> with WidgetsBindingObserver {
                       },
                     );
                   },
-                  whenNotDone: Center(child: CircularProgressIndicator()),
+                  whenNotDone: Center(child: LoadingAnimationWidget.inkDrop(
+                    color: Theme.of(context).primaryColor,
+                    size: 40,
+                  ),),
                 ),
               ),
             ],

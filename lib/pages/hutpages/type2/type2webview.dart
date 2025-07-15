@@ -4,6 +4,7 @@ import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -435,7 +436,10 @@ class _Type2WebviewState extends State<Type2Webview> {
                       },
                     );
                   },
-                  whenNotDone: const Center(child: CircularProgressIndicator()),
+                  whenNotDone:  Center(child: LoadingAnimationWidget.inkDrop(
+                    color: Theme.of(context).primaryColor,
+                    size: 40,
+                  ),),
                 ),
               ),
 
@@ -474,10 +478,9 @@ class _Type2WebviewState extends State<Type2Webview> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                           LoadingAnimationWidget.inkDrop(
+                            color: Theme.of(context).primaryColor,
+                            size: 40,
                           ),
                           const SizedBox(height: 16),
                           Text(
