@@ -16,7 +16,16 @@ class DrinkLoginPage extends StatefulWidget {
 class _DrinkLoginPageState extends State<DrinkLoginPage> {
   final TextEditingController _userNoController = TextEditingController();
   final TextEditingController _pwdController = TextEditingController();
+  final DrinkLoginCommand _command = DrinkLoginCommand();
   var api = DrinkApi();
+
+  @override
+  void dispose() {
+    _userNoController.dispose();
+    _pwdController.dispose();
+    _command.dispose();  // 清理登录状态
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +146,7 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
                                       ),
                                     ),
                                     EnhancedFutureBuilder(
-                                      future: GetImageCaptcha(),
+                                      future: _command.getImageCaptcha(),
                                       whenDone: (snapshot) {
                                         if (snapshot.isNotEmpty) {
                                           return ClipRRect(
@@ -145,13 +154,16 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
                                               10,
                                             ),
                                             child: InkWell(
-                                              onTap: () {},
+                                              onTap: () {
+                                                setState(() {
+                                                  _command.dispose(); // 重置状态以刷新验证码
+                                                });
+                                              },
                                               highlightColor:
                                                   Colors.transparent,
                                               splashColor: Colors.transparent,
                                               child: Image.memory(
                                                 snapshot,
-
                                                 fit: BoxFit.fill,
                                               ),
                                             ),
@@ -196,7 +208,7 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
                                           );
                                           return;
                                         }
-                                        SendMessageCode(
+                                        _command.sendMessageCode(
                                           context,
                                           _userNoController.text,
                                           _pwdController.text,

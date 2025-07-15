@@ -337,7 +337,7 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
 
   /// 位置信息显示
   Widget locationInfoWidget() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       child: Column(
         children: [
@@ -785,7 +785,6 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
             await logic.getDeviceList();
           }
         } catch (e) {
-          print('添加设备出错: $e');
           // 使用GetX显示错误提示
           Get.snackbar(
             '错误',
@@ -801,7 +800,6 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
         }
       }
     } catch (e) {
-      print('扫描二维码出错: $e');
       // 使用GetX显示错误提示
       Get.snackbar(
         '错误',
@@ -819,19 +817,17 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
   }
 
   // 旧版的QRScannerPage方法，不再使用
-  Widget QRScannerPage() {
+  Widget qrScannerPage() {
     // 这个方法已不再使用，被QRCodeScannerPage类替代
     return SizedBox();
   }
 
-  // 旧版设备管理对话框 - 已经不再使用，由上面的方法替代
-  void _showDeviceManagementDialog(BuildContext context) {
-    _showDeviceManagementSheet(context);
-  }
 }
 
 // 自定义二维码扫描页面
 class QRCodeScannerPage extends StatefulWidget {
+  const QRCodeScannerPage({super.key});
+
   @override
   State<QRCodeScannerPage> createState() => _QRCodeScannerPageState();
 }
@@ -881,7 +877,7 @@ class _QRCodeScannerPageState extends State<QRCodeScannerPage> {
                   margin: EdgeInsets.symmetric(horizontal: 40),
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withAlpha(200),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -948,7 +944,7 @@ class _QRCodeScannerPageState extends State<QRCodeScannerPage> {
 class BubbleAnimation extends StatefulWidget {
   final bool isActive;
 
-  const BubbleAnimation({Key? key, required this.isActive}) : super(key: key);
+  const BubbleAnimation({super.key, required this.isActive});
 
   @override
   State<BubbleAnimation> createState() => _BubbleAnimationState();

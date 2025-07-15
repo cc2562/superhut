@@ -25,8 +25,14 @@ class DrinkLoginPage2 extends StatefulWidget {
 
 class _DrinkLoginPage2State extends State<DrinkLoginPage2> {
   final TextEditingController _userNoController = TextEditingController();
-
+  final DrinkLoginCommand _command = DrinkLoginCommand();
   var api = DrinkApi();
+
+  @override
+  void dispose() {
+    _userNoController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +144,7 @@ class _DrinkLoginPage2State extends State<DrinkLoginPage2> {
                                           );
                                           return;
                                         }
-                                        Login(
+                                        _command.login(
                                           widget.phoneNumber,
                                           _userNoController.text,
                                           context,
