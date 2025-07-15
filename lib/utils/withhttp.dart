@@ -79,35 +79,3 @@ Future<Response> postDioWithCookie(String path, Map postData, {String? customCoo
   return response;
 }
 
-// 示例API类：展示如何使用cookie
-class ExampleApiWithCookie {
-  final Dio _dio = Dio();
-  late String token;
-  late String myClientTicket;
-
-  // 初始化API并配置cookie
-  Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    token = prefs.getString('token') ?? '';
-    myClientTicket = prefs.getString('my_client_ticket') ?? '';
-    
-    _configureApiDio();
-  }
-
-  void _configureApiDio() {
-    _dio.options.baseUrl = 'https://your-api-domain.com';
-    _dio.options.connectTimeout = Duration(seconds: 5);
-    _dio.options.receiveTimeout = Duration(seconds: 3);
-    _dio.options.headers = {
-      'User-Agent': 'Your-App/1.0',
-      'Accept': 'application/json',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Token': token,
-      'Cookie': 'my_client_ticket=$myClientTicket',
-    };
-  }
-
-  Future<Response> apiCall(String path, Map<String, dynamic> data) async {
-    return await _dio.post(path, data: data);
-  }
-}
