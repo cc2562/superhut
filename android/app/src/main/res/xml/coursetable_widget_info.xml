@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/coursetable_widget_description"
     android:initialKeyguardLayout="@layout/coursetable_widget"
     android:initialLayout="@layout/coursetable_widget"
     android:minWidth="180dp"

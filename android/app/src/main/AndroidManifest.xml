@@ -53,6 +53,26 @@
                 android:resource="@xml/coursetable_widget_info" />
         </receiver>
 
+        <!-- 快捷按钮桌面小组件注册 -->
+        <receiver
+            android:name="com.superhut.rice.superhut.QuickActionWidgetProvider"
+            android:label="快捷功能"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DELETED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.superhut.rice.superhut.ACTION_DRINK" />
+                <action android:name="com.superhut.rice.superhut.ACTION_BATH" />
+                <action android:name="com.superhut.rice.superhut.ACTION_ELECTRICITY" />
+                <action android:name="com.superhut.rice.superhut.ACTION_SCORE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_action_widget_info" />
+        </receiver>
+
         <!-- 课程表小组件服务 -->
         <service
             android:name="com.superhut.rice.superhut.CourseTableWidgetService"

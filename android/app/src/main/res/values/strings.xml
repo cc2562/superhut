@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">超级工大</string>
+    <string name="coursetable_widget_description">显示今日课程安排</string>
+    <string name="quick_action_widget_description">快捷功能按钮</string>
+</resources> 

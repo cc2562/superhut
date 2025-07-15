@@ -8,8 +8,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:superhut/pages/score/jumpToScorePage.dart';
 import 'package:superhut/welcomepage/view.dart';
 import 'home/homeview/view.dart';
+import 'pages/drink/view/view.dart';
+import 'pages/water/view.dart';
+import 'pages/Electricitybill/electricityPage.dart';
+import 'pages/score/scorepage.dart';
 
 abstract final class AppTheme {
   // The defined light theme.
@@ -168,11 +173,54 @@ class _MyAppState extends State<MyApp> {
   bool _isFirstOpen = true;
   bool _isLoading = true;
   bool _isOldVersion = false;
+  static const platform = MethodChannel('com.superhut.rice.superhut/widget_actions');
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
     _checkFirstOpen();
+    _setupWidgetActionHandler();
+  }
+
+  void _setupWidgetActionHandler() {
+    platform.setMethodCallHandler((call) async {
+      if (call.method == 'navigateToFunction') {
+        final actionType = call.arguments as String;
+        _handleWidgetAction(actionType);
+      }
+    });
+  }
+
+  void _handleWidgetAction(String actionType) {
+    // 等待应用完全加载后再导航
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        Widget? targetPage;
+        
+        switch (actionType) {
+          case 'drink':
+            targetPage = FunctionDrinkPage();
+            break;
+          case 'bath':
+            targetPage = FunctionHotWaterPage();
+            break;
+          case 'electricity':
+            targetPage = ElectricityPage();
+            break;
+          case 'score':
+            targetPage = JumpToScorePage();
+            break;
+        }
+        
+        if (targetPage != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => targetPage!),
+          );
+        }
+      }
+    });
   }
 
   Future<void> _checkFirstOpen() async {
@@ -196,6 +244,7 @@ class _MyAppState extends State<MyApp> {
     }
 
     return GetMaterialApp(
+      navigatorKey: navigatorKey,
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

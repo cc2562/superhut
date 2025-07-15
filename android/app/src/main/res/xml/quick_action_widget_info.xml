@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/quick_action_widget_description"
+    android:initialKeyguardLayout="@layout/quick_action_widget"
+    android:initialLayout="@layout/quick_action_widget"
+    android:minWidth="200dp"
+    android:minHeight="80dp"
+    android:previewImage="@drawable/quick_action_widget_preview"
+    android:resizeMode="horizontal"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen">
+</appwidget-provider> 

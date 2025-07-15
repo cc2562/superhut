@@ -40,6 +40,9 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
     public static final String ACTION_AUTO_UPDATE = "com.superhut.rice.superhut.ACTION_AUTO_UPDATE_WIDGET";
     private static final String TODAY_FORMAT = "yyyy-MM-dd";
     private static final String TAG = "CourseTableWidgetProv";
+    
+    // 为课程表小组件使用专用的requestCode基数，避免与快捷功能小组件冲突
+    private static final int COURSE_TABLE_BASE_REQUEST_CODE = 20000;
 
     // 定时刷新间隔（毫秒）- 默认为30分钟
     private static final long UPDATE_INTERVAL_MS = 30 * 60 * 1000;
@@ -120,14 +123,17 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
             // 设置标题点击刷新的Intent
             Intent refreshIntent = new Intent(context, CourseTableWidgetProvider.class);
             refreshIntent.setAction(ACTION_REFRESH);
-            PendingIntent refreshPendingIntent = createPendingIntent(context, refreshIntent, 0, true);
+            // 添加额外数据确保Intent唯一性
+            refreshIntent.putExtra("widget_id", appWidgetId);
+            refreshIntent.putExtra("timestamp", System.currentTimeMillis());
+            PendingIntent refreshPendingIntent = createPendingIntent(context, refreshIntent, COURSE_TABLE_BASE_REQUEST_CODE + 1, true);
 
             views.setOnClickPendingIntent(R.id.widget_title, refreshPendingIntent);
 
             // 设置点击打开应用的Intent
             Intent openAppIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
             if (openAppIntent != null) {
-                PendingIntent openAppPendingIntent = createPendingIntent(context, openAppIntent, 0, false);
+                PendingIntent openAppPendingIntent = createPendingIntent(context, openAppIntent, COURSE_TABLE_BASE_REQUEST_CODE + 2, false);
 
                 // 为空视图设置点击事件
                 views.setOnClickPendingIntent(R.id.widget_empty_view, openAppPendingIntent);
@@ -159,7 +165,7 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
                 // 设置列表项点击事件模板
                 Intent clickIntent = new Intent(context, MainActivity.class);
                 clickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-                PendingIntent clickPendingIntent = createPendingIntent(context, clickIntent, 0, false);
+                PendingIntent clickPendingIntent = createPendingIntent(context, clickIntent, COURSE_TABLE_BASE_REQUEST_CODE + 3, false);
 
                 views.setPendingIntentTemplate(R.id.widget_course_list, clickPendingIntent);
 
@@ -329,8 +335,10 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
 
         Intent intent = new Intent(context, CourseTableWidgetProvider.class);
         intent.setAction(ACTION_AUTO_UPDATE);
+        // 添加额外数据确保Intent唯一性
+        intent.putExtra("alarm_type", "auto_update");
 
-        PendingIntent pendingIntent = createPendingIntent(context, intent, 0, true);
+        PendingIntent pendingIntent = createPendingIntent(context, intent, COURSE_TABLE_BASE_REQUEST_CODE + 4, true);
 
         // 取消可能已存在的任务
         alarmManager.cancel(pendingIntent);
@@ -364,8 +372,10 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
 
         Intent intent = new Intent(context, CourseTableWidgetProvider.class);
         intent.setAction(ACTION_AUTO_UPDATE);
+        // 添加额外数据确保Intent唯一性（与设置时保持一致）
+        intent.putExtra("alarm_type", "auto_update");
 
-        PendingIntent pendingIntent = createPendingIntent(context, intent, 0, true);
+        PendingIntent pendingIntent = createPendingIntent(context, intent, COURSE_TABLE_BASE_REQUEST_CODE + 4, true);
 
         alarmManager.cancel(pendingIntent);
         Log.d(TAG, "定时刷新任务已取消");
