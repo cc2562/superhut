@@ -108,7 +108,7 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('HUT统一认证')),
+        appBar: AppBar(title: const Text('HUT统一认证'),leading: SizedBox(),),
         body: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -124,7 +124,7 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
 
     if (_errorMessage != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('HUT统一认证')),
+        appBar: AppBar(title: const Text('HUT统一认证'),leading: SizedBox(),),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

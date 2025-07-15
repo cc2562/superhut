@@ -23,14 +23,14 @@ class WelcomepagePage extends StatelessWidget {
       body: IntroductionScreen(
         showNextButton: true,
         next: Text("下一步"),
-        done: Text("登录教务系统"),
+        done: Text("签订契约"),
         onDone: () {
           Get.off(UnifiedLoginPage());
         },
         pages: [
           PageViewModel(
-            title: "湖工大小助手",
-            body: "欢迎使用湖工大小助手，这个向导会帮助你完成最初的步骤",
+            title: "超级工大",
+            body: "欢迎使用超级工大APP\n与工大签订契约吧~( ⓛ ω ⓛ *)",
             image: const Center(child: Icon(Icons.waving_hand, size: 50.0)),
             decoration: const PageDecoration(
               titleTextStyle: TextStyle(color: Colors.orange),
@@ -53,9 +53,9 @@ class WelcomepagePage extends StatelessWidget {
             ),
           ),
           PageViewModel(
-            title: "快速喝水",
-            body: "通过小助手的喝水功能，可以快速喝水（还没有做好）",
-            image: const Center(child: Icon(Icons.water_drop, size: 50.0)),
+            title: " 更多功能",
+            body: "宿舍喝水、洗澡、看成绩、快速教评...你需要的这里都有",
+            image: const Center(child: Icon(Icons.apps, size: 50.0)),
             decoration: const PageDecoration(
               titleTextStyle: TextStyle(color: Colors.orange),
               bodyTextStyle: TextStyle(

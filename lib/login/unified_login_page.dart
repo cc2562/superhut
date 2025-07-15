@@ -240,7 +240,7 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
                                     maxLength: 13,
                                     decoration: const InputDecoration(
                                       filled: false,
-                                      hintText: "账号",
+                                      hintText: "手机号",
                                       border: InputBorder.none,
                                       counterText: '',
                                     ),

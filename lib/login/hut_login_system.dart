@@ -133,6 +133,7 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('HUT统一认证'),
+        leading: SizedBox(),
         //  leading: IconButton(
         //    icon: const Icon(Icons.arrow_back),
         //    onPressed: () => Navigator.of(context).pop(),
