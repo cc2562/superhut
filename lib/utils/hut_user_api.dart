@@ -283,6 +283,7 @@ class HutUserApi {
     return await _request.get(url, params: params, options: options).then((
       value,
     ) {
+      print(value.data);
       if (value.data != "") {
         return [];
       }

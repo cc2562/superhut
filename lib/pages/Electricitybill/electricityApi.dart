@@ -49,7 +49,7 @@ class ElectricityApi {
   Future<Response> postDio(String path, Map postData) async {
     Response response;
     response = await dio.post(path, data: postData);
-    //print(response.data);
+    print(response.data);
     return response;
   }
 
@@ -172,13 +172,15 @@ class ElectricityApi {
     });
     Map data = response.data;
     Map resultData = data['resultData'];
-    String partnerjourno = resultData['partnerjourno'];
+    print("ReslutData:$resultData");
+    //String partnerjourno = resultData['partnerjourno'];
     String payorderno = resultData['payorderno'];
     String txdate = resultData['txdate'];
     return {
-      "partnerjourno": partnerjourno,
+      //"partnerjourno": partnerjourno,
       "payorderno": payorderno,
       "txdate": txdate,
+      "code":'true'
     };
   }
 

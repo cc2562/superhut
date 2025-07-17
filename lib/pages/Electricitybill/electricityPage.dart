@@ -25,6 +25,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
   final hutUserApi = HutUserApi();
   String balance = "-";
   bool isRoomLoading = false, isinit = false;
+  bool isChargeLoading = false;
   final TextEditingController _paymentController = TextEditingController();
 
   @override
@@ -106,6 +107,8 @@ class _ElectricityPageState extends State<ElectricityPage> {
     }
     //二次检测
     bool firstCheck = await electricityApi.checkBeforeRecharge(_roomToChargeId);
+    print('FirstCheck');
+    print(firstCheck);
     if (firstCheck != true) {
       ScaffoldMessenger.of(
         context,
@@ -120,11 +123,11 @@ class _ElectricityPageState extends State<ElectricityPage> {
     );
     print("the orderInfo::::$_orderInfo");
     //完成充值
-    electricityApi.finishRecharge(
-      _orderInfo['payorderno'],
-      _payment,
-      _roomToChargeName,
-    );
+   // electricityApi.finishRecharge(
+   //   _orderInfo['payorderno'],
+   //   _payment,
+   //   _roomToChargeName,
+   // );
     //充值成功
     getNewRoomInfo(_roomToChargeId);
     getBalance();
@@ -235,11 +238,12 @@ class _ElectricityPageState extends State<ElectricityPage> {
                   ),
                   SizedBox(height: 8),
                   TextField(
+                    
                     controller: _paymentController,
                     keyboardType: TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    style: TextStyle(fontSize: 32),
+                    style: TextStyle(fontSize: 32,color: Colors.white),
                     maxLength: 10,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
@@ -274,12 +278,23 @@ class _ElectricityPageState extends State<ElectricityPage> {
                   ),
                   TextButton(
                     onPressed: () async {
+                      
+                      if(isChargeLoading == true){
+                        return;
+                      }
+                      setState(() {
+                        isChargeLoading =true;
+                      });
                       //_launchUrl();
                       if (_paymentController.text.isEmpty) {
                         ScaffoldMessenger.of(
                           context,
                         ).showSnackBar(SnackBar(content: Text('充值金额不能为空')));
+                        setState(() {
+                          isChargeLoading =false;
+                        });
                         return;
+                        
                       }
                       // 层级校验 2: 数字格式校验
                       final amount = double.tryParse(_paymentController.text);
@@ -287,6 +302,9 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         ScaffoldMessenger.of(
                           context,
                         ).showSnackBar(SnackBar(content: Text('请输入有效的数字格式')));
+                        setState(() {
+                          isChargeLoading =false;
+                        });
                         return;
                       }
 
@@ -295,6 +313,9 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         ScaffoldMessenger.of(
                           context,
                         ).showSnackBar(SnackBar(content: Text('金额必须大于0元')));
+                        setState(() {
+                          isChargeLoading =false;
+                        });
                         return;
                       }
 
@@ -304,6 +325,9 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         ScaffoldMessenger.of(
                           context,
                         ).showSnackBar(SnackBar(content: Text('最多支持两位小数')));
+                        setState(() {
+                          isChargeLoading =false;
+                        });
                         return;
                       }
 
@@ -313,12 +337,17 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('单次充值不能超过$maxAmount元')),
                         );
+                        setState(() {
+                          isChargeLoading =false;
+                        });
                         return;
                       }
-
-                      
+                      await chargeMoney();
                       isinit = false;
-                      getHisRoomInfo();
+                      await getHisRoomInfo();
+                      setState(() {
+                        isChargeLoading = false;
+                      });
                     },
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.all(
@@ -331,7 +360,10 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         ),
                       ),
                     ),
-                    child: Text('充值'),
+                    child: isChargeLoading?LoadingAnimationWidget.inkDrop(
+                      color: Colors.white,
+                      size: 10,
+                    ):Text('充值'),
                   ),
                 ],
               ),
