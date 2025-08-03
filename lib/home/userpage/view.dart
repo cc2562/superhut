@@ -51,13 +51,13 @@ class _UserPageState extends State<UserPage> {
 
   Future<Map> getBaseData() async {
     final prefs = await SharedPreferences.getInstance();
-    String name = await prefs.getString('name') ?? "人类";
-    String entranceYear = await prefs.getString('entranceYear') ?? "0001";
-    String academyName = await prefs.getString('academyName') ?? "地球学院";
-    String clsName = await prefs.getString('clsName') ?? "地球1班";
-    String yxzxf = await prefs.getString('yxzxf') ?? "-";
-    String zxfjd = await prefs.getString('zxfjd') ?? "-";
-    String pjxfjd = await prefs.getString('pjxfjd') ?? "-";
+    String name =  prefs.getString('name') ?? "人类";
+    String entranceYear =  prefs.getString('entranceYear') ?? "0001";
+    String academyName =  prefs.getString('academyName') ?? "地球学院";
+    String clsName = prefs.getString('clsName') ?? "地球1班";
+    String yxzxf =  prefs.getString('yxzxf') ?? "-";
+    String zxfjd =  prefs.getString('zxfjd') ?? "-";
+    String pjxfjd =  prefs.getString('pjxfjd') ?? "-";
     Map data = {
       "name": name,
       "entranceYear": entranceYear,
