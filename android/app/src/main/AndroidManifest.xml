@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <application
-            android:label="超级工大"
+            android:label="超级包菜"
             android:name="${applicationName}"
             android:usesCleartextTraffic="true"
             android:enableOnBackInvokedCallback="true"
@@ -38,7 +38,7 @@
 
         <!-- 课程表桌面小组件注册 -->
         <receiver
-            android:name="com.superhut.rice.superhut.CourseTableWidgetProvider"
+            android:name="com.zhiquxy.rice.CourseTableWidgetProvider"
             android:label="课程表"
             android:exported="true">
             <intent-filter>
@@ -46,7 +46,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DELETED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
-                <action android:name="com.superhut.rice.superhut.ACTION_REFRESH" />
+                <action android:name="com.zhiquxy.rice.ACTION_REFRESH" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
@@ -55,7 +55,7 @@
 
         <!-- 快捷按钮桌面小组件注册 -->
         <receiver
-            android:name="com.superhut.rice.superhut.QuickActionWidgetProvider"
+            android:name="com.zhiquxy.rice.QuickActionWidgetProvider"
             android:label="快捷功能"
             android:exported="true">
             <intent-filter>
@@ -63,10 +63,10 @@
                 <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DELETED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
-                <action android:name="com.superhut.rice.superhut.ACTION_DRINK" />
-                <action android:name="com.superhut.rice.superhut.ACTION_BATH" />
-                <action android:name="com.superhut.rice.superhut.ACTION_ELECTRICITY" />
-                <action android:name="com.superhut.rice.superhut.ACTION_SCORE" />
+                <action android:name="com.zhiquxy.rice.ACTION_DRINK" />
+                <action android:name="com.zhiquxy.rice.ACTION_BATH" />
+                <action android:name="com.zhiquxy.rice.ACTION_ELECTRICITY" />
+                <action android:name="com.zhiquxy.rice.ACTION_SCORE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
@@ -75,7 +75,7 @@
 
         <!-- 课程表小组件服务 -->
         <service
-            android:name="com.superhut.rice.superhut.CourseTableWidgetService"
+            android:name="com.zhiquxy.rice.CourseTableWidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="false" />
     </application>

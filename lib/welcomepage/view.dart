@@ -29,8 +29,8 @@ class WelcomepagePage extends StatelessWidget {
         },
         pages: [
           PageViewModel(
-            title: "超级工大",
-            body: "欢迎使用超级工大APP\n与工大签订契约吧~( ⓛ ω ⓛ *)",
+            title: "超级包菜",
+            body: "欢迎使用超级包菜APP\n与工大签订契约吧~( ⓛ ω ⓛ *)",
             image: const Center(child: Icon(Icons.waving_hand, size: 50.0)),
             decoration: const PageDecoration(
               titleTextStyle: TextStyle(color: Colors.orange),

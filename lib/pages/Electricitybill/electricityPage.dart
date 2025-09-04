@@ -728,7 +728,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                                 ),
                                 SizedBox(height: 8),
                                 Text(
-                                  '当检测到${setRoomName}的电费小于预警值后，将会在进入超级工大时进行提醒',
+                                  '当检测到${setRoomName}的电费小于预警值后，将会在进入超级包菜时进行提醒',
                                 ),
                               ],
                             ),

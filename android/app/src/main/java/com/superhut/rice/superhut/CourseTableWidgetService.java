@@ -1,4 +1,4 @@
-package com.superhut.rice.superhut;
+package com.zhiquxy.rice;
 
 import android.annotation.TargetApi;
 import android.content.Context;

@@ -1,4 +1,4 @@
-package com.superhut.rice.superhut;
+package com.zhiquxy.rice;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -16,10 +16,10 @@ import android.widget.RemoteViews;
  */
 public class QuickActionWidgetProvider extends AppWidgetProvider {
 
-    public static final String ACTION_DRINK = "com.superhut.rice.superhut.ACTION_DRINK";
-    public static final String ACTION_BATH = "com.superhut.rice.superhut.ACTION_BATH";
-    public static final String ACTION_ELECTRICITY = "com.superhut.rice.superhut.ACTION_ELECTRICITY";
-    public static final String ACTION_SCORE = "com.superhut.rice.superhut.ACTION_SCORE";
+    public static final String ACTION_DRINK = "com.zhiquxy.rice.ACTION_DRINK";
+    public static final String ACTION_BATH = "com.zhiquxy.rice.ACTION_BATH";
+    public static final String ACTION_ELECTRICITY = "com.zhiquxy.rice.ACTION_ELECTRICITY";
+    public static final String ACTION_SCORE = "com.zhiquxy.rice.ACTION_SCORE";
     
     private static final String TAG = "QuickActionWidgetProv";
     
