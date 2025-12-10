@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/course/coursemain.dart';
 import '../../widget_refresh_service.dart';
 import 'logic.dart';
+import '../../utils/course/getCourse.dart';
 
 class CourseTableView extends StatefulWidget {
   const CourseTableView({super.key});
@@ -323,6 +324,20 @@ class _CourseTableViewState extends State<CourseTableView> {
                                         ),
                                         title: Text(course.location),
                                       ),
+                                      if (course.isExp &&
+                                          course.pcid.isNotEmpty)
+                                        ListTile(
+                                          leading: Icon(
+                                            Ionicons.people_outline,
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                          ),
+                                          title: Text('查看人员名单'),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            _showExpStudents(course.pcid);
+                                          },
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -413,7 +428,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                     children: [
                       Container(
                         padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
-                        height: 350,
+                        height: course.isExp ? 400 : 350,
                         child: ListView(
                           physics: NeverScrollableScrollPhysics(),
                           children: [
@@ -454,6 +469,18 @@ class _CourseTableViewState extends State<CourseTableView> {
                               ),
                               title: Text(course.location),
                             ),
+                            if (course.isExp)
+                              ListTile(
+                                leading: Icon(
+                                  Ionicons.people_outline,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                title: Text('查看人员名单'),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  _showExpStudents(course.pcid);
+                                },
+                              ),
                           ],
                         ),
                       ),
@@ -742,6 +769,74 @@ class _CourseTableViewState extends State<CourseTableView> {
           whenNotDone: Center(child: Text('Waiting...')),
         ),
       ),
+    );
+  }
+
+  Future<void> _showExpStudents(String pcid) async {
+    if (pcid.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('无法获取人员名单：缺少pcid，请在设置页刷新课表')));
+      return;
+    }
+    Map re = await getExpStudentList(pcid);
+    if (re['code']?.toString() != '1') {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('获取人员名单失败')));
+      return;
+    }
+    Map data = re['data'] ?? {};
+    Map baseData = data['baseData'] ?? {};
+    List stu = data['studentList'] ?? [];
+
+    showCupertinoModalBottomSheet(
+      expand: false,
+      context: context,
+      builder:
+          (context) => Material(
+            child: Container(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+              height: 500,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (baseData['kcmc']?.toString() ?? '') +
+                        ' - ' +
+                        (baseData['pcname']?.toString() ?? ''),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  SizedBox(height: 6),
+                  Text('学期: ' + (baseData['xnxqmc']?.toString() ?? '')),
+                  SizedBox(height: 10),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: stu.length,
+                      separatorBuilder: (_, __) => Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        var it = stu[index];
+                        return ListTile(
+                          leading: Icon(
+                            Ionicons.person_outline,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          title: Text(it['xm']?.toString() ?? ''),
+                          subtitle: Text(
+                            '学号: ' +
+                                (it['xh']?.toString() ?? '') +
+                                '  班级: ' +
+                                (it['bj']?.toString() ?? ''),
+                          ),
+                          trailing: Text(it['xbmc']?.toString() ?? ''),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
     );
   }
 }

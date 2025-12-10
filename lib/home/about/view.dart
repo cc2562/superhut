@@ -715,7 +715,7 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                         Divider(),
                         SizedBox(height: 10),
                         Text(
-                          "工大超级APP",
+                          "超级包菜",
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w500,

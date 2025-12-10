@@ -13,6 +13,8 @@ class Course {
   final String location;
   final int startSection;
   final int duration;
+  final bool isExp;
+  final String pcid;
 
   Course({
     required this.name,
@@ -21,6 +23,8 @@ class Course {
     required this.location,
     required this.startSection,
     required this.duration,
+    this.isExp = false,
+    this.pcid = '',
   });
 
   // 将 Course 对象转换为 Map
@@ -32,6 +36,8 @@ class Course {
       'location': location,
       'startSection': startSection,
       'duration': duration,
+      'isExp': isExp,
+      'pcid': pcid,
     };
   }
 
@@ -44,6 +50,8 @@ class Course {
       location: json['location'],
       startSection: json['startSection'],
       duration: json['duration'],
+      isExp: json['isExp'] ?? false,
+      pcid: json['pcid'] ?? '',
     );
   }
 }
@@ -159,6 +167,15 @@ Future<Map<String, List<Course>>> loadClassFormUrl(
   Map<String, List<Course>> courseData = await getOrgDataWeb.getAllWeekClass(
     context,
   );
+  Map<String, List<Course>> expCourseData = await getOrgDataWeb
+      .getAllWeekExpClass(context);
+  expCourseData.forEach((date, list) {
+    if (courseData.containsKey(date)) {
+      courseData[date]!.addAll(list);
+    } else {
+      courseData[date] = list;
+    }
+  });
   // print(courseData);
   return courseData;
 }
