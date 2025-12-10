@@ -251,7 +251,7 @@ class _MyAppState extends State<MyApp> {
       ],
       supportedLocales: [const Locale('zh', 'CH'), const Locale('en', 'US')],
       locale: Locale('zh'),
-      title: '超级湖工大',
+      title: '超级包菜',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       home: _isFirstOpen ? WelcomepagePage() : const HomeviewPage(),
