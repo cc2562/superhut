@@ -1,0 +1,9 @@
+-keep class io.flutter.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-keep class io.flutter.embedding.** { *; }
+-keep class io.flutter.plugin.** { *; }
+-keep class androidx.** { *; }
+-keep class com.google.firebase.** { *; }
+-keep class com.facebook.** { *; }
+-dontwarn io.flutter.**
+-dontwarn androidx.**
