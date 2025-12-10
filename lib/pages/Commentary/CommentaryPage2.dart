@@ -87,16 +87,7 @@ class _commentaryPage2State extends State<commentaryPage2> {
                                   ),
                                 ),
                                 SizedBox(height: 5),
-                                Text(
-                                  theCommentary['ktmc'],
-                                  maxLines: 1,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
+
                                 SizedBox(height: 5),
                                 Text(
                                   '授课教师：${theCommentary['teacherName']}',

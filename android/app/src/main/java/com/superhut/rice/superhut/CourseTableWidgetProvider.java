@@ -40,7 +40,7 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
     public static final String ACTION_AUTO_UPDATE = "com.zhiquxy.rice.ACTION_AUTO_UPDATE_WIDGET";
     private static final String TODAY_FORMAT = "yyyy-MM-dd";
     private static final String TAG = "CourseTableWidgetProv";
-    
+
     // 为课程表小组件使用专用的requestCode基数，避免与快捷功能小组件冲突
     private static final int COURSE_TABLE_BASE_REQUEST_CODE = 20000;
 
@@ -105,6 +105,7 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
         }
     }
 
+    @SuppressWarnings("deprecation")
     // 更新小组件的方法
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         Log.d(TAG, "更新小组件 ID: " + appWidgetId);
@@ -126,14 +127,16 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
             // 添加额外数据确保Intent唯一性
             refreshIntent.putExtra("widget_id", appWidgetId);
             refreshIntent.putExtra("timestamp", System.currentTimeMillis());
-            PendingIntent refreshPendingIntent = createPendingIntent(context, refreshIntent, COURSE_TABLE_BASE_REQUEST_CODE + 1, true);
+            PendingIntent refreshPendingIntent = createPendingIntent(context, refreshIntent,
+                    COURSE_TABLE_BASE_REQUEST_CODE + 1, true);
 
             views.setOnClickPendingIntent(R.id.widget_title, refreshPendingIntent);
 
             // 设置点击打开应用的Intent
             Intent openAppIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
             if (openAppIntent != null) {
-                PendingIntent openAppPendingIntent = createPendingIntent(context, openAppIntent, COURSE_TABLE_BASE_REQUEST_CODE + 2, false);
+                PendingIntent openAppPendingIntent = createPendingIntent(context, openAppIntent,
+                        COURSE_TABLE_BASE_REQUEST_CODE + 2, false);
 
                 // 为空视图设置点击事件
                 views.setOnClickPendingIntent(R.id.widget_empty_view, openAppPendingIntent);
@@ -160,14 +163,20 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
                 // 确保intent是唯一的
                 serviceIntent.setData(Uri.parse("content://widget/" + appWidgetId + "/" + System.currentTimeMillis()));
 
-                views.setRemoteAdapter(R.id.widget_course_list, serviceIntent);
+                try {
+                    views.setRemoteAdapter(appWidgetId, R.id.widget_course_list, serviceIntent);
+                } catch (NoSuchMethodError e) {
+                    views.setRemoteAdapter(R.id.widget_course_list, serviceIntent);
+                }
 
                 // 设置列表项点击事件模板
-                Intent clickIntent = new Intent(context, MainActivity.class);
-                clickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
-                PendingIntent clickPendingIntent = createPendingIntent(context, clickIntent, COURSE_TABLE_BASE_REQUEST_CODE + 3, false);
-
-                views.setPendingIntentTemplate(R.id.widget_course_list, clickPendingIntent);
+                Intent clickIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                if (clickIntent != null) {
+                    clickIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+                    PendingIntent clickPendingIntent = createPendingIntent(context, clickIntent,
+                            COURSE_TABLE_BASE_REQUEST_CODE + 3, false);
+                    views.setPendingIntentTemplate(R.id.widget_course_list, clickPendingIntent);
+                }
 
                 // 设置空视图
                 views.setEmptyView(R.id.widget_course_list, R.id.widget_empty_view);
@@ -176,7 +185,7 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
                 appWidgetManager.updateAppWidget(appWidgetId, views);
 
                 // 然后通知数据变化
-                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widget_course_list);
+                appWidgetManager.notifyAppWidgetViewDataChanged(new int[] { appWidgetId }, R.id.widget_course_list);
             }
 
             Log.d(TAG, "小组件更新完成");
@@ -188,9 +197,10 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
     /**
      * 创建PendingIntent的统一方法，处理不同Android版本的兼容性
      */
-    private static PendingIntent createPendingIntent(Context context, Intent intent, int requestCode, boolean isBroadcast) {
+    private static PendingIntent createPendingIntent(Context context, Intent intent, int requestCode,
+            boolean isBroadcast) {
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             flags |= PendingIntent.FLAG_IMMUTABLE;
         }
@@ -204,7 +214,8 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
 
     /**
      * 获取今日课程
-     * @param context 上下文
+     * 
+     * @param context   上下文
      * @param todayDate 今日日期字符串 (yyyy-MM-dd)
      * @return 课程列表
      */
@@ -264,7 +275,8 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
 
                                 // 设置课程时间
                                 course.timeStart = getSectionStartTime(course.startSection);
-                                course.sectionText = course.startSection + "-" + (course.startSection + course.duration - 1) + "节";
+                                course.sectionText = course.startSection + "-"
+                                        + (course.startSection + course.duration - 1) + "节";
 
                                 courses.add(course);
                                 Log.d(TAG, "添加课程: " + course.name + " 在 " + course.location);
@@ -290,23 +302,36 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
 
     /**
      * 根据节数获取开始时间
+     * 
      * @param section 节数
      * @return 时间字符串
      */
     public static String getSectionStartTime(int section) {
         switch (section) {
-            case 1: return "08:00";
-            case 2: return "08:55";
-            case 3: return "10:00";
-            case 4: return "10:55";
-            case 5: return "14:00";
-            case 6: return "14:55";
-            case 7: return "16:00";
-            case 8: return "16:55";
-            case 9: return "19:00";
-            case 10: return "19:55";
-            case 11: return "21:00";
-            default: return "00:00";
+            case 1:
+                return "08:00";
+            case 2:
+                return "08:55";
+            case 3:
+                return "10:00";
+            case 4:
+                return "10:55";
+            case 5:
+                return "14:00";
+            case 6:
+                return "14:55";
+            case 7:
+                return "16:00";
+            case 8:
+                return "16:55";
+            case 9:
+                return "19:00";
+            case 10:
+                return "19:55";
+            case 11:
+                return "21:00";
+            default:
+                return "00:00";
         }
     }
 
@@ -345,7 +370,7 @@ public class CourseTableWidgetProvider extends AppWidgetProvider {
 
         // 设置新的定时任务
         long firstTrigger = System.currentTimeMillis() + UPDATE_INTERVAL_MS;
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // 对于Android 6.0及以上版本，使用省电的方式
             alarmManager.setAndAllowWhileIdle(AlarmManager.RTC, firstTrigger, pendingIntent);
