@@ -46,18 +46,21 @@ class FunctionDrinkLogic extends GetxController {
 
   /// 获取喝水设备列表
   Future<void> getDeviceList() async {
-    await drinkApi.deviceList().then((value) {
-      if (value[0]["name"] == "Account failure") {
+    await drinkApi.deviceList().then((value) async {
+      if (value.isNotEmpty && value[0]["name"] == "Account failure") {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool("hui798IsLogin", false);
         state.deviceList.clear();
         setChoiceDevice(-1);
         state.drinkStatus.value = false;
         update();
-        checkLogin();
-      } else {
-        state.deviceList.value = value;
-        setChoiceDevice(state.deviceList.isNotEmpty ? 0 : -1);
-        update();
+        Get.off(DrinkLoginPage());
+        return;
       }
+
+      state.deviceList.value = value;
+      setChoiceDevice(state.deviceList.isNotEmpty ? 0 : -1);
+      update();
     });
   }
 
