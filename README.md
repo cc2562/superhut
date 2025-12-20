@@ -9,7 +9,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.7.0+-blue.svg)](https://flutter.dev/)
 [![Dart](https://img.shields.io/badge/Dart-3.7.0+-blue.svg)](https://dart.dev/)
 [![License](https://img.shields.io/badge/GPL-3.0-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.0.6-brightgreen.svg)](pubspec.yaml)
+[![Version](https://img.shields.io/badge/Version-1.1.1-brightgreen.svg)](pubspec.yaml)
 
 </div>
 
@@ -63,7 +63,7 @@ SuperHUT 是专为湖南工业大学学生开发的第三方一站式服务应�
 
 1. **克隆项目**
 ```bash
-git clone https://github.com/your-username/superhut.git
+git clone https://github.com/cc2562/superhut.git
 cd superhut
 ```
 
@@ -121,6 +121,11 @@ flutter build ios --release
 ## 📄 许可证
 
 本项目采用 GPL-3.0 license - 查看 [LICENSE](https://github.com/cc2562/superhut/blob/master/LICENSE) 文件了解详情
+
+## ⚖️ 法律
+
+- [用户协议](assets/UserAgreement.md)
+- [隐私政策](assets/PrivacyAgreement.md)
 
 ## 🙏 致谢
 
