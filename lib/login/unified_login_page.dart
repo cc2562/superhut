@@ -256,9 +256,17 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
       // 与密码登录成功后的处理保持一致：先换取教务系统 token（写入 `token`
       // key，Getcoursepage 依赖它），再关闭登录页跳转课表。SMS 登录只写了
       // hutToken，若跳过这一步新 SMS 用户会拿到空 token 导致课表加载失败。
+      // 仅在换取成功后才把 isFirstOpen 置 false 并跳转，失败则留在登录页让
+      // 用户重试或改用密码登录，避免下次启动跳过登录流程。
       String? token = await HutCasTokenRetriever.getJwxtToken(context);
-      if (token != null) {
-        print('获取到的教务系统Token: $token');
+      if (!mounted) {
+        return;
+      }
+      if (token == null || token.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('未获取到教务系统令牌，请重试或使用密码登录')),
+        );
+        return;
       }
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isFirstOpen', false);
