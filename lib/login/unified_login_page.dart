@@ -3,9 +3,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/bridge/getCoursePage.dart';
 import 'package:superhut/generated/assets.dart';
+import 'package:superhut/login/hut/command.dart';
+import 'package:superhut/login/hut/sms_command.dart';
 import 'package:superhut/login/hut_cas_login_page.dart';
+import 'package:superhut/login/hut_sms_login_enabled.dart';
 import 'package:superhut/login/webview_login_screen.dart';
 import 'package:superhut/utils/hut_user_api.dart';
+
+enum _UnifiedLoginMode { password, sms }
 
 class UnifiedLoginPage extends StatefulWidget {
   const UnifiedLoginPage({Key? key}) : super(key: key);
@@ -21,12 +26,23 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
   late TabController _tabController;
   bool _isLoading = false;
   final HutUserApi _api = HutUserApi();
+  _UnifiedLoginMode _mode = _UnifiedLoginMode.password;
+  final TextEditingController _mobileController = TextEditingController();
+  final TextEditingController _smsCodeController = TextEditingController();
+  final HutSmsLoginCommand _smsCommand = HutSmsLoginCommand();
+  bool _mobilePrefillDone = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadSavedCredentials();
+    _smsCommand.onCountdownChanged = () {
+      if (mounted) {
+        setState(() {});
+      }
+    };
+    _prefillMobile();
   }
 
   @override
@@ -34,7 +50,23 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
     _tabController.dispose();
     _userNoController.dispose();
     _pwdController.dispose();
+    _mobileController.dispose();
+    _smsCodeController.dispose();
+    _smsCommand.onCountdownChanged = null;
+    _smsCommand.dispose();
     super.dispose();
+  }
+
+  // 回填上次短信登录的手机号
+  void _prefillMobile() async {
+    final mobile = await readHutMobile();
+    if (!mounted || mobile.isEmpty || _mobilePrefillDone) {
+      return;
+    }
+    _mobilePrefillDone = true;
+    if (_mobileController.text.isEmpty) {
+      _mobileController.text = mobile;
+    }
   }
 
   // 加载保存的账号密码
@@ -145,6 +177,309 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
     );
   }
 
+  // 发送短信验证码
+  Future<void> _requestSmsCode() async {
+    if (_isLoading) {
+      return;
+    }
+
+    final mobile = _mobileController.text.trim();
+    if (mobile.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请输入手机号')));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final result = await _smsCommand.requestCode(mobile);
+      if (!mounted) {
+        return;
+      }
+      if (result.success) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          SnackBar(content: Text(result.message.isEmpty ? '验证码已发送' : result.message)),
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          SnackBar(content: Text(result.message.isEmpty ? '获取验证码失败' : result.message)),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // 短信验证码登录
+  Future<void> _loginWithSms() async {
+    if (_isLoading) {
+      return;
+    }
+
+    final mobile = _mobileController.text.trim();
+    final code = _smsCodeController.text.trim();
+    if (mobile.isEmpty || code.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请输入手机号和验证码')));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final result = await _smsCommand.login(mobile: mobile, smscode: code);
+      if (!mounted) {
+        return;
+      }
+      if (!result.success) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(
+          SnackBar(content: Text(result.message.isEmpty ? '登录失败' : result.message)),
+        );
+        return;
+      }
+
+      // 与密码登录成功后的处理保持一致
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isFirstOpen', false);
+      Navigator.of(context).pop();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => Getcoursepage(renew: false)),
+        );
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // 密码/验证码登录模式切换
+  List<Widget> _buildModeSwitcher() {
+    final isPassword = _mode == _UnifiedLoginMode.password;
+    return [
+      Row(
+        children: [
+          TextButton(
+            onPressed:
+                isPassword
+                    ? null
+                    : () => setState(() => _mode = _UnifiedLoginMode.password),
+            child: Text(
+              '密码登录',
+              style: TextStyle(
+                fontWeight: isPassword ? FontWeight.bold : FontWeight.normal,
+                color:
+                    isPassword
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).hintColor,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed:
+                isPassword
+                    ? () => setState(() => _mode = _UnifiedLoginMode.sms)
+                    : null,
+            child: Text(
+              '验证码登录',
+              style: TextStyle(
+                fontWeight: !isPassword ? FontWeight.bold : FontWeight.normal,
+                color:
+                    !isPassword
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).hintColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 4),
+    ];
+  }
+
+  // 账号/密码登录表单
+  Column _buildPasswordFields() {
+    return Column(
+      children: [
+        // 账号输入框
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Theme.of(context).highlightColor,
+          ),
+          child: TextField(
+            keyboardType: TextInputType.number,
+            style: const TextStyle(fontSize: 18),
+            maxLength: 13,
+            decoration: const InputDecoration(
+              filled: false,
+              hintText: "手机号",
+              border: InputBorder.none,
+              counterText: '',
+            ),
+            controller: _userNoController,
+          ),
+        ),
+        const SizedBox(height: 10),
+        // 密码输入框
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Theme.of(context).highlightColor,
+          ),
+          child: TextField(
+            style: const TextStyle(fontSize: 18),
+            maxLength: 40,
+            decoration: const InputDecoration(
+              filled: false,
+              hintText: "密码",
+              border: InputBorder.none,
+              counterText: '',
+            ),
+            controller: _pwdController,
+            obscureText: true,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Column(
+          children: [
+            FilledButton(
+              onPressed: _loginWithCAS,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.orangeAccent,
+                minimumSize: const Size.fromHeight(48),
+              ),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('工大平台登录'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // 手机号/验证码登录表单
+  Column _buildSmsFields() {
+    final remaining = _smsCommand.remainingSeconds;
+    final canRequest = remaining <= 0 && !_isLoading;
+
+    return Column(
+      children: [
+        // 手机号输入框
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Theme.of(context).highlightColor,
+          ),
+          child: TextField(
+            keyboardType: TextInputType.phone,
+            style: const TextStyle(fontSize: 18),
+            maxLength: 13,
+            decoration: const InputDecoration(
+              filled: false,
+              hintText: "手机号",
+              border: InputBorder.none,
+              counterText: '',
+            ),
+            controller: _mobileController,
+            onChanged: (_) {
+              _mobilePrefillDone = true;
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        // 验证码输入框 + 获取按钮
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Theme.of(context).highlightColor,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(fontSize: 18),
+                  maxLength: 8,
+                  decoration: const InputDecoration(
+                    filled: false,
+                    hintText: "验证码",
+                    border: InputBorder.none,
+                    counterText: '',
+                  ),
+                  controller: _smsCodeController,
+                ),
+              ),
+              TextButton(
+                onPressed:
+                    canRequest ? () => _requestSmsCode() : null,
+                child: Text(remaining > 0 ? '${remaining}s' : '获取验证码'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Column(
+          children: [
+            FilledButton(
+              onPressed: _isLoading ? null : () => _loginWithSms(),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.orangeAccent,
+                minimumSize: const Size.fromHeight(48),
+              ),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('验证码登录'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,102 +554,12 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
                             ),
                             const SizedBox(height: 20),
 
-                            Column(
-                              children: [
-                                // 账号输入框
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.fromLTRB(
-                                    10,
-                                    0,
-                                    10,
-                                    0,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    color: Theme.of(context).highlightColor,
-                                  ),
-                                  child: TextField(
-                                    keyboardType: TextInputType.number,
-                                    style: const TextStyle(fontSize: 18),
-                                    maxLength: 13,
-                                    decoration: const InputDecoration(
-                                      filled: false,
-                                      hintText: "手机号",
-                                      border: InputBorder.none,
-                                      counterText: '',
-                                    ),
-                                    controller: _userNoController,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
+                            if (kHutSmsLoginEnabled) ..._buildModeSwitcher(),
 
-                                // 密码输入框
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.fromLTRB(
-                                    10,
-                                    0,
-                                    10,
-                                    0,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    color: Theme.of(context).highlightColor,
-                                  ),
-                                  child: TextField(
-                                    style: const TextStyle(fontSize: 18),
-                                    maxLength: 40,
-                                    decoration: const InputDecoration(
-                                      filled: false,
-                                      hintText: "密码",
-                                      border: InputBorder.none,
-                                      counterText: '',
-                                    ),
-                                    controller: _pwdController,
-                                    obscureText: true,
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-
-                                // 登录按钮
-                                Row(
-                                  children: [
-                                    /*
-                                    Expanded(
-                                      child: FilledButton(
-                                        onPressed: _loginWithCredentials,
-                                        child: const Text('教务系统登录'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-
-
-                                     */
-                                    Expanded(
-                                      child: FilledButton(
-                                        onPressed: _loginWithCAS,
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: Colors.orangeAccent,
-                                        ),
-                                        child:
-                                            _isLoading
-                                                ? const SizedBox(
-                                                  width: 20,
-                                                  height: 20,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                        color: Colors.white,
-                                                        strokeWidth: 2,
-                                                      ),
-                                                )
-                                                : const Text('工大平台登录'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                            if (_mode == _UnifiedLoginMode.password)
+                              _buildPasswordFields()
+                            else
+                              _buildSmsFields(),
                             const SizedBox(height: 20),
                             Text(
                               '请使用智慧工大账号进行登录',
