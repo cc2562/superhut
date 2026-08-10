@@ -1,5 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:superhut/utils/hut_user_api.dart';
+
+/// Builds a JWT with the given [payload] (merged into a default header+payload
+/// shape) for testing [isHutJwtExpired]. The signature segment is arbitrary.
+String _buildJwt(Map<String, dynamic> payload) {
+  final header = base64Url.encode(utf8.encode('{"alg":"HS256"}'));
+  final body = base64Url.encode(utf8.encode(jsonEncode(payload)));
+  const signature = 'sig';
+  return '$header.$body.$signature';
+}
 
 void main() {
   test('buildHutSmsInitPath is under /token/passwordless', () {
@@ -125,5 +136,102 @@ void main() {
     expect(isHutSmsSessionInvalidMessage('nonce invalid'), isTrue);
     expect(isHutSmsSessionInvalidMessage('验证码已失效，请重新获取'), isTrue);
     expect(isHutSmsSessionInvalidMessage('手机号错误'), isFalse);
+  });
+
+  group('isHutJwtExpired', () {
+    test('returns false for a JWT whose exp is in the future', () {
+      final futureExp = (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 3600;
+      final token = _buildJwt({'exp': futureExp});
+      expect(isHutJwtExpired(token), isFalse);
+    });
+
+    test('returns true for a JWT whose exp has passed', () {
+      final pastExp = (DateTime.now().millisecondsSinceEpoch ~/ 1000) - 3600;
+      final token = _buildJwt({'exp': pastExp});
+      expect(isHutJwtExpired(token), isTrue);
+    });
+
+    test('respects clockSkew tolerance', () {
+      // exp is 30s in the future; with 60s skew it is still considered expired.
+      final exp = (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 30;
+      final token = _buildJwt({'exp': exp});
+      expect(isHutJwtExpired(token, clockSkew: const Duration(seconds: 60)),
+          isTrue);
+      expect(isHutJwtExpired(token), isFalse);
+    });
+
+    test('returns true for a non-JWT string (no dots)', () {
+      expect(isHutJwtExpired('not-a-jwt'), isTrue);
+      expect(isHutJwtExpired(''), isTrue);
+    });
+
+    test('returns true when payload is not valid base64/JSON', () {
+      expect(isHutJwtExpired('header.!!!.sig'), isTrue);
+    });
+
+    test('returns true when exp is missing', () {
+      final token = _buildJwt({'sub': 'no-exp'});
+      expect(isHutJwtExpired(token), isTrue);
+    });
+
+    test('returns true when exp is non-numeric', () {
+      final token = _buildJwt({'exp': 'soon'});
+      expect(isHutJwtExpired(token), isTrue);
+    });
+  });
+
+  group('buildHutRefreshPath', () {
+    test('puts refreshToken in query under /token/refresh', () {
+      final path = buildHutRefreshPath(refreshToken: 'rt-123');
+      expect(path.startsWith('/token/refresh?'), isTrue);
+      expect(path, contains('refreshToken=rt-123'));
+    });
+
+    test('url-encodes the refresh token', () {
+      final path = buildHutRefreshPath(refreshToken: 'a b+c');
+      expect(path, contains('refreshToken=a+b%2Bc'));
+    });
+  });
+
+  group('parseHutRefreshResponse', () {
+    test('succeeds when code 0 and idToken present', () {
+      final result = parseHutRefreshResponse({
+        'code': 0,
+        'data': {'idToken': 'new-id', 'refreshToken': 'new-ref'},
+      });
+      expect(result.success, isTrue);
+      expect(result.nonce, 'new-ref');
+    });
+
+    test('succeeds without a rotated refreshToken', () {
+      final result = parseHutRefreshResponse({
+        'code': 0,
+        'data': {'idToken': 'new-id'},
+      });
+      expect(result.success, isTrue);
+      expect(result.nonce, isNull);
+    });
+
+    test('fails on non-zero code', () {
+      final result = parseHutRefreshResponse({
+        'code': -1,
+        'message': 'invalid refresh token',
+        'data': null,
+      });
+      expect(result.success, isFalse);
+    });
+
+    test('fails when idToken missing', () {
+      final result = parseHutRefreshResponse({
+        'code': 0,
+        'data': {'refreshToken': 'ref'},
+      });
+      expect(result.success, isFalse);
+    });
+
+    test('fails on non-Map input', () {
+      expect(parseHutRefreshResponse(null).success, isFalse);
+      expect(parseHutRefreshResponse('string').success, isFalse);
+    });
   });
 }

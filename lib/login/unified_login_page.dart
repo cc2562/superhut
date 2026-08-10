@@ -253,7 +253,13 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
         return;
       }
 
-      // 与密码登录成功后的处理保持一致
+      // 与密码登录成功后的处理保持一致：先换取教务系统 token（写入 `token`
+      // key，Getcoursepage 依赖它），再关闭登录页跳转课表。SMS 登录只写了
+      // hutToken，若跳过这一步新 SMS 用户会拿到空 token 导致课表加载失败。
+      String? token = await HutCasTokenRetriever.getJwxtToken(context);
+      if (token != null) {
+        print('获取到的教务系统Token: $token');
+      }
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isFirstOpen', false);
       Navigator.of(context).pop();

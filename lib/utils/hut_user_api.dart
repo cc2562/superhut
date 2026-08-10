@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -236,6 +236,110 @@ HutAuthResult parseHutSmsLoginTokenData(dynamic data) {
     success: true,
     message: message == _kDefaultHutAuthFailureMessage ? '' : message,
     needMfa: needMfa,
+  );
+}
+
+/// Persisted auth method marker (SharedPreferences key `hutAuthMethod`).
+///
+/// Distinguishes password vs SMS sessions explicitly so [checkTokenValidity]
+/// and [refreshToken] can branch on how the session was established, instead
+/// of inferring it from whether `hutUsername` is empty (which breaks on
+/// account switch: a prior password login leaves `hutUsername` around and a
+/// fresh SMS token would be re-validated with the stale username).
+const String kHutAuthMethodPassword = 'password';
+const String kHutAuthMethodSms = 'sms';
+
+/// Builds the mycas refresh-token path.
+///
+/// NOTE: the exact mycas refresh endpoint is a reverse-engineering gap — the
+/// official client stores `refreshToken` but this codebase has never sent it.
+/// Keep it as a single constant so the path can be corrected in one place once
+/// confirmed via a captured request. The caller degrades safely on any
+/// failure (clears login state), so a wrong path just forces re-auth rather
+/// than corrupting the session.
+String buildHutRefreshPath({required String refreshToken}) {
+  return '/token/refresh?refreshToken=${Uri.encodeQueryComponent(refreshToken)}';
+}
+
+/// True when [token] is a JWT whose `exp` has passed (or it is malformed).
+///
+/// SMS sessions carry a mycas `idToken` (a JWT). [checkTokenValidity] uses this
+/// to decide validity without a network round-trip, so an expired/revoked/
+/// corrupted token is no longer permanently trusted. Malformed input (not a
+/// 3-segment JWT, bad base64, non-JSON payload, missing/invalid `exp`) returns
+/// `true` — i.e. treated as expired — so the caller clears login state and
+/// asks the user to re-authenticate, rather than silently trusting garbage.
+/// [clockSkew] lets callers tolerate minor client/server clock drift.
+bool isHutJwtExpired(String token, {Duration clockSkew = Duration.zero}) {
+  final parts = token.split('.');
+  if (parts.length != 3) {
+    return true;
+  }
+  final payload = parts[1];
+  Uint8List bytes;
+  try {
+    bytes = base64Url.decode(base64Url.normalize(payload));
+  } catch (_) {
+    return true;
+  }
+  dynamic decoded;
+  try {
+    decoded = jsonDecode(utf8.decode(bytes));
+  } catch (_) {
+    return true;
+  }
+  if (decoded is! Map) {
+    return true;
+  }
+  final exp = decoded['exp'];
+  if (exp == null) {
+    return true;
+  }
+  final expSeconds = num.tryParse(exp.toString());
+  if (expSeconds == null) {
+    return true;
+  }
+  final expMillis = (expSeconds * 1000).toInt();
+  final nowMillis = DateTime.now().millisecondsSinceEpoch;
+  return expMillis <= nowMillis + clockSkew.inMilliseconds;
+}
+
+/// Parses a mycas refresh-token response into [HutAuthResult].
+///
+/// Mirrors the login envelope: `{"code":0,"data":{"idToken":...,"refreshToken":...}}`.
+/// On success the caller persists the new tokens; on failure the caller clears
+/// login state. The new `refreshToken` (if any) is surfaced via [nonce] to avoid
+/// widening [HutAuthResult] for a single caller — `refreshToken()` reads it
+/// back out and stores it.
+HutAuthResult parseHutRefreshResponse(dynamic data) {
+  if (data is! Map) {
+    return const HutAuthResult(
+      success: false,
+      message: _kDefaultHutAuthFailureMessage,
+    );
+  }
+
+  final envelope = Map<dynamic, dynamic>.from(data);
+  final payload = envelope['data'];
+  final payloadMap = payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
+  final message = _hutAuthMessage(envelope, payloadMap);
+
+  if (!_isHutSuccessCode(envelope['code']) || payloadMap == null) {
+    return HutAuthResult(success: false, message: message);
+  }
+
+  final idToken = payloadMap['idToken']?.toString().trim() ?? '';
+  if (idToken.isEmpty) {
+    return HutAuthResult(success: false, message: message);
+  }
+
+  // Reuse `nonce` to carry the rotated refresh token back to the caller.
+  final nextRefreshToken = payloadMap['refreshToken']?.toString().trim() ?? '';
+
+  return HutAuthResult(
+    success: true,
+    message: message == _kDefaultHutAuthFailureMessage ? '' : message,
+    nonce: nextRefreshToken.isEmpty ? null : nextRefreshToken,
   );
 }
 
@@ -560,7 +664,7 @@ class HutUserApi {
         ),
         data: '',
       );
-      return await _completeSmsLoginFromResponseData(
+      return await completeSmsLoginFromResponseData(
         responseData: response.data,
         mobile: normalized,
         deviceId: deviceId,
@@ -570,7 +674,8 @@ class HutUserApi {
     }
   }
 
-  Future<HutAuthResult> _completeSmsLoginFromResponseData({
+  @visibleForTesting
+  Future<HutAuthResult> completeSmsLoginFromResponseData({
     required dynamic responseData,
     required String mobile,
     required String deviceId,
@@ -598,6 +703,13 @@ class HutUserApi {
     // SMS sessions have no password; persist mobile so the page can refill it.
     prefs.setString('hutMobile', mobile);
     prefs.setString('loginType', 'hut');
+    // Clear any leftover password credentials from a prior password login so
+    // checkTokenValidity/refreshToken don't reuse a stale username with the
+    // fresh SMS token (which would falsely invalidate the session on account
+    // switch). Mark the auth method explicitly instead of inferring it.
+    prefs.remove('hutUsername');
+    prefs.remove('hutPassword');
+    prefs.setString('hutAuthMethod', kHutAuthMethodSms);
     prefs.setBool('hutIsLogin', true);
     _token['idToken'] = idToken;
     return const HutAuthResult(success: true, message: '登录成功');
@@ -660,6 +772,7 @@ class HutUserApi {
     prefs.setString('hutUsername', username);
     prefs.setString('hutPassword', password);
     prefs.setString('loginType', 'hut');
+    prefs.setString('hutAuthMethod', kHutAuthMethodPassword);
     prefs.setBool('hutIsLogin', true);
     print(response.data);
     print("结束！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！");
@@ -684,16 +797,28 @@ class HutUserApi {
       return false;
     }
 
-    // SMS/passwordless sessions never persist hutUsername (they persist
-    // hutMobile instead). The official iOS client does NOT run
-    // userOnlineDetect right after an SMS login — it goes straight to
-    // safety-check completion. userOnlineDetect with an empty username is
-    // rejected by mycas ({"code":-1,...,"username error"}), which made a fresh
-    // SMS token be falsely flagged as invalid. Trust fresh SMS tokens.
     final prefs = await SharedPreferences.getInstance();
+    // Branch on the explicit auth-method marker. Fall back to inferring from
+    // hutUsername for sessions persisted before hutAuthMethod existed, so the
+    // migration is transparent.
+    final authMethod = prefs.getString('hutAuthMethod') ??
+        (prefs.getString('hutUsername')?.trim().isNotEmpty == true
+            ? kHutAuthMethodPassword
+            : kHutAuthMethodSms);
+
+    if (authMethod == kHutAuthMethodSms) {
+      // SMS sessions carry a JWT idToken; validate its format + exp locally
+      // instead of permanently trusting any non-empty token. An expired,
+      // revoked, or corrupted token now returns false so the caller can
+      // refresh or re-authenticate. No network round-trip: userOnlineDetect
+      // needs a username SMS sessions don't have.
+      return !isHutJwtExpired(token);
+    }
+
+    // Password sessions: keep the server-side userOnlineDetect check.
     String username = prefs.getString('hutUsername')?.trim() ?? '';
     if (username.isEmpty) {
-      return true;
+      return false;
     }
 
     String deviceId = prefs.getString('deviceId') ?? 'null';
@@ -714,13 +839,11 @@ class HutUserApi {
     response = await dio.post(url, data: {});
     Map data = response.data;
     bool isValid = false;
-    //  print(data);
     if (data['code'] == -1) {
       isValid = false;
     } else if (data['code'] == 0) {
       isValid = true;
     }
-    //  print(data['code']);
     return isValid;
   }
 
@@ -1138,13 +1261,14 @@ class HutUserApi {
   Future<List<Map>> getFunctionList() async {
     bool isLogin = await checkTokenValidity();
     if (!isLogin) {
-      print("LOG");
-      final prefs = await SharedPreferences.getInstance();
-      String _userName = prefs.getString('hutUsername') ?? "";
-      print(_userName);
-      String _orgPassword = prefs.getString('hutPassword') ?? "";
-      print(_orgPassword);
-      await userLogin(username: _userName, password: _orgPassword);
+      // Token invalid/expired: try to refresh (handles both password re-login
+      // and SMS refresh-token). If refresh fails the session is cleared —
+      // return empty so the caller surfaces re-authentication instead of
+      // hammering the portal API with a dead token.
+      final refreshed = await refreshToken();
+      if (!refreshed) {
+        return [];
+      }
     }
     String token = await getToken();
     String url = "/portal-api/v1/service/list";
@@ -1202,15 +1326,75 @@ class HutUserApi {
 
   //刷新Token
   Future<bool> refreshToken() async {
-    print("startRe");
-    //bool isLogin = await checkTokenValidity();
-    print("LOG");
     final prefs = await SharedPreferences.getInstance();
+    final authMethod = prefs.getString('hutAuthMethod') ??
+        (prefs.getString('hutUsername')?.trim().isNotEmpty == true
+            ? kHutAuthMethodPassword
+            : kHutAuthMethodSms);
+
+    if (authMethod == kHutAuthMethodSms) {
+      return _refreshSmsToken(prefs);
+    }
+
+    // Password sessions: re-run password login with stored credentials.
     String _userName = prefs.getString('hutUsername') ?? "";
-    print(_userName);
     String _orgPassword = prefs.getString('hutPassword') ?? "";
-    print(_orgPassword);
-    await userLogin(username: _userName, password: _orgPassword);
-    return true;
+    if (_userName.isEmpty || _orgPassword.isEmpty) {
+      return false;
+    }
+    return userLogin(username: _userName, password: _orgPassword);
+  }
+
+  /// Refreshes an SMS/passwordless session via the mycas refresh-token
+  /// endpoint. On success persists the rotated tokens; on any failure clears
+  /// the login state (keeping `hutMobile` so the user can re-request a code
+  /// without retyping the number) and returns false so callers surface
+  /// re-authentication.
+  Future<bool> _refreshSmsToken(SharedPreferences prefs) async {
+    final refreshToken = prefs.getString('hutRefreshToken') ?? '';
+    if (refreshToken.isEmpty) {
+      await _clearSmsLoginState(prefs);
+      return false;
+    }
+    try {
+      final response = await _smsLoginDio().post(
+        buildHutRefreshPath(refreshToken: refreshToken),
+        data: '',
+      );
+      final result = parseHutRefreshResponse(response.data);
+      if (!result.success) {
+        await _clearSmsLoginState(prefs);
+        return false;
+      }
+      // parseHutRefreshResponse carries the rotated refresh token via nonce.
+      final newIdToken = result.nonce == null
+          ? ''
+          : (response.data is Map
+              ? (response.data['data']?['idToken']?.toString().trim() ?? '')
+              : '');
+      if (newIdToken.isEmpty) {
+        await _clearSmsLoginState(prefs);
+        return false;
+      }
+      prefs.setString('hutToken', newIdToken);
+      if (result.nonce != null && result.nonce!.isNotEmpty) {
+        prefs.setString('hutRefreshToken', result.nonce!);
+      }
+      prefs.setBool('hutIsLogin', true);
+      _token['idToken'] = newIdToken;
+      return true;
+    } catch (_) {
+      await _clearSmsLoginState(prefs);
+      return false;
+    }
+  }
+
+  /// Clears SMS login state but keeps `hutMobile` for re-requesting a code.
+  Future<void> _clearSmsLoginState(SharedPreferences prefs) async {
+    prefs.remove('hutToken');
+    prefs.remove('hutRefreshToken');
+    prefs.remove('hutAuthMethod');
+    prefs.setBool('hutIsLogin', false);
+    _token['idToken'] = '';
   }
 }
