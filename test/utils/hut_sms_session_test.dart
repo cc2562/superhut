@@ -93,12 +93,12 @@ void main() {
     });
   });
 
-  group('refreshToken SMS empty-refresh-token degrades safely', () {
-    test('clears login state but keeps hutMobile', () async {
+  group('refreshToken SMS degrades safely', () {
+    test('clears login state but keeps hutMobile when token invalid', () async {
       SharedPreferences.setMockInitialValues({
         'hutAuthMethod': kHutAuthMethodSms,
-        'hutToken': 'dead-token',
-        'hutRefreshToken': '',
+        'hutToken': 'not-a-jwt',
+        'hutRefreshToken': 'ref',
         'hutMobile': '13800138000',
         'hutIsLogin': true,
       });
@@ -113,6 +113,24 @@ void main() {
       expect(prefs.getBool('hutIsLogin'), isFalse);
       // Mobile preserved so the user can re-request a code without retyping.
       expect(prefs.getString('hutMobile'), '13800138000');
+    });
+
+    test('keeps a valid token untouched and reports usable', () async {
+      final futureExp = (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 3600;
+      SharedPreferences.setMockInitialValues({
+        'hutAuthMethod': kHutAuthMethodSms,
+        'hutToken': _buildJwt({'exp': futureExp}),
+        'hutRefreshToken': 'ref',
+        'hutMobile': '13800138000',
+        'hutIsLogin': true,
+      });
+
+      final ok = await HutUserApi().refreshToken();
+      expect(ok, isTrue);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('hutToken'), isNotNull);
+      expect(prefs.getString('hutAuthMethod'), kHutAuthMethodSms);
+      expect(prefs.getBool('hutIsLogin'), isTrue);
     });
   });
 }
