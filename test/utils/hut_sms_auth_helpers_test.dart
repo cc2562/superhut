@@ -61,7 +61,11 @@ void main() {
   test('parseHutSmsInitResponse reads nonce on code 0', () {
     final result = parseHutSmsInitResponse({
       'code': 0,
-      'data': {'success': true, 'message': 'SMS init success', 'nonce': 'oUOHnB'},
+      'data': {
+        'success': true,
+        'message': 'SMS init success',
+        'nonce': 'oUOHnB',
+      },
     });
     expect(result.success, isTrue);
     expect(result.nonce, 'oUOHnB');
@@ -120,7 +124,10 @@ void main() {
       isTrue,
     );
     expect(
-      hutResponseIndicatesNeedMfa({'code': 0, 'data': {'idToken': 't'}}),
+      hutResponseIndicatesNeedMfa({
+        'code': 0,
+        'data': {'idToken': 't'},
+      }),
       isFalse,
     );
   });
@@ -155,8 +162,10 @@ void main() {
       // exp is 30s in the future; with 60s skew it is still considered expired.
       final exp = (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 30;
       final token = _buildJwt({'exp': exp});
-      expect(isHutJwtExpired(token, clockSkew: const Duration(seconds: 60)),
-          isTrue);
+      expect(
+        isHutJwtExpired(token, clockSkew: const Duration(seconds: 60)),
+        isTrue,
+      );
       expect(isHutJwtExpired(token), isFalse);
     });
 
@@ -178,5 +187,10 @@ void main() {
       final token = _buildJwt({'exp': 'soon'});
       expect(isHutJwtExpired(token), isTrue);
     });
+  });
+
+  test('extractHutJwtSubject returns the account from sub', () {
+    final token = _buildJwt({'sub': ' 20260001 '});
+    expect(extractHutJwtSubject(token), '20260001');
   });
 }

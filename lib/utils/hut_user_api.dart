@@ -155,7 +155,8 @@ HutAuthResult parseHutSmsInitResponse(dynamic data) {
 
   final envelope = Map<dynamic, dynamic>.from(data);
   final payload = envelope['data'];
-  final payloadMap = payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
+  final payloadMap =
+      payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
   final message = _hutAuthMessage(envelope, payloadMap);
   final needMfa = hutResponseIndicatesNeedMfa(envelope);
 
@@ -186,7 +187,8 @@ HutAuthResult parseHutSmsSendResponse(dynamic data) {
 
   final envelope = Map<dynamic, dynamic>.from(data);
   final payload = envelope['data'];
-  final payloadMap = payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
+  final payloadMap =
+      payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
   final message = _hutAuthMessage(envelope, payloadMap);
   final needMfa = hutResponseIndicatesNeedMfa(envelope);
 
@@ -214,7 +216,8 @@ HutAuthResult parseHutSmsLoginTokenData(dynamic data) {
 
   final envelope = Map<dynamic, dynamic>.from(data);
   final payload = envelope['data'];
-  final payloadMap = payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
+  final payloadMap =
+      payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
   final message = _hutAuthMessage(envelope, payloadMap);
   final needMfa = hutResponseIndicatesNeedMfa(envelope);
 
@@ -249,15 +252,46 @@ HutAuthResult parseHutSmsLoginTokenData(dynamic data) {
 const String kHutAuthMethodPassword = 'password';
 const String kHutAuthMethodSms = 'sms';
 
+typedef HutOnlineTokenValidator =
+    Future<bool> Function({
+      required String token,
+      required String account,
+      required String deviceId,
+    });
+
+/// Extracts the stable account identifier used by mycas from a JWT `sub`.
+///
+/// The official app stores the raw token unchanged, then decodes only its
+/// claims and persists `sub` separately for `userOnlineDetect`.
+String? extractHutJwtSubject(String token) {
+  final parts = token.split('.');
+  if (parts.length != 3) {
+    return null;
+  }
+  try {
+    final payload = utf8.decode(
+      base64Url.decode(base64Url.normalize(parts[1])),
+    );
+    final decoded = jsonDecode(payload);
+    if (decoded is! Map) {
+      return null;
+    }
+    final subject = decoded['sub']?.toString().trim() ?? '';
+    return subject.isEmpty ? null : subject;
+  } catch (_) {
+    return null;
+  }
+}
+
 /// True when [token] is a JWT whose `exp` has passed (or it is malformed).
 ///
 /// SMS sessions carry a mycas `idToken` (a JWT). [checkTokenValidity] uses this
-/// to decide validity without a network round-trip, so an expired/revoked/
-/// corrupted token is no longer permanently trusted. Malformed input (not a
-/// 3-segment JWT, bad base64, non-JSON payload, missing/invalid `exp`) returns
-/// `true` — i.e. treated as expired — so the caller clears login state and
-/// asks the user to re-authenticate, rather than silently trusting garbage.
-/// [clockSkew] lets callers tolerate minor client/server clock drift.
+/// as a fail-fast check before `userOnlineDetect`, so an expired or corrupted
+/// token never reaches the server. Malformed input (not a 3-segment JWT, bad
+/// base64, non-JSON payload, missing/invalid `exp`) returns `true` — i.e.
+/// treated as expired — so the caller asks the user to re-authenticate rather
+/// than silently trusting garbage. [clockSkew] lets callers tolerate minor
+/// client/server clock drift.
 bool isHutJwtExpired(String token, {Duration clockSkew = Duration.zero}) {
   final parts = token.split('.');
   if (parts.length != 3) {
@@ -423,7 +457,8 @@ HutAuthResult hutAuthResultFromTransportError({
     if (responseData is Map) {
       final envelope = Map<dynamic, dynamic>.from(responseData);
       final payload = envelope['data'];
-      final payloadMap = payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
+      final payloadMap =
+          payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
       final message = _hutAuthMessage(envelope, payloadMap);
       return HutAuthResult(
         success: false,
@@ -465,6 +500,11 @@ class FunctionItem {
 }
 
 class HutUserApi {
+  HutUserApi({HutOnlineTokenValidator? onlineTokenValidator})
+    : _onlineTokenValidator = onlineTokenValidator;
+
+  final HutOnlineTokenValidator? _onlineTokenValidator;
+
   String generateDeviceIdAlphabet() {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     final random = Random.secure();
@@ -523,7 +563,8 @@ class HutUserApi {
   static const String _kHutAppId = 'com.supwisdom.hut';
   // Matches the official iOS client version surfaced in X-Device-Infos.
   static const String _kHutAppVersion = '1.1.8';
-  static const String _kHutLoginUserAgent = 'SWSuperApp/1.1.3(XiaomidadaXiaomi15)';
+  static const String _kHutLoginUserAgent =
+      'SWSuperApp/1.1.3(XiaomidadaXiaomi15)';
 
   /// Shared Dio for the mycas login/passwordless endpoints.
   ///
@@ -639,27 +680,33 @@ class HutUserApi {
     }
     // CRITICAL: store the RAW data.idToken, not a JWT-decoded variant, so
     // checkTokenValidity/CAS send exactly the token mycas issued.
-    final idToken = data['idToken']?.toString().trim() ?? '';
-    if (idToken.isEmpty) {
+    final idToken = data['idToken']?.toString() ?? '';
+    if (idToken.trim().isEmpty) {
       return const HutAuthResult(success: false, message: '登录失败，请稍后重试');
     }
     final refreshToken = data['refreshToken']?.toString().trim() ?? '';
+    final account = extractHutJwtSubject(idToken);
 
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('hutToken', idToken);
-    prefs.setString('hutRefreshToken', refreshToken);
-    prefs.setString('deviceId', deviceId);
+    await prefs.setString('hutToken', idToken);
+    await prefs.setString('hutRefreshToken', refreshToken);
+    if (account == null) {
+      await prefs.remove('hutAccount');
+    } else {
+      await prefs.setString('hutAccount', account);
+    }
+    await prefs.setString('deviceId', deviceId);
     // SMS sessions have no password; persist mobile so the page can refill it.
-    prefs.setString('hutMobile', mobile);
-    prefs.setString('loginType', 'hut');
+    await prefs.setString('hutMobile', mobile);
+    await prefs.setString('loginType', 'hut');
     // Clear any leftover password credentials from a prior password login so
     // checkTokenValidity/refreshToken don't reuse a stale username with the
     // fresh SMS token (which would falsely invalidate the session on account
     // switch). Mark the auth method explicitly instead of inferring it.
-    prefs.remove('hutUsername');
-    prefs.remove('hutPassword');
-    prefs.setString('hutAuthMethod', kHutAuthMethodSms);
-    prefs.setBool('hutIsLogin', true);
+    await prefs.remove('hutUsername');
+    await prefs.remove('hutPassword');
+    await prefs.setString('hutAuthMethod', kHutAuthMethodSms);
+    await prefs.setBool('hutIsLogin', true);
     _token['idToken'] = idToken;
     return const HutAuthResult(success: true, message: '登录成功');
   }
@@ -750,50 +797,53 @@ class HutUserApi {
     // Branch on the explicit auth-method marker. Fall back to inferring from
     // hutUsername for sessions persisted before hutAuthMethod existed, so the
     // migration is transparent.
-    final authMethod = prefs.getString('hutAuthMethod') ??
+    final authMethod =
+        prefs.getString('hutAuthMethod') ??
         (prefs.getString('hutUsername')?.trim().isNotEmpty == true
             ? kHutAuthMethodPassword
             : kHutAuthMethodSms);
 
-    if (authMethod == kHutAuthMethodSms) {
-      // SMS sessions carry a JWT idToken; validate its format + exp locally
-      // instead of permanently trusting any non-empty token. An expired,
-      // revoked, or corrupted token now returns false so the caller can
-      // refresh or re-authenticate. No network round-trip: userOnlineDetect
-      // needs a username SMS sessions don't have.
-      return !isHutJwtExpired(token);
-    }
-
-    // Password sessions: keep the server-side userOnlineDetect check.
-    String username = prefs.getString('hutUsername')?.trim() ?? '';
-    if (username.isEmpty) {
+    if (authMethod == kHutAuthMethodSms && isHutJwtExpired(token)) {
       return false;
     }
 
-    String deviceId = prefs.getString('deviceId') ?? 'null';
+    var account =
+        authMethod == kHutAuthMethodSms
+            ? prefs.getString('hutAccount')?.trim() ?? ''
+            : prefs.getString('hutUsername')?.trim() ?? '';
+    if (authMethod == kHutAuthMethodSms && account.isEmpty) {
+      account = extractHutJwtSubject(token) ?? '';
+      if (account.isNotEmpty) {
+        await prefs.setString('hutAccount', account);
+      }
+    }
+    if (account.isEmpty) {
+      return false;
+    }
+
+    final deviceId = prefs.getString('deviceId') ?? 'null';
+    final validator = _onlineTokenValidator;
+    if (validator != null) {
+      return validator(token: token, account: account, deviceId: deviceId);
+    }
+
     String url =
-        "/token/login/userOnlineDetect?appId=com.supwisdom.hut&deviceId=$deviceId&username=$username";
+        "/token/login/userOnlineDetect?appId=com.supwisdom.hut&deviceId=$deviceId&username=$account";
     final dio = Dio();
-    dio.options.baseUrl = 'https://mycas.hut.edu.cn';
+    dio.options.baseUrl = _kMyCasBaseUrl;
     dio.options.connectTimeout = Duration(seconds: 5);
     dio.options.receiveTimeout = Duration(seconds: 3);
     dio.options.headers = {
-      'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64',
+      'User-Agent': _kHutLoginUserAgent,
       'Accept': '*/*',
       'Accept-Encoding': 'gzip, deflate, br',
       'X-Id-Token': token,
+      'X-Device-Infos':
+          'packagename=$_kHutAppId;version=$_kHutAppVersion;system=iOS',
     };
-    Response response;
-    response = await dio.post(url, data: {});
-    Map data = response.data;
-    bool isValid = false;
-    if (data['code'] == -1) {
-      isValid = false;
-    } else if (data['code'] == 0) {
-      isValid = true;
-    }
-    return isValid;
+    final response = await dio.post(url, data: {});
+    final data = response.data;
+    return data is Map && data['code']?.toString() == '0';
   }
 
   /// 设置Token
@@ -1013,7 +1063,7 @@ class HutUserApi {
           Map resultData = {
             "result": data["resultData"]["result"],
             "message": data["resultData"]["message"],
-            "success": data["success"]
+            "success": data["success"],
           };
           return resultData;
         });
@@ -1276,22 +1326,23 @@ class HutUserApi {
   //刷新Token
   Future<bool> refreshToken() async {
     final prefs = await SharedPreferences.getInstance();
-    final authMethod = prefs.getString('hutAuthMethod') ??
+    final authMethod =
+        prefs.getString('hutAuthMethod') ??
         (prefs.getString('hutUsername')?.trim().isNotEmpty == true
             ? kHutAuthMethodPassword
             : kHutAuthMethodSms);
 
     if (authMethod == kHutAuthMethodSms) {
-      // SMS token is long-lived (official research shows it never expires).
-      // Nothing to refresh; re-validate the JWT and only clear state when it
-      // is corrupted/empty so callers surface re-authentication. Return true
-      // when the session is still usable.
-      final token = await getToken();
-      if (isHutJwtExpired(token)) {
-        prefs.remove('hutToken');
-        prefs.remove('hutRefreshToken');
-        prefs.remove('hutAuthMethod');
-        prefs.setBool('hutIsLogin', false);
+      // The official SMS flow exposes no confirmed refresh call. Revalidate
+      // locally and with userOnlineDetect; only a definite invalid verdict
+      // logs the user out. Network failures propagate without touching state.
+      final isValid = await checkTokenValidity();
+      if (!isValid) {
+        await prefs.remove('hutToken');
+        await prefs.remove('hutRefreshToken');
+        await prefs.remove('hutAccount');
+        await prefs.remove('hutAuthMethod');
+        await prefs.setBool('hutIsLogin', false);
         _token['idToken'] = '';
         return false;
       }
