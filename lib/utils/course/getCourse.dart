@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../withhttp.dart';
 import 'coursemain.dart';
+
+typedef CourseWeekProgress = void Function(int completed, int total);
 
 class GetSingleWeekClass {
   final Map orgdata;
@@ -211,6 +211,7 @@ class GetOrgDataWeb {
   List weekList = [];
   late Map<String, List<Course>> courseData = {};
   String? semesterId;
+  String? firstDay;
 
   GetOrgDataWeb({required this.token});
 
@@ -219,109 +220,89 @@ class GetOrgDataWeb {
   }
 
   //获取总周数和当前周数
-  Future<String> getTeachingWeek() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> getTeachingWeek() async {
     await configureDioFromStorage();
 
-    try {
-      Response response;
-      response = await postDioWithCookie('/njwhd/teachingWeek', {});
-      Map data = response.data;
+    final Response response = await postDioWithCookie(
+      '/njwhd/teachingWeek',
+      {},
+    );
+    if (response.data is! Map) {
+      throw const FormatException('教学周数据格式不正确');
+    }
+    final Map data = response.data;
 
-      // 安全地处理nowWeek字段
-      var nowWeekValue = data['nowWeek'];
-      if (nowWeekValue is String) {
-        nowWeek = int.parse(nowWeekValue);
-      } else if (nowWeekValue is int) {
-        nowWeek = nowWeekValue;
-      } else {
-        nowWeek = 1; // 默认值
+    // 安全地处理nowWeek字段
+    final int? parsedNowWeek = int.tryParse(data['nowWeek'].toString());
+    nowWeek = parsedNowWeek ?? 1;
+
+    if (data['data'] is! List) {
+      throw const FormatException('教学周列表格式不正确');
+    }
+    final List tempList = data['data'];
+    weekList.clear();
+
+    for (final dynamic item in tempList) {
+      if (item is Map && item['week'] != null) {
+        weekList.add(item['week'].toString());
       }
+    }
 
-      List tempList = data['data'];
-      weekList.clear(); // 清空之前的数据
+    if (weekList.isEmpty) {
+      firstWeek = 1;
+      maxWeek = 20;
+      return;
+    }
 
-      for (int i = 0; i < tempList.length; i++) {
-        var weekValue = tempList[i]['week'];
-        if (weekValue != null) {
-          weekList.add(weekValue.toString());
-        }
-      }
-
-      if (weekList.isNotEmpty) {
-        firstWeek = int.parse(weekList[0]);
-        maxWeek = int.parse(weekList[weekList.length - 1]);
-      } else {
-        // 如果没有数据，设置默认值
-        firstWeek = 1;
-        maxWeek = 20;
-      }
-
-      //print('$firstWeek and $maxWeek now $nowWeek');
-      prefs.setInt('firstWeek', firstWeek);
-      prefs.setInt('maxWeek', maxWeek);
-      print("MAXIS");
-      print(maxWeek);
-      print(firstWeek);
-      return '200';
-    } catch (e) {
-      print('获取教学周数据出错: $e');
-      return 'error';
+    firstWeek = int.parse(weekList.first);
+    maxWeek = int.parse(weekList.last);
+    if (firstWeek < 1 || maxWeek < firstWeek) {
+      throw const FormatException('教学周范围不正确');
     }
   }
 
   //循环获取所有周课表
-  Future<Map<String, List<Course>>> getAllWeekClass(context) async {
-    bool noget = true;
-    final prefs = await SharedPreferences.getInstance();
+  Future<Map<String, List<Course>>> getAllWeekClass({
+    CourseWeekProgress? onProgress,
+  }) async {
     await configureDioFromStorage();
+    courseData = {};
+    final int total = maxWeek - firstWeek + 1;
+    int completed = 0;
 
     for (int i = firstWeek; i <= maxWeek; i++) {
-      try {
-        Response response;
-        response = await postDioWithCookie(
-          '/njwhd/student/curriculum?week=$i',
-          {},
-        );
-        Map data = response.data;
-        print('获取第$i周数据: ${data.toString()}');
-        print('这里');
-
-        // 检查返回的数据结构
-        if (data['data'] == null || (data['data'] as List).isEmpty) {
-          print('第$i周没有课程数据');
-          continue;
-        }
-
-        GetSingleWeekClass getsingleweek = GetSingleWeekClass(orgdata: data);
-        getsingleweek.initData();
-        getsingleweek.getWeekDate();
-        Map<String, List<Course>> tempData =
-            await getsingleweek.getSingleClass();
-        courseData.addAll(tempData);
-
-        if (i == 1 && noget && tempData.isNotEmpty) {
-          var entry = tempData.entries;
-          MapEntry en = entry.first;
-          print("开学第一天：${en.key}");
-          prefs.setString('firstDay', en.key);
-          noget = false;
-        }
-
-        print(i);
-        await Future.delayed(Duration(microseconds: 300));
-        ScaffoldMessenger.of(context).removeCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Theme.of(context).secondaryHeaderColor,
-            content: Text('正在获取第$i周课表'),
-          ),
-        );
-      } catch (e) {
-        print('获取第$i周课表出错: $e');
-        // 继续获取下一周的数据
-        continue;
+      final Response response = await postDioWithCookie(
+        '/njwhd/student/curriculum?week=$i',
+        {},
+      );
+      if (response.data is! Map) {
+        throw FormatException('第$i周课表数据格式不正确');
       }
+      final Map data = response.data;
+      final dynamic rawWeekData = data['data'];
+      if (rawWeekData != null && rawWeekData is! List) {
+        throw FormatException('第$i周课表列表格式不正确');
+      }
+
+      final List weekData = rawWeekData is List ? rawWeekData : const [];
+      if (weekData.isNotEmpty) {
+        final GetSingleWeekClass singleWeek = GetSingleWeekClass(orgdata: data);
+        singleWeek.initData();
+        singleWeek.getWeekDate();
+        final Map<String, List<Course>> tempData =
+            await singleWeek.getSingleClass();
+        courseData.addAll(tempData);
+        if (firstDay == null && tempData.keys.isNotEmpty) {
+          final DateTime weekStart = DateTime.parse(tempData.keys.first);
+          final DateTime semesterStart = weekStart.subtract(
+            Duration(days: (i - 1) * 7),
+          );
+          firstDay = semesterStart.toIso8601String().substring(0, 10);
+        }
+      }
+
+      completed++;
+      onProgress?.call(completed, total);
     }
     return courseData;
   }
@@ -377,56 +358,52 @@ class GetOrgDataWeb {
     }
   }
 
-  Future<Map<String, List<Course>>> getAllWeekExpClass(context) async {
-    Map<String, List<Course>> expCourseData = {};
-    try {
-      if (semesterId == null || semesterId!.isEmpty) {
-        await getCurrentSemesterId();
-      }
-      await configureDioFromStorage();
-      for (int i = firstWeek; i <= maxWeek; i++) {
-        try {
-          final sid = semesterId ?? '';
-          if (sid.isEmpty) {
-            continue;
-          }
-          Response response = await postDioWithCookie(
-            '/njwhd/teacher/courseScheduleExp?xnxq01id=${sid}&week=$i',
-            {},
-          );
-          Map data = response.data;
-          if (data['data'] == null || (data['data'] as List).isEmpty) {
-            continue;
-          }
-          GetSingleWeekExpClass getExpWeek = GetSingleWeekExpClass(
-            orgdata: data,
-          );
-          getExpWeek.initData();
-          getExpWeek.getWeekDate();
-          Map<String, List<Course>> tempData =
-              await getExpWeek.getSingleClass();
-          tempData.forEach((k, v) {
-            expCourseData.putIfAbsent(k, () => []);
-            expCourseData[k]!.addAll(v);
-          });
+  Future<Map<String, List<Course>>> getAllWeekExpClass({
+    CourseWeekProgress? onProgress,
+  }) async {
+    final Map<String, List<Course>> expCourseData = {};
+    if (semesterId == null || semesterId!.isEmpty) {
+      await getCurrentSemesterId();
+    }
+    final String sid = semesterId ?? '';
+    if (sid.isEmpty) {
+      throw const FormatException('无法获取当前学期');
+    }
 
-          if (context != null) {
-            ScaffoldMessenger.of(context).removeCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Theme.of(context).secondaryHeaderColor,
-                content: Text('正在获取第$i周实验课表'),
-              ),
-            );
-          }
-          await Future.delayed(Duration(milliseconds: 100));
-        } catch (e) {
-          print('获取第$i周实验课表出错: $e');
-          continue;
-        }
+    await configureDioFromStorage();
+    final int total = maxWeek - firstWeek + 1;
+    int completed = 0;
+    for (int i = firstWeek; i <= maxWeek; i++) {
+      final Response response = await postDioWithCookie(
+        '/njwhd/teacher/courseScheduleExp?xnxq01id=$sid&week=$i',
+        {},
+      );
+      if (response.data is! Map) {
+        throw FormatException('第$i周课程数据格式不正确');
       }
-    } catch (e) {
-      print('获取实验课表失败总体错误: $e');
+      final Map data = response.data;
+      final dynamic rawWeekData = data['data'];
+      if (rawWeekData != null && rawWeekData is! List) {
+        throw FormatException('第$i周课程列表格式不正确');
+      }
+
+      final List weekData = rawWeekData is List ? rawWeekData : const [];
+      if (weekData.isNotEmpty) {
+        final GetSingleWeekExpClass expWeek = GetSingleWeekExpClass(
+          orgdata: data,
+        );
+        expWeek.initData();
+        expWeek.getWeekDate();
+        final Map<String, List<Course>> tempData =
+            await expWeek.getSingleClass();
+        tempData.forEach((String date, List<Course> courses) {
+          expCourseData.putIfAbsent(date, () => []);
+          expCourseData[date]!.addAll(courses);
+        });
+      }
+
+      completed++;
+      onProgress?.call(completed, total);
     }
     return expCourseData;
   }

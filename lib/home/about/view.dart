@@ -5,7 +5,7 @@ import 'package:confetti/confetti.dart'; // 添加彩带库
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:ionicons_plus/ionicons_plus.dart'; // 导入 Ionicons 图标包
+import 'package:ionicons_plus/ionicons_plus.dart'; // 导入服务包，用于震动
 import 'package:sensors_plus/sensors_plus.dart'; // 导入传感器包，用于重力感应
 
 class AboutPage extends StatefulWidget {
