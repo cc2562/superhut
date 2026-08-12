@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -82,6 +82,399 @@ class RequestManager {
   }
 }
 
+/// Result of a pure HUT SMS auth path/response helper (no storage side effects).
+///
+/// Reverse-engineered from the official iOS `SWSuperApp` binary:
+/// `smsInit` / `smsSend` / `smsLogin` under `/token/passwordless/...`.
+class HutAuthResult {
+  const HutAuthResult({
+    required this.success,
+    this.message = '',
+    this.nonce,
+    this.needMfa = false,
+  });
+
+  final bool success;
+  final String message;
+  final String? nonce;
+  final bool needMfa;
+}
+
+/// Signals that a HUT request cannot continue until the user authenticates
+/// again. Callers should present the login flow instead of rendering empty
+/// business data as if the request succeeded.
+class HutAuthenticationRequiredException implements Exception {
+  const HutAuthenticationRequiredException();
+
+  @override
+  String toString() => 'HUT authentication required';
+}
+
+const String _kDefaultHutAuthFailureMessage = '操作失败，请稍后重试';
+
+String buildHutSmsInitPath() => '/token/passwordless/smsInit';
+
+String buildHutSmsSendPath({required String mobile, required String nonce}) {
+  return '/token/passwordless/smsSend?'
+      'mobile=${Uri.encodeQueryComponent(mobile)}'
+      '&nonce=${Uri.encodeQueryComponent(nonce)}';
+}
+
+/// Builds the `smsLogin` query path.
+///
+/// Field contract matched against the official client request:
+///   * `osType` must match the Android device identity sent in the request
+///     headers.
+///   * `clientId` defaults to `"CLIENT_ID"` when the app has not persisted one.
+///   * `deviceId` mirrors the official UUID.
+String buildHutSmsLoginPath({
+  required String mobile,
+  required String smscode,
+  required String appId,
+  required String deviceId,
+  required String osType,
+  required String geo,
+  required String nonce,
+  String clientId = 'CLIENT_ID',
+}) {
+  return '/token/passwordless/smsLogin?'
+      'mobile=${Uri.encodeQueryComponent(mobile)}'
+      '&smscode=${Uri.encodeQueryComponent(smscode)}'
+      '&appId=${Uri.encodeQueryComponent(appId)}'
+      '&deviceId=${Uri.encodeQueryComponent(deviceId)}'
+      '&osType=${Uri.encodeQueryComponent(osType)}'
+      '&geo=${Uri.encodeQueryComponent(geo)}'
+      '&nonce=${Uri.encodeQueryComponent(nonce)}'
+      '&clientId=${Uri.encodeQueryComponent(clientId)}';
+}
+
+String normalizeHutMobile(String mobile) => mobile.trim().replaceAll(' ', '');
+
+bool isPlausibleHutMobile(String mobile) {
+  return RegExp(r'^1\d{10}$').hasMatch(normalizeHutMobile(mobile));
+}
+
+HutAuthResult parseHutSmsInitResponse(dynamic data) {
+  if (data is! Map) {
+    return const HutAuthResult(
+      success: false,
+      message: _kDefaultHutAuthFailureMessage,
+    );
+  }
+
+  final envelope = Map<dynamic, dynamic>.from(data);
+  final payload = envelope['data'];
+  final payloadMap =
+      payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
+  final message = _hutAuthMessage(envelope, payloadMap);
+  final needMfa = hutResponseIndicatesNeedMfa(envelope);
+
+  if (!_isHutSuccessCode(envelope['code']) || payloadMap == null) {
+    return HutAuthResult(success: false, message: message, needMfa: needMfa);
+  }
+
+  final nonce = payloadMap['nonce']?.toString();
+  if (nonce == null || nonce.isEmpty) {
+    return HutAuthResult(success: false, message: message, needMfa: needMfa);
+  }
+
+  return HutAuthResult(
+    success: true,
+    message: message == _kDefaultHutAuthFailureMessage ? '' : message,
+    nonce: nonce,
+    needMfa: needMfa,
+  );
+}
+
+HutAuthResult parseHutSmsSendResponse(dynamic data) {
+  if (data is! Map) {
+    return const HutAuthResult(
+      success: false,
+      message: _kDefaultHutAuthFailureMessage,
+    );
+  }
+
+  final envelope = Map<dynamic, dynamic>.from(data);
+  final payload = envelope['data'];
+  final payloadMap =
+      payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
+  final message = _hutAuthMessage(envelope, payloadMap);
+  final needMfa = hutResponseIndicatesNeedMfa(envelope);
+
+  if (!_isHutSuccessCode(envelope['code'])) {
+    return HutAuthResult(success: false, message: message, needMfa: needMfa);
+  }
+
+  // Some deployments rotate/echo nonce on send success; prefer it when present.
+  final sendNonce = payloadMap?['nonce']?.toString();
+  return HutAuthResult(
+    success: true,
+    message: message == _kDefaultHutAuthFailureMessage ? '' : message,
+    nonce: (sendNonce != null && sendNonce.isNotEmpty) ? sendNonce : null,
+    needMfa: needMfa,
+  );
+}
+
+HutAuthResult parseHutSmsLoginTokenData(dynamic data) {
+  if (data is! Map) {
+    return const HutAuthResult(
+      success: false,
+      message: _kDefaultHutAuthFailureMessage,
+    );
+  }
+
+  final envelope = Map<dynamic, dynamic>.from(data);
+  final payload = envelope['data'];
+  final payloadMap =
+      payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
+  final message = _hutAuthMessage(envelope, payloadMap);
+  final needMfa = hutResponseIndicatesNeedMfa(envelope);
+
+  // Passwordless success is a single-step token store: the official iOS
+  // success handler stores `data.idToken` VERBATIM. It never decodes the JWT
+  // (HutPortalSession.fromLoginData did that and could return an embedded
+  // idToken mycas never issued → "登录状态已失效"). We just need a non-empty
+  // token here; the raw value is persisted by the caller.
+  if (!_isHutSuccessCode(envelope['code']) || payloadMap == null) {
+    return HutAuthResult(success: false, message: message, needMfa: needMfa);
+  }
+
+  final idToken = payloadMap['idToken']?.toString().trim() ?? '';
+  if (idToken.isEmpty) {
+    return HutAuthResult(success: false, message: message, needMfa: needMfa);
+  }
+
+  return HutAuthResult(
+    success: true,
+    message: message == _kDefaultHutAuthFailureMessage ? '' : message,
+    needMfa: needMfa,
+  );
+}
+
+/// Persisted auth method marker (SharedPreferences key `hutAuthMethod`).
+///
+/// Distinguishes password vs SMS sessions explicitly so [checkTokenValidity]
+/// and [refreshToken] can branch on how the session was established, instead
+/// of inferring it from whether `hutUsername` is empty (which breaks on
+/// account switch: a prior password login leaves `hutUsername` around and a
+/// fresh SMS token would be re-validated with the stale username).
+const String kHutAuthMethodPassword = 'password';
+const String kHutAuthMethodSms = 'sms';
+
+typedef HutOnlineTokenValidator =
+    Future<bool> Function({
+      required String token,
+      required String account,
+      required String deviceId,
+    });
+
+/// Decodes the payload shared by the small amount of local JWT claim handling.
+Map<String, dynamic>? decodeHutJwtPayload(String token) {
+  final parts = token.split('.');
+  if (parts.length != 3) {
+    return null;
+  }
+  try {
+    final payload = utf8.decode(
+      base64Url.decode(base64Url.normalize(parts[1])),
+    );
+    final decoded = jsonDecode(payload);
+    if (decoded is! Map) {
+      return null;
+    }
+    return Map<String, dynamic>.from(decoded);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Extracts the stable account identifier used by mycas from a JWT `sub`.
+///
+/// The official app stores the raw token unchanged, then decodes only its
+/// claims and persists `sub` separately for `userOnlineDetect`.
+String? extractHutJwtSubject(String token) {
+  final subject = decodeHutJwtPayload(token)?['sub']?.toString().trim() ?? '';
+  return subject.isEmpty ? null : subject;
+}
+
+/// True when [token] is a JWT whose `exp` has passed (or it is malformed).
+///
+/// SMS sessions carry a mycas `idToken` (a JWT). [checkTokenValidity] uses this
+/// as a fail-fast check before `userOnlineDetect`, so an expired or corrupted
+/// token never reaches the server. Malformed input (not a 3-segment JWT, bad
+/// base64, non-JSON payload, missing/invalid `exp`) returns `true` — i.e.
+/// treated as expired — so the caller asks the user to re-authenticate rather
+/// than silently trusting garbage. [clockSkew] lets callers tolerate minor
+/// client/server clock drift.
+bool isHutJwtExpired(String token, {Duration clockSkew = Duration.zero}) {
+  final decoded = decodeHutJwtPayload(token);
+  if (decoded == null) {
+    return true;
+  }
+  final exp = decoded['exp'];
+  if (exp == null) {
+    return true;
+  }
+  final expSeconds = num.tryParse(exp.toString());
+  if (expSeconds == null) {
+    return true;
+  }
+  final expMillis = (expSeconds * 1000).toInt();
+  final nowMillis = DateTime.now().millisecondsSinceEpoch;
+  return expMillis <= nowMillis + clockSkew.inMilliseconds;
+}
+
+bool hutResponseIndicatesNeedMfa(dynamic data) {
+  if (data is! Map) {
+    return false;
+  }
+
+  final envelope = Map<dynamic, dynamic>.from(data);
+  if (_mapIndicatesNeedMfa(envelope)) {
+    return true;
+  }
+
+  final payload = envelope['data'];
+  if (payload is Map) {
+    return _mapIndicatesNeedMfa(Map<dynamic, dynamic>.from(payload));
+  }
+  return false;
+}
+
+bool _isHutSuccessCode(dynamic code) => code?.toString() == '0';
+
+bool _isTruthyHutFlag(dynamic value) {
+  if (value == true || value == 1) {
+    return true;
+  }
+  final text = value?.toString().trim().toLowerCase();
+  return text == 'true' || text == '1';
+}
+
+bool _mapIndicatesNeedMfa(Map<dynamic, dynamic> map) {
+  return _isTruthyHutFlag(map['needMfa']) ||
+      _isTruthyHutFlag(map['need_mfa']) ||
+      _isTruthyHutFlag(map['need']);
+}
+
+const String _kHutSmsSessionInvalidMessage = '验证码已失效，请重新获取';
+
+/// True when mycas returned a bare/opaque failure that usually means the SMS
+/// session (nonce) is no longer usable for login.
+bool isHutSmsSessionInvalidMessage(String message) {
+  final trimmed = message.trim();
+  if (trimmed.isEmpty) {
+    return false;
+  }
+  final lower = trimmed.toLowerCase();
+  if (lower == 'bad request' ||
+      lower == 'badrequest' ||
+      lower.contains('nonce invalid') ||
+      lower.contains('nonce expire') ||
+      lower.contains('invalid nonce')) {
+    return true;
+  }
+  return trimmed == '请求无效' ||
+      trimmed == '请求参数错误' ||
+      trimmed.contains('验证码已失效') ||
+      trimmed.contains('验证码已过期') ||
+      trimmed.contains('验证码失效') ||
+      trimmed.contains('验证码过期') ||
+      (trimmed.contains('nonce') &&
+          (trimmed.contains('无效') ||
+              trimmed.contains('过期') ||
+              trimmed.contains('失效')));
+}
+
+String localizeHutAuthMessage(String message) {
+  final trimmed = message.trim();
+  if (trimmed.isEmpty) {
+    return _kDefaultHutAuthFailureMessage;
+  }
+  if (isHutSmsSessionInvalidMessage(trimmed)) {
+    return _kHutSmsSessionInvalidMessage;
+  }
+
+  final lower = trimmed.toLowerCase();
+  if (lower.contains('phone number not equals') ||
+      trimmed.contains('与接收验证码的手机号码不一致')) {
+    return '手机号与获取验证码时不一致，请使用原手机号或重新获取';
+  }
+  if (lower.contains('secure mobile invalid') || trimmed.contains('安全手机无效')) {
+    return '该手机号未绑定智慧工大安全手机';
+  }
+  if (lower == 'unauthorized' ||
+      lower.contains('bad credentials') ||
+      trimmed == '未授权') {
+    return '账号或密码错误';
+  }
+  if (lower == 'request parameter error' || trimmed == '请求参数错误') {
+    return '请求参数错误，请重新获取验证码后再试';
+  }
+  return trimmed;
+}
+
+String _hutAuthMessage(
+  Map<dynamic, dynamic> envelope, [
+  Map<dynamic, dynamic>? data,
+]) {
+  final fromData = data?['message']?.toString().trim();
+  if (fromData != null && fromData.isNotEmpty) {
+    return localizeHutAuthMessage(fromData);
+  }
+  final fromEnvelope = envelope['message']?.toString().trim();
+  if (fromEnvelope != null && fromEnvelope.isNotEmpty) {
+    return localizeHutAuthMessage(fromEnvelope);
+  }
+  // mycas passwordless endpoints often return {"code":-1,"error":"..."} only.
+  final fromError = envelope['error']?.toString().trim();
+  if (fromError != null &&
+      fromError.isNotEmpty &&
+      fromError.toLowerCase() != 'bad request' &&
+      fromError.toLowerCase() != 'unauthorized' &&
+      fromError.toLowerCase() != 'internal server error') {
+    return localizeHutAuthMessage(fromError);
+  }
+  if (fromError != null && fromError.toLowerCase() == 'bad request') {
+    return _kHutSmsSessionInvalidMessage;
+  }
+  return _kDefaultHutAuthFailureMessage;
+}
+
+/// Maps a Dio/transport failure into [HutAuthResult].
+///
+/// mycas often encodes business failures as HTTP 4xx/5xx with a JSON body
+/// (`code` / `error` / `message`). Those must surface the body text — not the
+/// generic network copy — because the server may already have side effects
+/// (e.g. SMS already sent) before returning a non-2xx status.
+HutAuthResult hutAuthResultFromTransportError({
+  int? statusCode,
+  dynamic responseData,
+}) {
+  if (responseData != null) {
+    if (responseData is Map) {
+      final envelope = Map<dynamic, dynamic>.from(responseData);
+      final payload = envelope['data'];
+      final payloadMap =
+          payload is Map ? Map<dynamic, dynamic>.from(payload) : null;
+      final message = _hutAuthMessage(envelope, payloadMap);
+      return HutAuthResult(
+        success: false,
+        message: message,
+        needMfa: hutResponseIndicatesNeedMfa(envelope),
+      );
+    }
+    final text = responseData.toString().trim();
+    if (text.isNotEmpty) {
+      return HutAuthResult(
+        success: false,
+        message: localizeHutAuthMessage(text),
+      );
+    }
+  }
+  return const HutAuthResult(success: false, message: '网络异常，请稍后重试');
+}
+
 /// Data Storage Manager for handling persistent storage operations
 
 class FunctionItem {
@@ -105,6 +498,11 @@ class FunctionItem {
 }
 
 class HutUserApi {
+  HutUserApi({HutOnlineTokenValidator? onlineTokenValidator})
+    : _onlineTokenValidator = onlineTokenValidator;
+
+  final HutOnlineTokenValidator? _onlineTokenValidator;
+
   String generateDeviceIdAlphabet() {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     final random = Random.secure();
@@ -159,6 +557,169 @@ class HutUserApi {
     return uuid.v4().replaceAll("-", "");
   }
 
+  static const String _kMyCasBaseUrl = 'https://mycas.hut.edu.cn';
+  static const String _kHutAppId = 'com.supwisdom.hut';
+  // Matches the official iOS client version surfaced in X-Device-Infos.
+  static const String _kHutAppVersion = '1.1.8';
+  static const String _kHutLoginUserAgent =
+      'SWSuperApp/1.1.3(XiaomidadaXiaomi15)';
+  static const String _kHutDeviceInfos =
+      'packagename=$_kHutAppId;version=$_kHutAppVersion;system=Android';
+
+  /// Shared Dio for the mycas login/passwordless endpoints.
+  ///
+  /// mycas often encodes business failures (wrong code, invalid nonce, unbound
+  /// mobile, …) as HTTP 4xx/5xx with a JSON body. Accept them so callers can
+  /// parse `code`/`error`/`message` instead of collapsing to "网络异常".
+  /// The official YYRequestManager injects `X-Device-Infos` on every request;
+  /// mycas uses it for origin/device validation.
+  Dio _smsLoginDio() {
+    final dio = Dio();
+    dio.options.baseUrl = _kMyCasBaseUrl;
+    dio.options.connectTimeout = const Duration(seconds: 5);
+    dio.options.receiveTimeout = const Duration(seconds: 15);
+    dio.options.validateStatus = (status) => status != null && status < 600;
+    dio.options.headers = {
+      'User-Agent': _kHutLoginUserAgent,
+      'Accept': 'application/json',
+      'Accept-Language': 'zh-CN',
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-Device-Infos': _kHutDeviceInfos,
+    };
+    return dio;
+  }
+
+  /// 初始化密码less会话，获取 `nonce`。
+  Future<HutAuthResult> smsInit() async {
+    try {
+      final response = await _smsLoginDio().get(buildHutSmsInitPath());
+      return parseHutSmsInitResponse(response.data);
+    } catch (error) {
+      return _authResultFromTransportError(error);
+    }
+  }
+
+  /// 发送短信验证码。
+  Future<HutAuthResult> smsSend({
+    required String mobile,
+    required String nonce,
+  }) async {
+    final normalized = normalizeHutMobile(mobile);
+    if (!isPlausibleHutMobile(normalized)) {
+      return const HutAuthResult(success: false, message: '请输入正确的手机号');
+    }
+    try {
+      // Official client posts form-urlencoded with empty body; params are query.
+      final response = await _smsLoginDio().post(
+        buildHutSmsSendPath(mobile: normalized, nonce: nonce),
+        data: '',
+      );
+      return parseHutSmsSendResponse(response.data);
+    } catch (error) {
+      return _authResultFromTransportError(error);
+    }
+  }
+
+  /// 短信验证码登录，成功后以 raw `data.idToken` 落盘。
+  ///
+  /// Matches the official iOS success handler (`sub_100079334` /
+  /// `vercodeLoginSuccess`), which stores `data.idToken` VERBATIM into the
+  /// token — it does NOT call `federation/federatedBinding` (that is for
+  /// third-party federated login, not SMS) and does NOT JWT-decode the token.
+  Future<HutAuthResult> smsLogin({
+    required String mobile,
+    required String smscode,
+    required String nonce,
+  }) async {
+    final normalized = normalizeHutMobile(mobile);
+    if (!isPlausibleHutMobile(normalized)) {
+      return const HutAuthResult(success: false, message: '请输入正确的手机号');
+    }
+    if (smscode.trim().isEmpty) {
+      return const HutAuthResult(success: false, message: '请输入验证码');
+    }
+    final deviceId = generateUuidV4();
+    try {
+      final response = await _smsLoginDio().post(
+        buildHutSmsLoginPath(
+          mobile: normalized,
+          smscode: smscode.trim(),
+          appId: _kHutAppId,
+          deviceId: deviceId,
+          osType: 'Android',
+          geo: '',
+          nonce: nonce,
+          clientId: 'CLIENT_ID',
+        ),
+        data: '',
+      );
+      return await completeSmsLoginFromResponseData(
+        responseData: response.data,
+        mobile: normalized,
+        deviceId: deviceId,
+      );
+    } catch (error) {
+      return _authResultFromTransportError(error);
+    }
+  }
+
+  @visibleForTesting
+  Future<HutAuthResult> completeSmsLoginFromResponseData({
+    required dynamic responseData,
+    required String mobile,
+    required String deviceId,
+  }) async {
+    final parsed = parseHutSmsLoginTokenData(responseData);
+    if (!parsed.success || responseData is! Map) {
+      return parsed;
+    }
+    final data = responseData['data'];
+    if (data is! Map) {
+      return const HutAuthResult(success: false, message: '登录失败，请稍后重试');
+    }
+    // CRITICAL: store the RAW data.idToken, not a JWT-decoded variant, so
+    // checkTokenValidity/CAS send exactly the token mycas issued.
+    final idToken = data['idToken']?.toString() ?? '';
+    if (idToken.trim().isEmpty) {
+      return const HutAuthResult(success: false, message: '登录失败，请稍后重试');
+    }
+    final refreshToken = data['refreshToken']?.toString().trim() ?? '';
+    final account = extractHutJwtSubject(idToken);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('hutToken', idToken);
+    await prefs.setString('hutRefreshToken', refreshToken);
+    if (account == null) {
+      await prefs.remove('hutAccount');
+    } else {
+      await prefs.setString('hutAccount', account);
+    }
+    await prefs.setString('deviceId', deviceId);
+    // SMS sessions have no password; persist mobile so the page can refill it.
+    await prefs.setString('hutMobile', mobile);
+    await prefs.setString('loginType', 'hut');
+    // Clear any leftover password credentials from a prior password login so
+    // checkTokenValidity/refreshToken don't reuse a stale username with the
+    // fresh SMS token (which would falsely invalidate the session on account
+    // switch). Mark the auth method explicitly instead of inferring it.
+    await prefs.remove('hutUsername');
+    await prefs.remove('hutPassword');
+    await prefs.setString('hutAuthMethod', kHutAuthMethodSms);
+    await prefs.setBool('hutIsLogin', true);
+    _token['idToken'] = idToken;
+    return const HutAuthResult(success: true, message: '登录成功');
+  }
+
+  HutAuthResult _authResultFromTransportError(Object error) {
+    if (error is DioException) {
+      return hutAuthResultFromTransportError(
+        statusCode: error.response?.statusCode,
+        responseData: error.response?.data,
+      );
+    }
+    return hutAuthResultFromTransportError();
+  }
+
   /// 开始登录
   /// [username] 用户名
   /// [password] 密码
@@ -206,6 +767,7 @@ class HutUserApi {
     prefs.setString('hutUsername', username);
     prefs.setString('hutPassword', password);
     prefs.setString('loginType', 'hut');
+    prefs.setString('hutAuthMethod', kHutAuthMethodPassword);
     prefs.setBool('hutIsLogin', true);
     print(response.data);
     print("结束！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！");
@@ -226,34 +788,54 @@ class HutUserApi {
   ///检查Token是否有效
   Future<bool> checkTokenValidity() async {
     String token = await getToken();
+    if (token.isEmpty) {
+      return false;
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    String deviceId = prefs.getString('deviceId') ?? 'null';
-    String username = prefs.getString('hutUsername') ?? 'null';
+    // Branch on the explicit auth-method marker. Fall back to inferring from
+    // hutUsername for sessions persisted before hutAuthMethod existed, so the
+    // migration is transparent.
+    final authMethod =
+        prefs.getString('hutAuthMethod') ??
+        (prefs.getString('hutUsername')?.trim().isNotEmpty == true
+            ? kHutAuthMethodPassword
+            : kHutAuthMethodSms);
+
+    if (authMethod == kHutAuthMethodSms && isHutJwtExpired(token)) {
+      return false;
+    }
+
+    final account =
+        authMethod == kHutAuthMethodSms
+            ? prefs.getString('hutAccount')?.trim() ?? ''
+            : prefs.getString('hutUsername')?.trim() ?? '';
+    if (account.isEmpty) {
+      return false;
+    }
+
+    final deviceId = prefs.getString('deviceId') ?? 'null';
+    final validator = _onlineTokenValidator;
+    if (validator != null) {
+      return validator(token: token, account: account, deviceId: deviceId);
+    }
+
     String url =
-        "/token/login/userOnlineDetect?appId=com.supwisdom.hut&deviceId=$deviceId&username=$username";
+        "/token/login/userOnlineDetect?appId=com.supwisdom.hut&deviceId=$deviceId&username=$account";
     final dio = Dio();
-    dio.options.baseUrl = 'https://mycas.hut.edu.cn';
+    dio.options.baseUrl = _kMyCasBaseUrl;
     dio.options.connectTimeout = Duration(seconds: 5);
     dio.options.receiveTimeout = Duration(seconds: 3);
     dio.options.headers = {
-      'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64',
+      'User-Agent': _kHutLoginUserAgent,
       'Accept': '*/*',
       'Accept-Encoding': 'gzip, deflate, br',
       'X-Id-Token': token,
+      'X-Device-Infos': _kHutDeviceInfos,
     };
-    Response response;
-    response = await dio.post(url, data: {});
-    Map data = response.data;
-    bool isValid = false;
-    //  print(data);
-    if (data['code'] == -1) {
-      isValid = false;
-    } else if (data['code'] == 0) {
-      isValid = true;
-    }
-    //  print(data['code']);
-    return isValid;
+    final response = await dio.post(url, data: {});
+    final data = response.data;
+    return data is Map && data['code']?.toString() == '0';
   }
 
   /// 设置Token
@@ -473,7 +1055,7 @@ class HutUserApi {
           Map resultData = {
             "result": data["resultData"]["result"],
             "message": data["resultData"]["message"],
-            "success": data["success"]
+            "success": data["success"],
           };
           return resultData;
         });
@@ -670,13 +1252,14 @@ class HutUserApi {
   Future<List<Map>> getFunctionList() async {
     bool isLogin = await checkTokenValidity();
     if (!isLogin) {
-      print("LOG");
-      final prefs = await SharedPreferences.getInstance();
-      String _userName = prefs.getString('hutUsername') ?? "";
-      print(_userName);
-      String _orgPassword = prefs.getString('hutPassword') ?? "";
-      print(_orgPassword);
-      await userLogin(username: _userName, password: _orgPassword);
+      // Token invalid/expired: try to refresh (handles both password re-login
+      // and SMS refresh-token). If refresh fails the session is cleared —
+      // return empty so the caller surfaces re-authentication instead of
+      // hammering the portal API with a dead token.
+      final refreshed = await refreshToken();
+      if (!refreshed) {
+        throw const HutAuthenticationRequiredException();
+      }
     }
     String token = await getToken();
     String url = "/portal-api/v1/service/list";
@@ -734,15 +1317,56 @@ class HutUserApi {
 
   //刷新Token
   Future<bool> refreshToken() async {
-    print("startRe");
-    //bool isLogin = await checkTokenValidity();
-    print("LOG");
     final prefs = await SharedPreferences.getInstance();
+    final authMethod =
+        prefs.getString('hutAuthMethod') ??
+        (prefs.getString('hutUsername')?.trim().isNotEmpty == true
+            ? kHutAuthMethodPassword
+            : kHutAuthMethodSms);
+
+    if (authMethod == kHutAuthMethodSms) {
+      // The official SMS flow exposes no confirmed refresh call. Revalidate
+      // locally and with userOnlineDetect; only a definite invalid verdict
+      // logs the user out. Network failures propagate without touching state.
+      final isValid = await checkTokenValidity();
+      if (!isValid) {
+        await _clearAuthenticationState(prefs);
+        return false;
+      }
+      return true;
+    }
+
+    // Password sessions: re-run password login with stored credentials.
     String _userName = prefs.getString('hutUsername') ?? "";
-    print(_userName);
     String _orgPassword = prefs.getString('hutPassword') ?? "";
-    print(_orgPassword);
-    await userLogin(username: _userName, password: _orgPassword);
-    return true;
+    if (_userName.isEmpty || _orgPassword.isEmpty) {
+      await _clearAuthenticationState(prefs);
+      return false;
+    }
+    final refreshed = await userLogin(
+      username: _userName,
+      password: _orgPassword,
+    );
+    if (!refreshed) {
+      await _clearAuthenticationState(prefs);
+    }
+    return refreshed;
+  }
+
+  /// Clears the persisted HUT authentication session after a definitive
+  /// authentication failure. The saved mobile number is intentionally kept so
+  /// an SMS user can request another code without retyping it.
+  Future<void> clearAuthenticationState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _clearAuthenticationState(prefs);
+  }
+
+  Future<void> _clearAuthenticationState(SharedPreferences prefs) async {
+    await prefs.remove('hutToken');
+    await prefs.remove('hutRefreshToken');
+    await prefs.remove('hutAccount');
+    await prefs.remove('hutAuthMethod');
+    await prefs.setBool('hutIsLogin', false);
+    _token['idToken'] = '';
   }
 }

@@ -102,34 +102,33 @@ class FunctionHotWaterLogic extends GetxController {
       // print(value);
 
       if (value["code"] == 500) {
-        // 处理登录失效情况：尝试自动重新登录
+        // Let HutUserApi choose the recovery strategy from hutAuthMethod:
+        // password sessions may re-login, while SMS sessions are validated and
+        // sent back to verification when definitively invalid.
         if (_hutUserInfo["hutIsLogin"]) {
-          bool isLogin = await hutUserApi.userLogin(
-            username: _hutUserInfo["username"],
-            password: _hutUserInfo["password"],
-          );
+          final isLogin = await hutUserApi.refreshToken();
           if (isLogin) {
             // 重新登录成功后再次获取设备列表
-            await hutUserApi.getHotWaterDevice().then((value) async {
-              if (value["code"] != 500) {
-                // 更新设备列表及关联状态
-                state.deviceList.value = value["data"];
-                setChoiceDevice(state.deviceList.isNotEmpty ? 0 : -1);
-                await checkHotWaterDevice();
-                await getBalance();
-                update();
-              }
-            });
-            return;
+            final retriedValue = await hutUserApi.getHotWaterDevice();
+            if (retriedValue["code"] != 500) {
+              // 更新设备列表及关联状态
+              state.deviceList.value = retriedValue["data"];
+              setChoiceDevice(state.deviceList.isNotEmpty ? 0 : -1);
+              await checkHotWaterDevice();
+              await getBalance();
+              update();
+              return;
+            }
           }
         }
         // 登录失败处理：重置登录状态并清除设备信息
-        setHutUserInfo("hutIsLogin", false);
+        await hutUserApi.clearAuthenticationState();
+        _hutUserInfo["hutIsLogin"] = false;
         state.deviceList.clear();
         setChoiceDevice(-1);
         state.waterStatus.value = false;
         update();
-        checkLogin();
+        await checkLogin();
       } else {
         // 正常获取到设备列表时更新状态
         state.deviceList.value = value["data"];
