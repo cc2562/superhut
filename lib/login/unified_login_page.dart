@@ -596,7 +596,7 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
                         alignment: Alignment.topRight,
                         margin: const EdgeInsets.only(top: 0),
                         child: SvgPicture.asset(
-                          Assets.illustrationLogin,
+                          Assets.illustration.login.path,
                           width: 150,
                         ),
                       ),

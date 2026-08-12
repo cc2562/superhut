@@ -58,7 +58,9 @@ class _GetcoursepageState extends State<Getcoursepage> {
         MaterialPageRoute<void>(builder: (_) => const HomeviewPage()),
         (Route<dynamic> route) => false,
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('课程表刷新失败: $error');
+      debugPrintStack(stackTrace: stackTrace);
       if (!mounted) return;
       setState(() {
         _isRefreshing = false;

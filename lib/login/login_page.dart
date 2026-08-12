@@ -174,7 +174,7 @@ class _LoginPageState extends State<LoginPage> {
                           alignment: Alignment.topRight,
                           margin: EdgeInsets.only(top: 0),
                           child: SvgPicture.asset(
-                            Assets.illustrationLogin,
+                            Assets.illustration.login.path,
                             width: 150,
                           ),
                         ),

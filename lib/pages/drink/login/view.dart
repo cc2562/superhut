@@ -227,7 +227,7 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
                           alignment: Alignment.topRight,
                           margin: EdgeInsets.only(top: 0),
                           child: SvgPicture.asset(
-                            Assets.illustrationLogin,
+                            Assets.illustration.login.path,
                             width: 150,
                           ),
                         ),

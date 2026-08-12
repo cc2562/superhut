@@ -346,7 +346,7 @@ class _HutLoginPageState extends State<HutLoginPage> {
                           alignment: Alignment.topRight,
                           margin: EdgeInsets.only(top: 0),
                           child: SvgPicture.asset(
-                            Assets.illustrationLogin,
+                            Assets.illustration.login.path,
                             width: 150,
                           ),
                         ),
