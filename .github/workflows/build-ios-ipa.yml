@@ -1,0 +1,55 @@
+name: Build Unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  
+    
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS app without code signing
+        run: flutter build ios --release --no-codesign
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+
+          APP_PATH="build/ios/iphoneos/Runner.app"
+          IPA_DIR="build/ios/ipa"
+          PAYLOAD_DIR="$RUNNER_TEMP/Payload"
+
+          [ -d "$APP_PATH" ] || { echo "Runner.app was not found at $APP_PATH"; exit 1; }
+
+          rm -rf "$PAYLOAD_DIR" "$IPA_DIR"
+          mkdir -p "$PAYLOAD_DIR" "$IPA_DIR"
+          cp -R "$APP_PATH" "$PAYLOAD_DIR/"
+
+          (cd "$RUNNER_TEMP" && zip -qry "$GITHUB_WORKSPACE/$IPA_DIR/superhut-unsigned.ipa" Payload)
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: build/ios/ipa/*.ipa
+          if-no-files-found: error

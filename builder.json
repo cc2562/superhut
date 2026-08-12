@@ -1,0 +1,17 @@
+{
+  "project": "superhut",
+  "platform": "ios",
+  "github": {
+    "owner": "cc2562",
+    "repo": "superhut"
+  },
+  "ios": {
+    "path": "ios"
+  },
+  "flutter": {
+    "version": "3.35.4",
+    "watch": {}
+  },
+  "reactNative": {},
+  "mobai": {}
+}

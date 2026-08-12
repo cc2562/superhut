@@ -1,9 +1,10 @@
 import 'dart:convert';
 
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:ionicons/ionicons.dart';
+import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:superhut/utils/hut_user_api.dart';
@@ -24,6 +25,8 @@ class Type2Webview extends StatefulWidget {
 }
 
 class _Type2WebviewState extends State<Type2Webview> {
+  static const String _webViewCookieDomain = 'xzhngydx.hut.edu.cn';
+
   final api = HutUserApi();
   InAppWebViewController? _webViewController;
   bool _canGoBack = false;
@@ -50,7 +53,6 @@ class _Type2WebviewState extends State<Type2Webview> {
     "sec-fetch-user": "?1",
     "sec-fetch-dest": "document",
     "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-    "cookie": "userToken=; Domain=xzhngydx.hut.edu.cn; Path=/",
     "priority": "u=0, i",
   };
   String resultUrl = '';
@@ -91,6 +93,11 @@ class _Type2WebviewState extends State<Type2Webview> {
         resultUrl = newUri.toString();
       }
     }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      headerMap["Cookie"] = _buildCookieHeaderWithAttributes();
+    } else {
+      headerMap.remove("Cookie");
+    }
     print(headerMap);
     return true;
   }
@@ -100,7 +107,67 @@ class _Type2WebviewState extends State<Type2Webview> {
     resultUrl = widget.serviceUrl;
     print(resultUrl);
     doWithAccept();
+    await _injectWebViewCookies();
     return true;
+  }
+
+  List<String> _getCookieTokenKeys() {
+    final tokenAcceptList = getTokenAccept(widget.tokenAccept);
+    final cookieKeys =
+        tokenAcceptList
+            .where((item) => item['tokenType'] == 'cookie')
+            .map((item) => item['tokenKey']?.toString() ?? '')
+            .where((key) => key.isNotEmpty)
+            .toSet()
+            .toList();
+
+    return cookieKeys.isEmpty ? ['userToken'] : cookieKeys;
+  }
+
+  String _buildCookieHeaderWithAttributes() {
+    return _getCookieTokenKeys()
+        .map((key) => '$key=$token; Domain=$_webViewCookieDomain; Path=/')
+        .join('; ');
+  }
+
+  Future<void> _injectWebViewCookies() async {
+    if (resultUrl.isEmpty || token.isEmpty) return;
+
+    try {
+      final uri = Uri.parse(resultUrl);
+      if (!uri.hasScheme || uri.host.isEmpty) return;
+
+      final cookieManager = CookieManager.instance();
+      final webUri = WebUri('${uri.scheme}://$_webViewCookieDomain');
+
+      for (final cookieName in _getCookieTokenKeys()) {
+        await cookieManager.setCookie(
+          url: webUri,
+          name: cookieName,
+          value: token,
+          domain: _webViewCookieDomain,
+          path: '/',
+          isSecure: uri.scheme == 'https',
+          sameSite: HTTPCookieSameSitePolicy.LAX,
+        );
+      }
+
+      if (kDebugMode) {
+        final cookies = await cookieManager.getCookies(url: webUri);
+        final cookieDebugInfo = cookies
+            .where((cookie) => _getCookieTokenKeys().contains(cookie.name))
+            .map(
+              (cookie) =>
+                  '${cookie.name}; domain=${cookie.domain}; path=${cookie.path}',
+            )
+            .join(', ');
+        print('Type2 WebView cookies injected for $webUri: $cookieDebugInfo');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Type2 WebView cookie injection failed: $e');
+      }
+    }
   }
 
   @override
@@ -436,10 +503,12 @@ class _Type2WebviewState extends State<Type2Webview> {
                       },
                     );
                   },
-                  whenNotDone:  Center(child: LoadingAnimationWidget.inkDrop(
-                    color: Theme.of(context).primaryColor,
-                    size: 40,
-                  ),),
+                  whenNotDone: Center(
+                    child: LoadingAnimationWidget.inkDrop(
+                      color: Theme.of(context).primaryColor,
+                      size: 40,
+                    ),
+                  ),
                 ),
               ),
 
@@ -478,7 +547,7 @@ class _Type2WebviewState extends State<Type2Webview> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                           LoadingAnimationWidget.inkDrop(
+                          LoadingAnimationWidget.inkDrop(
                             color: Theme.of(context).primaryColor,
                             size: 40,
                           ),

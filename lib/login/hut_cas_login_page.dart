@@ -195,6 +195,13 @@ class HutCasLoginExample extends StatelessWidget {
 
 // 另一种使用方式 - 获取token和cookie不返回
 class HutCasTokenRetriever {
+  /// Clears the cached academic-system session before switching HUT accounts.
+  static Future<void> clearCachedSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('my_client_ticket');
+  }
+
   static Future<Map<String, String>?> getJwxtTokenAndCookie(BuildContext context) async {
     // 先检查是否有缓存的token
     final prefs = await SharedPreferences.getInstance();

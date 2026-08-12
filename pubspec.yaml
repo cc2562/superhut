@@ -41,7 +41,7 @@ dependencies:
   webview_flutter_android: ^4.3.2
   webview_flutter_wkwebview: ^3.18.2
   google_nav_bar: ^5.0.7
-  ionicons: ^0.2.2
+  ionicons_plus: ^0.2.5
   responsive_framework: ^1.5.1
   shared_preferences: ^2.5.2
   intl: any
