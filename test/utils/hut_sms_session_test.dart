@@ -113,33 +113,30 @@ void main() {
       },
     );
 
-    test(
-      'migrates a legacy SMS session by extracting sub before validation',
-      () async {
-        final futureExp =
-            (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 3600;
-        final token = _buildJwt({'sub': 'legacy-account', 'exp': futureExp});
-        SharedPreferences.setMockInitialValues({
-          'hutToken': token,
-          'deviceId': 'legacy-device',
-        });
+    test('returns false when a SMS session has no persisted account', () async {
+      final futureExp = (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 3600;
+      final token = _buildJwt({'sub': 'unpersisted-account', 'exp': futureExp});
+      var validatorCalled = false;
+      SharedPreferences.setMockInitialValues({
+        'hutAuthMethod': kHutAuthMethodSms,
+        'hutToken': token,
+        'deviceId': 'sms-device',
+      });
 
-        final api = HutUserApi(
-          onlineTokenValidator: ({
-            required token,
-            required account,
-            required deviceId,
-          }) async {
-            expect(account, 'legacy-account');
-            return true;
-          },
-        );
+      final api = HutUserApi(
+        onlineTokenValidator: ({
+          required token,
+          required account,
+          required deviceId,
+        }) async {
+          validatorCalled = true;
+          return true;
+        },
+      );
 
-        expect(await api.checkTokenValidity(), isTrue);
-        final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getString('hutAccount'), 'legacy-account');
-      },
-    );
+      expect(await api.checkTokenValidity(), isFalse);
+      expect(validatorCalled, isFalse);
+    });
   });
 
   group('refreshToken SMS degrades safely', () {

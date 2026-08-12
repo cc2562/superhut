@@ -30,7 +30,7 @@ void main() {
       smscode: '123456',
       appId: 'com.supwisdom.hut',
       deviceId: 'abcdefghijklmnopqrstuvwx',
-      osType: 'iOS',
+      osType: 'Android',
       geo: '',
       nonce: 'oUOHnB',
     );
@@ -39,7 +39,7 @@ void main() {
     expect(path, contains('smscode=123456'));
     expect(path, contains('appId=com.supwisdom.hut'));
     expect(path, contains('deviceId=abcdefghijklmnopqrstuvwx'));
-    expect(path, contains('osType=iOS'));
+    expect(path, contains('osType=Android'));
     expect(path, contains('nonce=oUOHnB'));
     expect(path, contains('clientId=CLIENT_ID'));
   });
@@ -50,7 +50,7 @@ void main() {
       smscode: '123456',
       appId: 'com.supwisdom.hut',
       deviceId: 'abc',
-      osType: 'iOS',
+      osType: 'Android',
       geo: '',
       nonce: 'n',
       clientId: 'custom',
@@ -192,5 +192,12 @@ void main() {
   test('extractHutJwtSubject returns the account from sub', () {
     final token = _buildJwt({'sub': ' 20260001 '});
     expect(extractHutJwtSubject(token), '20260001');
+  });
+
+  test('decodeHutJwtPayload is shared by claim readers', () {
+    final token = _buildJwt({'sub': '20260001', 'exp': 4102444800});
+    expect(decodeHutJwtPayload(token), {'sub': '20260001', 'exp': 4102444800});
+    expect(extractHutJwtSubject(token), '20260001');
+    expect(isHutJwtExpired(token), isFalse);
   });
 }

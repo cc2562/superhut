@@ -122,10 +122,9 @@ String buildHutSmsSendPath({required String mobile, required String nonce}) {
 
 /// Builds the `smsLogin` query path.
 ///
-/// Field contract matched against the official iOS client
-/// (`+[SWUserModel smsLoginWithMobile:smscode:complete:]`):
-///   * `osType` MUST be `"iOS"` — sending `"android"` can be rejected by the
-///     mycas SSO origin/device check before a usable session is issued.
+/// Field contract matched against the official client request:
+///   * `osType` must match the Android device identity sent in the request
+///     headers.
 ///   * `clientId` defaults to `"CLIENT_ID"` when the app has not persisted one.
 ///   * `deviceId` mirrors the official UUID.
 String buildHutSmsLoginPath({
@@ -269,11 +268,8 @@ typedef HutOnlineTokenValidator =
       required String deviceId,
     });
 
-/// Extracts the stable account identifier used by mycas from a JWT `sub`.
-///
-/// The official app stores the raw token unchanged, then decodes only its
-/// claims and persists `sub` separately for `userOnlineDetect`.
-String? extractHutJwtSubject(String token) {
+/// Decodes the payload shared by the small amount of local JWT claim handling.
+Map<String, dynamic>? decodeHutJwtPayload(String token) {
   final parts = token.split('.');
   if (parts.length != 3) {
     return null;
@@ -286,11 +282,19 @@ String? extractHutJwtSubject(String token) {
     if (decoded is! Map) {
       return null;
     }
-    final subject = decoded['sub']?.toString().trim() ?? '';
-    return subject.isEmpty ? null : subject;
+    return Map<String, dynamic>.from(decoded);
   } catch (_) {
     return null;
   }
+}
+
+/// Extracts the stable account identifier used by mycas from a JWT `sub`.
+///
+/// The official app stores the raw token unchanged, then decodes only its
+/// claims and persists `sub` separately for `userOnlineDetect`.
+String? extractHutJwtSubject(String token) {
+  final subject = decodeHutJwtPayload(token)?['sub']?.toString().trim() ?? '';
+  return subject.isEmpty ? null : subject;
 }
 
 /// True when [token] is a JWT whose `exp` has passed (or it is malformed).
@@ -303,24 +307,8 @@ String? extractHutJwtSubject(String token) {
 /// than silently trusting garbage. [clockSkew] lets callers tolerate minor
 /// client/server clock drift.
 bool isHutJwtExpired(String token, {Duration clockSkew = Duration.zero}) {
-  final parts = token.split('.');
-  if (parts.length != 3) {
-    return true;
-  }
-  final payload = parts[1];
-  Uint8List bytes;
-  try {
-    bytes = base64Url.decode(base64Url.normalize(payload));
-  } catch (_) {
-    return true;
-  }
-  dynamic decoded;
-  try {
-    decoded = jsonDecode(utf8.decode(bytes));
-  } catch (_) {
-    return true;
-  }
-  if (decoded is! Map) {
+  final decoded = decodeHutJwtPayload(token);
+  if (decoded == null) {
     return true;
   }
   final exp = decoded['exp'];
@@ -575,6 +563,8 @@ class HutUserApi {
   static const String _kHutAppVersion = '1.1.8';
   static const String _kHutLoginUserAgent =
       'SWSuperApp/1.1.3(XiaomidadaXiaomi15)';
+  static const String _kHutDeviceInfos =
+      'packagename=$_kHutAppId;version=$_kHutAppVersion;system=Android';
 
   /// Shared Dio for the mycas login/passwordless endpoints.
   ///
@@ -594,8 +584,7 @@ class HutUserApi {
       'Accept': 'application/json',
       'Accept-Language': 'zh-CN',
       'Content-Type': 'application/x-www-form-urlencoded',
-      'X-Device-Infos':
-          'packagename=$_kHutAppId;version=$_kHutAppVersion;system=iOS',
+      'X-Device-Infos': _kHutDeviceInfos,
     };
     return dio;
   }
@@ -657,7 +646,7 @@ class HutUserApi {
           smscode: smscode.trim(),
           appId: _kHutAppId,
           deviceId: deviceId,
-          osType: 'iOS',
+          osType: 'Android',
           geo: '',
           nonce: nonce,
           clientId: 'CLIENT_ID',
@@ -817,16 +806,10 @@ class HutUserApi {
       return false;
     }
 
-    var account =
+    final account =
         authMethod == kHutAuthMethodSms
             ? prefs.getString('hutAccount')?.trim() ?? ''
             : prefs.getString('hutUsername')?.trim() ?? '';
-    if (authMethod == kHutAuthMethodSms && account.isEmpty) {
-      account = extractHutJwtSubject(token) ?? '';
-      if (account.isNotEmpty) {
-        await prefs.setString('hutAccount', account);
-      }
-    }
     if (account.isEmpty) {
       return false;
     }
@@ -848,8 +831,7 @@ class HutUserApi {
       'Accept': '*/*',
       'Accept-Encoding': 'gzip, deflate, br',
       'X-Id-Token': token,
-      'X-Device-Infos':
-          'packagename=$_kHutAppId;version=$_kHutAppVersion;system=iOS',
+      'X-Device-Infos': _kHutDeviceInfos,
     };
     final response = await dio.post(url, data: {});
     final data = response.data;
