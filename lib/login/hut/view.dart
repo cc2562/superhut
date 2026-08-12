@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../generated/assets.dart';
 import '../../utils/hut_user_api.dart';
+import '../hut_cas_login_page.dart';
 import '../hut_sms_login_enabled.dart';
 import 'command.dart';
 import 'sms_command.dart';
@@ -115,6 +116,12 @@ class _HutLoginPageState extends State<HutLoginPage> {
         return;
       }
       if (result.success) {
+        // A successful SMS login may switch HUT accounts. Do not let the new
+        // account reuse the previous account's academic-system credentials.
+        await HutCasTokenRetriever.clearCachedSession();
+        if (!mounted) {
+          return;
+        }
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('登录成功')));

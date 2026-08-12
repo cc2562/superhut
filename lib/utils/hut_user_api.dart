@@ -100,6 +100,16 @@ class HutAuthResult {
   final bool needMfa;
 }
 
+/// Signals that a HUT request cannot continue until the user authenticates
+/// again. Callers should present the login flow instead of rendering empty
+/// business data as if the request succeeded.
+class HutAuthenticationRequiredException implements Exception {
+  const HutAuthenticationRequiredException();
+
+  @override
+  String toString() => 'HUT authentication required';
+}
+
 const String _kDefaultHutAuthFailureMessage = '操作失败，请稍后重试';
 
 String buildHutSmsInitPath() => '/token/passwordless/smsInit';
@@ -1266,7 +1276,7 @@ class HutUserApi {
       // hammering the portal API with a dead token.
       final refreshed = await refreshToken();
       if (!refreshed) {
-        return [];
+        throw const HutAuthenticationRequiredException();
       }
     }
     String token = await getToken();
@@ -1338,12 +1348,7 @@ class HutUserApi {
       // logs the user out. Network failures propagate without touching state.
       final isValid = await checkTokenValidity();
       if (!isValid) {
-        await prefs.remove('hutToken');
-        await prefs.remove('hutRefreshToken');
-        await prefs.remove('hutAccount');
-        await prefs.remove('hutAuthMethod');
-        await prefs.setBool('hutIsLogin', false);
-        _token['idToken'] = '';
+        await _clearAuthenticationState(prefs);
         return false;
       }
       return true;
@@ -1353,8 +1358,33 @@ class HutUserApi {
     String _userName = prefs.getString('hutUsername') ?? "";
     String _orgPassword = prefs.getString('hutPassword') ?? "";
     if (_userName.isEmpty || _orgPassword.isEmpty) {
+      await _clearAuthenticationState(prefs);
       return false;
     }
-    return userLogin(username: _userName, password: _orgPassword);
+    final refreshed = await userLogin(
+      username: _userName,
+      password: _orgPassword,
+    );
+    if (!refreshed) {
+      await _clearAuthenticationState(prefs);
+    }
+    return refreshed;
+  }
+
+  /// Clears the persisted HUT authentication session after a definitive
+  /// authentication failure. The saved mobile number is intentionally kept so
+  /// an SMS user can request another code without retyping it.
+  Future<void> clearAuthenticationState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _clearAuthenticationState(prefs);
+  }
+
+  Future<void> _clearAuthenticationState(SharedPreferences prefs) async {
+    await prefs.remove('hutToken');
+    await prefs.remove('hutRefreshToken');
+    await prefs.remove('hutAccount');
+    await prefs.remove('hutAuthMethod');
+    await prefs.setBool('hutIsLogin', false);
+    _token['idToken'] = '';
   }
 }

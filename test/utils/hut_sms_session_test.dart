@@ -258,4 +258,20 @@ void main() {
       expect(prefs.getString('hutMobile'), '13800138000');
     });
   });
+
+  test('getFunctionList reports authentication required explicitly', () async {
+    SharedPreferences.setMockInitialValues({
+      'hutAuthMethod': kHutAuthMethodSms,
+      'hutToken': 'not-a-jwt',
+      'hutIsLogin': true,
+    });
+
+    await expectLater(
+      HutUserApi().getFunctionList(),
+      throwsA(isA<HutAuthenticationRequiredException>()),
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('hutIsLogin'), isFalse);
+  });
 }

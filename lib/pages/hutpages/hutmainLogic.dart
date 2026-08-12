@@ -14,7 +14,15 @@ class HutMainLogic extends GetxController {
     if (state.isLoad.value) {
       return funList;
     }
-    funList = await api.getFunctionList();
+    try {
+      funList = await api.getFunctionList();
+    } on HutAuthenticationRequiredException {
+      // getFunctionList explicitly reports an invalid session. Re-check the
+      // persisted login flag now so this page opens the login flow immediately
+      // instead of treating authentication failure as a valid empty list.
+      await checkLogin();
+      return const [];
+    }
     state.isLoad.value = true;
     update();
     return funList;
