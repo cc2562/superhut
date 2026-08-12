@@ -253,6 +253,13 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
         return;
       }
 
+      // 短信登录可能已切换账号，先清除上一个账号的教务系统会话，
+      // 避免 getJwxtToken 命中仍有效的旧缓存并加载上一个账号的课表。
+      await HutCasTokenRetriever.clearCachedSession();
+      if (!mounted) {
+        return;
+      }
+
       // 与密码登录成功后的处理保持一致：先换取教务系统 token（写入 `token`
       // key，Getcoursepage 依赖它），再关闭登录页跳转课表。SMS 登录只写了
       // hutToken，若跳过这一步新 SMS 用户会拿到空 token 导致课表加载失败。
