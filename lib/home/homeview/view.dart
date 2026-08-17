@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,6 +24,7 @@ class HomeviewPage extends StatefulWidget {
 
 class _HomeviewPageState extends State<HomeviewPage>
     with AutomaticKeepAliveClientMixin {
+  int _selectedIndex = 0;
   bool _isUpdateAvailable = false;
   String _latestVersion = '';
   String _updateDescription = '';
@@ -158,40 +159,196 @@ class _HomeviewPageState extends State<HomeviewPage>
   Widget build(BuildContext context) {
     super.build(context);
     final HomeviewLogic logic = Get.put(HomeviewLogic());
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      //extendBodyBehindAppBar: true,
-      body: PageView(
-        physics: NeverScrollableScrollPhysics(),
-        controller: logic.homePageController,
-        children: [CourseTableView(), FunctionPage(), UserPage()],
-      ),
-      bottomSheet: Container(
-        color: Colors.transparent,
-        margin: EdgeInsets.all(10),
-        padding: EdgeInsets.only(left: 15, right: 15, bottom: 20, top: 10),
-        child: GNav(
-          gap: 10,
-          color: Theme.of(context).primaryColorDark,
-          activeColor: Theme.of(context).primaryColor,
-          iconSize: 24,
-          tabBackgroundColor: Theme.of(context).primaryColor.withAlpha(20),
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          duration: Duration(milliseconds: 200),
-          tabs: [
-            GButton(icon: Ionicons.calendar_outline, text: '课表'),
-            GButton(icon: Ionicons.apps_outline, text: '功能'),
-            GButton(icon: Ionicons.person_outline, text: '我'),
-          ],
-          onTabChange: (index) {
-            logic.homePageController.animateToPage(
-              index,
-              duration: Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-            );
+      body: BottomBar(
+        layout: const BottomBarLayout.adaptive(
+          maxWidth: 420,
+          offset: 16,
+          borderRadius: BorderRadius.all(Radius.circular(30)),
+        ),
+        motion: const BottomBarMotion.cupertino(
+          preset: BottomBarCupertinoMotion.snappy,
+          duration: Duration(milliseconds: 420),
+          slideStart: Offset(0, 2),
+        ),
+        scrollBehavior: const BottomBarScrollBehavior(
+          hideOnScroll: true,
+          showAtStart: true,
+          deltaThreshold: 10,
+        ),
+        showIcon: false,
+        theme: BottomBarThemeData(
+          barDecoration: BoxDecoration(
+            color: colorScheme.surfaceContainer.withValues(alpha: 0.96),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.shadow.withValues(alpha: 0.16),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+        ),
+        body: PageView(
+          physics: const NeverScrollableScrollPhysics(),
+          controller: logic.homePageController,
+          onPageChanged: (index) {
+            if (_selectedIndex != index) {
+              setState(() => _selectedIndex = index);
+            }
           },
+          children: const [
+            _KeepAlivePage(child: CourseTableView()),
+            _KeepAlivePage(child: FunctionPage()),
+            _KeepAlivePage(child: UserPage()),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final itemWidth = constraints.maxWidth / 3;
+
+              return Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 280),
+                    curve: Curves.easeOutCubic,
+                    left: itemWidth * _selectedIndex,
+                    top: 0,
+                    bottom: 0,
+                    width: itemWidth,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      _FloatingNavigationItem(
+                        icon: Ionicons.calendar_outline,
+                        selectedIcon: Ionicons.calendar,
+                        label: '课表',
+                        selected: _selectedIndex == 0,
+                        onTap: () => _selectPage(logic, 0),
+                      ),
+                      _FloatingNavigationItem(
+                        icon: Ionicons.apps_outline,
+                        selectedIcon: Ionicons.apps,
+                        label: '功能',
+                        selected: _selectedIndex == 1,
+                        onTap: () => _selectPage(logic, 1),
+                      ),
+                      _FloatingNavigationItem(
+                        icon: Ionicons.person_outline,
+                        selectedIcon: Ionicons.person,
+                        label: '我',
+                        selected: _selectedIndex == 2,
+                        onTap: () => _selectPage(logic, 2),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
+  }
+
+  void _selectPage(HomeviewLogic logic, int index) {
+    if (_selectedIndex == index) {
+      return;
+    }
+
+    setState(() => _selectedIndex = index);
+    logic.homePageController.jumpToPage(index);
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+}
+
+class _FloatingNavigationItem extends StatelessWidget {
+  const _FloatingNavigationItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: label,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 52),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: Icon(
+                    selected ? selectedIcon : icon,
+                    key: ValueKey(selected),
+                    size: 22,
+                    color:
+                        selected
+                            ? colorScheme.onPrimaryContainer
+                            : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KeepAlivePage extends StatefulWidget {
+  const _KeepAlivePage({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<_KeepAlivePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 
   @override
