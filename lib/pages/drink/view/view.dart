@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:superhut/theme/app_theme.dart';
 
 import 'logic.dart';
 
@@ -97,8 +98,20 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('展开更多功能', style: TextStyle(color: Colors.grey)),
-                          Icon(Icons.keyboard_arrow_right, color: Colors.grey),
+                          Text(
+                            '展开更多功能',
+                            style: TextStyle(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          Icon(
+                            Icons.keyboard_arrow_right,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ],
                       ),
                     ),
@@ -172,7 +185,10 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Icon(Icons.arrow_forward_ios, color: Colors.grey),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ],
                     ),
                   ],
@@ -208,7 +224,10 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios, color: Colors.grey),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ],
                   ),
                 ],
@@ -242,7 +261,7 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                     height: 4,
                     margin: EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: Theme.of(context).colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -267,7 +286,10 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                                 Icon(
                                   Icons.device_unknown,
                                   size: 48,
-                                  color: Colors.grey,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                 ),
                                 SizedBox(height: 10),
                                 Text('暂无可用设备，请先添加设备'),
@@ -343,9 +365,13 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
         children: [
           Container(
             height: 180,
-            color: Colors.grey[200], // 地图占位背景
+            color: Theme.of(context).colorScheme.surfaceContainer,
             child: Center(
-              child: Icon(Icons.location_on, size: 48, color: Colors.blue),
+              child: Icon(
+                Icons.location_on,
+                size: 48,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ),
         ],
@@ -360,7 +386,7 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
         return Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(horizontal: 20),
-          child: TextButton(
+          child: FilledButton(
             onPressed: () {
               if (logic.state.choiceDevice.value == -1) {
                 return;
@@ -372,17 +398,8 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                 logic.startDrink(context);
               }
             },
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all(
-                Theme.of(context).colorScheme.primary,
-              ),
-              foregroundColor: WidgetStateProperty.all(Colors.white),
-              padding: WidgetStateProperty.all(
-                EdgeInsets.symmetric(vertical: 15),
-              ),
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 15),
             ),
             child: Text(
               logic.state.drinkStatus.value ? '结算' : '开启用水',
@@ -430,7 +447,7 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                     height: 4,
                     margin: EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: Theme.of(context).colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -445,7 +462,10 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                     ),
                   ),
                   ListTile(
-                    leading: Icon(Ionicons.grid_outline, color: Colors.blue),
+                    leading: Icon(
+                      Ionicons.grid_outline,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     title: Text('设备管理'),
                     onTap: () {
                       Navigator.pop(context);
@@ -455,7 +475,7 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                   ListTile(
                     leading: Icon(
                       Ionicons.add_circle_outline,
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     title: Text('添加设备'),
                     onTap: () {
@@ -493,7 +513,7 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                     height: 4,
                     margin: EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: Theme.of(context).colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -564,7 +584,8 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                                   trailing: IconButton(
                                     icon: Icon(
                                       Ionicons.remove_circle_outline,
-                                      color: Colors.red,
+                                      color:
+                                          Theme.of(context).colorScheme.error,
                                     ),
                                     onPressed: () {
                                       showDialog(
@@ -601,7 +622,10 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                                                     Navigator.pop(context);
                                                   },
                                                   style: TextButton.styleFrom(
-                                                    foregroundColor: Colors.red,
+                                                    foregroundColor:
+                                                        Theme.of(
+                                                          context,
+                                                        ).colorScheme.error,
                                                   ),
                                                   child: Text('删除'),
                                                 ),
@@ -661,7 +685,7 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                     height: 4,
                     margin: EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: Theme.of(context).colorScheme.outlineVariant,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -769,14 +793,23 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
             isFavo ? '成功' : '失败',
             isFavo ? '设备添加成功！' : '设备添加失败，请重试',
             snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: isFavo ? Colors.green : Colors.red,
-            colorText: Colors.white,
+            backgroundColor:
+                isFavo
+                    ? context.semanticColors.successContainer
+                    : Theme.of(context).colorScheme.errorContainer,
+            colorText:
+                isFavo
+                    ? context.semanticColors.onSuccessContainer
+                    : Theme.of(context).colorScheme.onErrorContainer,
             duration: Duration(seconds: 3),
             margin: EdgeInsets.all(10),
             borderRadius: 10,
             icon: Icon(
               isFavo ? Icons.check_circle : Icons.error,
-              color: Colors.white,
+              color:
+                  isFavo
+                      ? context.semanticColors.onSuccessContainer
+                      : Theme.of(context).colorScheme.onErrorContainer,
             ),
           );
 
@@ -790,12 +823,15 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
             '错误',
             '添加设备时出错: $e',
             snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.errorContainer,
+            colorText: Theme.of(context).colorScheme.onErrorContainer,
             duration: Duration(seconds: 3),
             margin: EdgeInsets.all(10),
             borderRadius: 10,
-            icon: Icon(Icons.error, color: Colors.white),
+            icon: Icon(
+              Icons.error,
+              color: Theme.of(context).colorScheme.onErrorContainer,
+            ),
           );
         }
       }
@@ -805,12 +841,15 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
         '错误',
         '扫描二维码出错',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.errorContainer,
+        colorText: Theme.of(context).colorScheme.onErrorContainer,
         duration: Duration(seconds: 3),
         margin: EdgeInsets.all(10),
         borderRadius: 10,
-        icon: Icon(Icons.error, color: Colors.white),
+        icon: Icon(
+          Icons.error,
+          color: Theme.of(context).colorScheme.onErrorContainer,
+        ),
       );
     }
     return true;
@@ -821,7 +860,6 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
     // 这个方法已不再使用，被QRCodeScannerPage类替代
     return SizedBox();
   }
-
 }
 
 // 自定义二维码扫描页面

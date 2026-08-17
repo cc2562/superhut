@@ -32,8 +32,10 @@ class WelcomepagePage extends StatelessWidget {
             title: "超级包菜",
             body: "欢迎使用超级包菜APP\n与工大签订契约吧~( ⓛ ω ⓛ *)",
             image: const Center(child: Icon(Icons.waving_hand, size: 50.0)),
-            decoration: const PageDecoration(
-              titleTextStyle: TextStyle(color: Colors.orange),
+            decoration: PageDecoration(
+              titleTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+              ),
               bodyTextStyle: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 20.0,
@@ -44,8 +46,10 @@ class WelcomepagePage extends StatelessWidget {
             title: "查看课表",
             body: "通过小助手的课表功能，可以查看你的课表",
             image: const Center(child: Icon(Icons.calendar_month, size: 50.0)),
-            decoration: const PageDecoration(
-              titleTextStyle: TextStyle(color: Colors.orange),
+            decoration: PageDecoration(
+              titleTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+              ),
               bodyTextStyle: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 20.0,
@@ -56,8 +60,10 @@ class WelcomepagePage extends StatelessWidget {
             title: " 更多功能",
             body: "宿舍喝水、洗澡、看成绩、快速教评...你需要的这里都有",
             image: const Center(child: Icon(Icons.apps, size: 50.0)),
-            decoration: const PageDecoration(
-              titleTextStyle: TextStyle(color: Colors.orange),
+            decoration: PageDecoration(
+              titleTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+              ),
               bodyTextStyle: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 20.0,

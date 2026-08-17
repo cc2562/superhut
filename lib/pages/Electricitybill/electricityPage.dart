@@ -123,11 +123,11 @@ class _ElectricityPageState extends State<ElectricityPage> {
     );
     print("the orderInfo::::$_orderInfo");
     //完成充值
-   // electricityApi.finishRecharge(
-   //   _orderInfo['payorderno'],
-   //   _payment,
-   //   _roomToChargeName,
-   // );
+    // electricityApi.finishRecharge(
+    //   _orderInfo['payorderno'],
+    //   _payment,
+    //   _roomToChargeName,
+    // );
     //充值成功
     getNewRoomInfo(_roomToChargeId);
     getBalance();
@@ -137,6 +137,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
@@ -152,7 +153,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                color: Colors.blue.shade100,
+                color: scheme.primaryContainer,
               ),
               child: EnhancedFutureBuilder(
                 future: getHisRoomInfo(),
@@ -170,7 +171,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                                 setRoomName,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black,
+                                  color: scheme.onPrimaryContainer,
                                 ),
                               ),
                             ],
@@ -185,7 +186,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              color: scheme.onPrimaryContainer,
                             ),
                           ),
                           SizedBox(width: 5),
@@ -194,7 +195,9 @@ class _ElectricityPageState extends State<ElectricityPage> {
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w100,
-                              color: Colors.black.withAlpha(150),
+                              color: scheme.onPrimaryContainer.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                         ],
@@ -215,7 +218,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                color: Colors.green.shade100,
+                color: scheme.secondaryContainer,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +232,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                             '通过校园卡充值',
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
-                              color: Colors.black,
+                              color: scheme.onSecondaryContainer,
                             ),
                           ),
                         ],
@@ -238,12 +241,14 @@ class _ElectricityPageState extends State<ElectricityPage> {
                   ),
                   SizedBox(height: 8),
                   TextField(
-                    
                     controller: _paymentController,
                     keyboardType: TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    style: TextStyle(fontSize: 32,color: Colors.white),
+                    style: TextStyle(
+                      fontSize: 32,
+                      color: scheme.onSecondaryContainer,
+                    ),
                     maxLength: 10,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
@@ -262,7 +267,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         '校园卡余额:',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.black,
+                          color: scheme.onSecondaryContainer,
                           fontWeight: FontWeight.normal,
                         ),
                       ),
@@ -271,19 +276,18 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.normal,
-                          color: Colors.black,
+                          color: scheme.onSecondaryContainer,
                         ),
                       ),
                     ],
                   ),
-                  TextButton(
+                  FilledButton(
                     onPressed: () async {
-                      
-                      if(isChargeLoading == true){
+                      if (isChargeLoading == true) {
                         return;
                       }
                       setState(() {
-                        isChargeLoading =true;
+                        isChargeLoading = true;
                       });
                       //_launchUrl();
                       if (_paymentController.text.isEmpty) {
@@ -291,10 +295,9 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           context,
                         ).showSnackBar(SnackBar(content: Text('充值金额不能为空')));
                         setState(() {
-                          isChargeLoading =false;
+                          isChargeLoading = false;
                         });
                         return;
-                        
                       }
                       // 层级校验 2: 数字格式校验
                       final amount = double.tryParse(_paymentController.text);
@@ -303,7 +306,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           context,
                         ).showSnackBar(SnackBar(content: Text('请输入有效的数字格式')));
                         setState(() {
-                          isChargeLoading =false;
+                          isChargeLoading = false;
                         });
                         return;
                       }
@@ -314,7 +317,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           context,
                         ).showSnackBar(SnackBar(content: Text('金额必须大于0元')));
                         setState(() {
-                          isChargeLoading =false;
+                          isChargeLoading = false;
                         });
                         return;
                       }
@@ -326,7 +329,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           context,
                         ).showSnackBar(SnackBar(content: Text('最多支持两位小数')));
                         setState(() {
-                          isChargeLoading =false;
+                          isChargeLoading = false;
                         });
                         return;
                       }
@@ -338,7 +341,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           SnackBar(content: Text('单次充值不能超过$maxAmount元')),
                         );
                         setState(() {
-                          isChargeLoading =false;
+                          isChargeLoading = false;
                         });
                         return;
                       }
@@ -349,21 +352,13 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         isChargeLoading = false;
                       });
                     },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all(
-                        Colors.green.shade200,
-                      ),
-                      foregroundColor: WidgetStateProperty.all(Colors.white),
-                      shape: WidgetStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                    child: isChargeLoading?LoadingAnimationWidget.inkDrop(
-                      color: Colors.white,
-                      size: 10,
-                    ):Text('充值'),
+                    child:
+                        isChargeLoading
+                            ? LoadingAnimationWidget.inkDrop(
+                              color: scheme.onPrimary,
+                              size: 10,
+                            )
+                            : Text('充值'),
                   ),
                 ],
               ),
@@ -390,7 +385,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           color: Theme.of(context).primaryColor,
                           size: 20,
                         )
-                        : Icon(Icons.chevron_right, color: Colors.grey),
+                        : const Icon(Icons.chevron_right),
                 onTap: () async {
                   setState(() {
                     isRoomLoading = true;
@@ -458,7 +453,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                         height: 4,
                         margin: EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: Theme.of(context).colorScheme.outlineVariant,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -483,7 +478,10 @@ class _ElectricityPageState extends State<ElectricityPage> {
                             hintText: '搜索房间名称或ID',
                             prefixIcon: Icon(Icons.search, size: 24),
                             filled: true,
-                            fillColor: Colors.grey.withAlpha(20),
+                            fillColor:
+                                Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                               borderSide: BorderSide.none,
@@ -505,7 +503,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                             return ListTile(
                               leading: Icon(
                                 Ionicons.shapes_outline,
-                                color: Colors.blue,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                               title: Text(room['acname']),
                               //subtitle: Text(room['acguid']),
@@ -571,7 +569,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           height: 4,
                           margin: EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: Theme.of(context).colorScheme.outlineVariant,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -595,14 +593,17 @@ class _ElectricityPageState extends State<ElectricityPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            fillColor: Colors.white.withAlpha(20),
+                            fillColor:
+                                Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 12,
                             ),
                             prefixIcon: Icon(
                               Ionicons.alert_circle_outline,
-                              color: Colors.orange,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                           keyboardType: TextInputType.number,
@@ -635,8 +636,10 @@ class _ElectricityPageState extends State<ElectricityPage> {
                               Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -657,7 +660,10 @@ class _ElectricityPageState extends State<ElectricityPage> {
                                 child: Container(
                                   padding: EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withAlpha(20),
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Column(
@@ -681,8 +687,10 @@ class _ElectricityPageState extends State<ElectricityPage> {
                                     Navigator.pop(context);
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                    foregroundColor: Colors.white,
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.primary,
+                                    foregroundColor:
+                                        Theme.of(context).colorScheme.onPrimary,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -704,7 +712,10 @@ class _ElectricityPageState extends State<ElectricityPage> {
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(20),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Column(
@@ -714,7 +725,8 @@ class _ElectricityPageState extends State<ElectricityPage> {
                                   children: [
                                     Icon(
                                       Icons.info_outline,
-                                      color: Colors.orange,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                     ),
                                     SizedBox(width: 8),
                                     Text(
@@ -759,7 +771,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
       child: ListTile(
         leading: Icon(icon, color: Theme.of(context).primaryColor),
         title: Text(title, style: TextStyle(fontWeight: FontWeight.w500)),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey),
+        trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );

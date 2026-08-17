@@ -7,8 +7,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../bridge/getCoursePage.dart';
 import '../../pages/score/scorepage.dart';
+import '../../pages/settings/theme_settings_page.dart';
 import '../../utils/hut_user_api.dart';
 import '../../utils/token.dart';
+import '../../widgets/material_grouped_list.dart';
 import '../about/view.dart';
 
 class UserPage extends StatefulWidget {
@@ -32,7 +34,7 @@ class _UserPageState extends State<UserPage> {
   /// 获取余额
   Future<void> getBalance() async {
     await hutUserApi.getCardBalance().then((value) {
-      balance = value.toString() ?? '--';
+      balance = value.toString();
       setState(() {
         balance = balance;
       });
@@ -81,15 +83,17 @@ class _UserPageState extends State<UserPage> {
         whenDone: (d) {
           return SafeArea(
             child: ListView(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
               children: [
                 // 顶部标题
                 Text(
                   "你好，${d["name"]}",
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
 
-                SizedBox(height: 24),
+                const SizedBox(height: 20),
                 /*
               Container(
                 padding: EdgeInsets.all(20),
@@ -157,8 +161,6 @@ class _UserPageState extends State<UserPage> {
                       child: _buildStatCard(
                         title: "已修学分",
                         value: d['yxzxf'],
-                        color: Color(0xFFE3F1EC),
-                        textColor: Colors.black87,
                         onTap: () async {
                           if (!await renewToken(context) || !context.mounted) {
                             return;
@@ -173,15 +175,13 @@ class _UserPageState extends State<UserPage> {
                       ),
                     ),
 
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
 
                     // 分数卡片
                     Expanded(
                       child: _buildStatCard(
                         title: "我的绩点",
                         value: d['pjxfjd'],
-                        color: Color(0xFFFFF6E0),
-                        textColor: Colors.black87,
                         onTap: () async {
                           if (!await renewToken(context) || !context.mounted) {
                             return;
@@ -198,132 +198,141 @@ class _UserPageState extends State<UserPage> {
                   ],
                 ),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 // 校园卡
-                Card(
-                  elevation: 0,
-                  color: Colors.purple.shade100,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Container(
+                Card.filled(
+                  margin: EdgeInsets.zero,
+                  color: Theme.of(context).colorScheme.tertiaryContainer,
+                  child: SizedBox(
                     width: double.infinity,
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.white.withAlpha(20),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  '校园卡',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    '校园卡',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onTertiaryContainer,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Text(
-                              balance,
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                ],
                               ),
-                            ),
-                            SizedBox(width: 5),
-                            Text(
-                              'CNY',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w100,
-                                color: Colors.black.withAlpha(150),
-                              ),
-                            ),
-                          ],
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            _launchUrl();
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: WidgetStateProperty.all(
-                              Colors.purple.shade200,
-                            ),
-                            foregroundColor: WidgetStateProperty.all(
-                              Colors.white,
-                            ),
-                            shape: WidgetStateProperty.all(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
+                            ],
                           ),
-                          child: Text('充值'),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      balance,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onTertiaryContainer,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'CNY',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelLarge?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onTertiaryContainer
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              FilledButton.tonal(
+                                onPressed: _launchUrl,
+                                child: const Text('充值'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 //SizedBox(height: 24),
 
                 // 功能项
-                _buildFunctionItem(
-                  icon: Ionicons.refresh_outline,
-                  title: "刷新课表",
-                  onTap: () async {
-                    if (!await renewToken(context) || !context.mounted) return;
-                    // print("跳转");
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => Getcoursepage(renew: true),
-                      ),
-                    );
-                  },
+                MaterialGroupedList(
+                  children: [
+                    _buildFunctionItem(
+                      icon: Ionicons.refresh_outline,
+                      title: "刷新课表",
+                      onTap: () async {
+                        if (!await renewToken(context) || !context.mounted) {
+                          return;
+                        }
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Getcoursepage(renew: true),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildFunctionItem(
+                      icon: Icons.palette_outlined,
+                      title: '外观与主题',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ThemeSettingsPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildFunctionItem(
+                      icon: Ionicons.log_out_outline,
+                      title: "退出登录",
+                      onTap: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        prefs.setString('user', "");
+                        prefs.setString('password', "");
+                        await prefs.setBool('isFirstOpen', true);
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => WelcomepagePage(),
+                            ),
+                          );
+                        });
+                      },
+                    ),
+                    _buildFunctionItem(
+                      icon: Ionicons.information_circle_outline,
+                      title: "关于软件",
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => AboutPage()),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-
-                _buildFunctionItem(
-                  icon: Ionicons.log_out_outline,
-                  title: "退出登录",
-                  onTap: () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    prefs.setString('user', "");
-                    prefs.setString('password', "");
-                    await prefs.setBool('isFirstOpen', true);
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => WelcomepagePage(),
-                        ),
-                      );
-                    });
-                  },
-                ),
-
-                _buildFunctionItem(
-                  icon: Ionicons.information_circle_outline,
-                  title: "关于软件",
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => AboutPage()),
-                    );
-                  },
-                ),
-                SizedBox(height: 100),
               ],
             ),
           );
@@ -338,51 +347,48 @@ class _UserPageState extends State<UserPage> {
     required VoidCallback onTap,
     required String title,
     required String value,
-    required Color color,
-    required Color textColor,
   }) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: textColor.withOpacity(0.7),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final scheme = Theme.of(context).colorScheme;
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: scheme.secondaryContainer,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                value,
+                title,
                 style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
+                  color: scheme.onSecondaryContainer.withValues(alpha: 0.75),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                padding: EdgeInsets.all(4),
-                child: IconButton(
-                  onPressed: onTap,
-                  icon: Icon(Icons.arrow_forward, size: 16, color: textColor),
-                ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 30,
+                      height: 1.1,
+                      fontWeight: FontWeight.bold,
+                      color: scheme.onSecondaryContainer,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 20,
+                    color: scheme.onSecondaryContainer,
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -393,16 +399,11 @@ class _UserPageState extends State<UserPage> {
     required String title,
     required VoidCallback onTap,
   }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return MaterialGroupedListItem(
       child: ListTile(
-        leading: Icon(icon, color: Theme.of(context).primaryColor),
+        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
         title: Text(title, style: TextStyle(fontWeight: FontWeight.w500)),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey),
+        trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );

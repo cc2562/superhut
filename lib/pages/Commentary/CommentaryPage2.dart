@@ -1,5 +1,6 @@
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
+import 'package:superhut/theme/app_theme.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/Commentary/CommentaryPage3.dart';
 
@@ -104,15 +105,28 @@ class _commentaryPage2State extends State<commentaryPage2> {
                                     theCommentary['isSubmitCode'] == '1'
                                         ? '已评教'
                                         : '未评教',
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(
+                                      color:
+                                          theCommentary['isSubmitCode'] == '1'
+                                              ? context
+                                                  .semanticColors
+                                                  .onSuccessContainer
+                                              : Theme.of(
+                                                context,
+                                              ).colorScheme.onErrorContainer,
+                                    ),
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(50),
                                   ),
                                   backgroundColor:
                                       theCommentary['isSubmitCode'] == '1'
-                                          ? Colors.green
-                                          : Colors.red,
+                                          ? context
+                                              .semanticColors
+                                              .successContainer
+                                          : Theme.of(
+                                            context,
+                                          ).colorScheme.errorContainer,
                                 ),
                               ],
                             ),

@@ -122,12 +122,15 @@ class FunctionDrinkLogic extends GetxController {
               '失败',
               '开启失败',
               snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.red,
-              colorText: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.errorContainer,
+              colorText: Theme.of(context).colorScheme.onErrorContainer,
               duration: Duration(seconds: 3),
               margin: EdgeInsets.all(10),
               borderRadius: 10,
-              icon: Icon(Icons.error, color: Colors.white),
+              icon: Icon(
+                Icons.error,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
             );
           }
           update();
@@ -147,12 +150,15 @@ class FunctionDrinkLogic extends GetxController {
               '失败',
               '结算失败',
               snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: Colors.red,
-              colorText: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.errorContainer,
+              colorText: Theme.of(context).colorScheme.onErrorContainer,
               duration: Duration(seconds: 3),
               margin: EdgeInsets.all(10),
               borderRadius: 10,
-              icon: Icon(Icons.error, color: Colors.white),
+              icon: Icon(
+                Icons.error,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
             );
           }
           update();

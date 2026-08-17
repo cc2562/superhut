@@ -173,14 +173,20 @@ class _HutMainPageState extends State<HutMainPage> with WidgetsBindingObserver {
                               Icon(
                                 Icons.search_off,
                                 size: 64,
-                                color: Colors.grey,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                               ),
                               SizedBox(height: 16),
                               Text(
                                 '未找到与"$_searchText"相关的功能',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -215,7 +221,10 @@ class _HutMainPageState extends State<HutMainPage> with WidgetsBindingObserver {
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.grey,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ),
@@ -325,10 +334,12 @@ class _HutMainPageState extends State<HutMainPage> with WidgetsBindingObserver {
                       },
                     );
                   },
-                  whenNotDone: Center(child: LoadingAnimationWidget.inkDrop(
-                    color: Theme.of(context).primaryColor,
-                    size: 40,
-                  ),),
+                  whenNotDone: Center(
+                    child: LoadingAnimationWidget.inkDrop(
+                      color: Theme.of(context).primaryColor,
+                      size: 40,
+                    ),
+                  ),
                 ),
               ),
             ],

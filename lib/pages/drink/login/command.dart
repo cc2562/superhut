@@ -9,7 +9,7 @@ import 'loginpart2.dart';
 class DrinkLoginCommand {
   static final DrinkLoginCommand _instance = DrinkLoginCommand._internal();
   factory DrinkLoginCommand() => _instance;
-  
+
   DrinkLoginCommand._internal() {
     _reset();
   }
@@ -43,12 +43,13 @@ class DrinkLoginCommand {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DrinkLoginPage2(
-          phoneNumber: phoneNumber,
-          doubleRandom: _doubleRandom,
-          timestamp: _timestamp,
-          imageCode: imageCode,
-        ),
+        builder:
+            (context) => DrinkLoginPage2(
+              phoneNumber: phoneNumber,
+              doubleRandom: _doubleRandom,
+              timestamp: _timestamp,
+              imageCode: imageCode,
+            ),
       ),
     );
   }
@@ -66,8 +67,9 @@ class DrinkLoginCommand {
           if (value) {
             to2Login(context, phoneNumber, imageCode);
           } else {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(const SnackBar(content: Text('验证码错误')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('验证码错误')));
           }
         });
   }
@@ -75,13 +77,15 @@ class DrinkLoginCommand {
   void login(String phoneNumber, String code, context) {
     api.userLogin(phone: phoneNumber, messageCode: code).then((value) {
       if (value) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('成功')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('成功')));
         Navigator.pop(context);
-        Navigator.pop(context);  // 退出登录页面时，确保返回两层
+        Navigator.pop(context); // 退出登录页面时，确保返回两层
       } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('登录失败')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('登录失败')));
       }
     });
   }

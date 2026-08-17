@@ -80,16 +80,16 @@ class _HutLoginPageState extends State<HutLoginPage> {
         return;
       }
       if (result.success) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(result.message.isEmpty ? '验证码已发送' : result.message)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message.isEmpty ? '验证码已发送' : result.message),
+          ),
         );
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(result.message.isEmpty ? '获取验证码失败' : result.message)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message.isEmpty ? '获取验证码失败' : result.message),
+          ),
         );
       }
     } finally {
@@ -127,10 +127,10 @@ class _HutLoginPageState extends State<HutLoginPage> {
         ).showSnackBar(const SnackBar(content: Text('登录成功')));
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(result.message.isEmpty ? '登录失败' : result.message)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message.isEmpty ? '登录失败' : result.message),
+          ),
         );
       }
     } finally {
@@ -425,9 +425,7 @@ class _HutLoginPageState extends State<HutLoginPage> {
                       _pwdController.text.isEmpty) {
                     ScaffoldMessenger.of(
                       context,
-                    ).showSnackBar(
-                      const SnackBar(content: Text('学号或密码不能为空')),
-                    );
+                    ).showSnackBar(const SnackBar(content: Text('学号或密码不能为空')));
                     return;
                   }
                   loginToHuT(

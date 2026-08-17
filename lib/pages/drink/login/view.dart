@@ -23,7 +23,7 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
   void dispose() {
     _userNoController.dispose();
     _pwdController.dispose();
-    _command.dispose();  // 清理登录状态
+    _command.dispose(); // 清理登录状态
     super.dispose();
   }
 
@@ -156,7 +156,8 @@ class _DrinkLoginPageState extends State<DrinkLoginPage> {
                                             child: InkWell(
                                               onTap: () {
                                                 setState(() {
-                                                  _command.dispose(); // 重置状态以刷新验证码
+                                                  _command
+                                                      .dispose(); // 重置状态以刷新验证码
                                                 });
                                               },
                                               highlightColor:

@@ -251,7 +251,7 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.white.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
               child: const Center(child: CircularProgressIndicator()),
             ),
         ],

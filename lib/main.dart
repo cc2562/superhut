@@ -1,5 +1,4 @@
-import 'package:flex_color_scheme/flex_color_scheme.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,124 +13,7 @@ import 'home/homeview/view.dart';
 import 'pages/drink/view/view.dart';
 import 'pages/water/view.dart';
 import 'pages/Electricitybill/electricityPage.dart';
-import 'pages/score/scorepage.dart';
-
-abstract final class AppTheme {
-  // The defined light theme.
-  static ThemeData light = FlexThemeData.light(
-    scheme: FlexScheme.indigoM3,
-    usedColors: 1,
-    surfaceMode: FlexSurfaceMode.highBackgroundLowScaffold,
-    blendLevel: 1,
-    appBarStyle: FlexAppBarStyle.background,
-    subThemesData: const FlexSubThemesData(
-      interactionEffects: true,
-      tintedDisabledControls: true,
-      blendOnLevel: 10,
-      useM2StyleDividerInM3: true,
-      elevatedButtonSchemeColor: SchemeColor.onPrimaryContainer,
-      elevatedButtonSecondarySchemeColor: SchemeColor.primaryContainer,
-      segmentedButtonSchemeColor: SchemeColor.primary,
-      inputDecoratorSchemeColor: SchemeColor.primary,
-      inputDecoratorIsFilled: true,
-      inputDecoratorBackgroundAlpha: 21,
-      inputDecoratorBorderType: FlexInputBorderType.outline,
-      inputDecoratorRadius: 8.0,
-      inputDecoratorUnfocusedHasBorder: false,
-      inputDecoratorPrefixIconSchemeColor: SchemeColor.primary,
-      popupMenuRadius: 6.0,
-      popupMenuElevation: 4.0,
-      alignedDropdown: true,
-      dialogElevation: 3.0,
-      dialogRadius: 20.0,
-      drawerIndicatorSchemeColor: SchemeColor.primary,
-      bottomNavigationBarMutedUnselectedLabel: false,
-      bottomNavigationBarMutedUnselectedIcon: false,
-      menuRadius: 6.0,
-      menuElevation: 4.0,
-      menuBarRadius: 0.0,
-      menuBarElevation: 1.0,
-      searchBarElevation: 2.0,
-      searchViewElevation: 2.0,
-      searchUseGlobalShape: true,
-      navigationBarSelectedLabelSchemeColor: SchemeColor.primary,
-      navigationBarSelectedIconSchemeColor: SchemeColor.onPrimary,
-      navigationBarIndicatorSchemeColor: SchemeColor.primary,
-      navigationBarBackgroundSchemeColor: SchemeColor.surfaceContainer,
-      navigationBarElevation: 0.0,
-      navigationRailSelectedLabelSchemeColor: SchemeColor.primary,
-      navigationRailSelectedIconSchemeColor: SchemeColor.onPrimary,
-      navigationRailUseIndicator: true,
-      navigationRailIndicatorSchemeColor: SchemeColor.primary,
-      navigationRailIndicatorOpacity: 1.00,
-      navigationRailLabelType: NavigationRailLabelType.all,
-    ),
-    keyColors: const FlexKeyColors(
-      useSecondary: true,
-      useTertiary: true,
-      keepPrimary: true,
-    ),
-    tones: FlexSchemeVariant.oneHue.tones(Brightness.light),
-    visualDensity: FlexColorScheme.comfortablePlatformDensity,
-    cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
-  );
-
-  // The defined dark theme.
-  static ThemeData dark = FlexThemeData.dark(
-    scheme: FlexScheme.indigoM3,
-    usedColors: 1,
-    surfaceMode: FlexSurfaceMode.highBackgroundLowScaffold,
-    blendLevel: 4,
-    appBarStyle: FlexAppBarStyle.background,
-    subThemesData: const FlexSubThemesData(
-      interactionEffects: true,
-      tintedDisabledControls: true,
-      blendOnLevel: 10,
-      blendOnColors: true,
-      useM2StyleDividerInM3: true,
-      elevatedButtonSchemeColor: SchemeColor.onPrimaryContainer,
-      elevatedButtonSecondarySchemeColor: SchemeColor.primaryContainer,
-      segmentedButtonSchemeColor: SchemeColor.primary,
-      inputDecoratorSchemeColor: SchemeColor.primary,
-      inputDecoratorIsFilled: true,
-      inputDecoratorBackgroundAlpha: 43,
-      inputDecoratorBorderType: FlexInputBorderType.outline,
-      inputDecoratorRadius: 8.0,
-      inputDecoratorUnfocusedHasBorder: false,
-      inputDecoratorPrefixIconSchemeColor: SchemeColor.primary,
-      popupMenuRadius: 6.0,
-      popupMenuElevation: 4.0,
-      alignedDropdown: true,
-      dialogElevation: 3.0,
-      dialogRadius: 20.0,
-      drawerIndicatorSchemeColor: SchemeColor.primary,
-      bottomNavigationBarMutedUnselectedLabel: false,
-      bottomNavigationBarMutedUnselectedIcon: false,
-      menuRadius: 6.0,
-      menuElevation: 4.0,
-      menuBarRadius: 0.0,
-      menuBarElevation: 1.0,
-      searchBarElevation: 2.0,
-      searchViewElevation: 2.0,
-      searchUseGlobalShape: true,
-      navigationBarSelectedLabelSchemeColor: SchemeColor.primary,
-      navigationBarSelectedIconSchemeColor: SchemeColor.onPrimary,
-      navigationBarIndicatorSchemeColor: SchemeColor.primary,
-      navigationBarBackgroundSchemeColor: SchemeColor.surfaceContainer,
-      navigationBarElevation: 0.0,
-      navigationRailSelectedLabelSchemeColor: SchemeColor.primary,
-      navigationRailSelectedIconSchemeColor: SchemeColor.onPrimary,
-      navigationRailUseIndicator: true,
-      navigationRailIndicatorSchemeColor: SchemeColor.primary,
-      navigationRailIndicatorOpacity: 1.00,
-      navigationRailLabelType: NavigationRailLabelType.all,
-    ),
-    keyColors: const FlexKeyColors(useSecondary: true, useTertiary: true),
-    tones: FlexSchemeVariant.oneHue.tones(Brightness.dark),
-    visualDensity: FlexColorScheme.comfortablePlatformDensity,
-    cupertinoOverrideTheme: const CupertinoThemeData(applyThemeToAll: true),
-  );
-}
+import 'theme/theme_controller.dart';
 
 WebViewEnvironment? webViewEnvironment;
 
@@ -153,12 +35,7 @@ Future<void> main() async {
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     await InAppWebViewController.setWebContentsDebuggingEnabled(kDebugMode);
   }
-  SystemChrome.setSystemUIOverlayStyle(
-    SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent, // 全局状态栏颜色
-      statusBarIconBrightness: Brightness.dark, // 图标颜色（根据背景调整）
-    ),
-  );
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   runApp(const MyApp());
 }
 
@@ -173,8 +50,11 @@ class _MyAppState extends State<MyApp> {
   bool _isFirstOpen = true;
   bool _isLoading = true;
   bool _isOldVersion = false;
-  static const platform = MethodChannel('com.superhut.rice.superhut/widget_actions');
+  static const platform = MethodChannel(
+    'com.superhut.rice.superhut/widget_actions',
+  );
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  final ThemeController themeController = Get.put(ThemeController());
 
   @override
   void initState() {
@@ -198,7 +78,7 @@ class _MyAppState extends State<MyApp> {
       final context = navigatorKey.currentContext;
       if (context != null) {
         Widget? targetPage;
-        
+
         switch (actionType) {
           case 'drink':
             targetPage = FunctionDrinkPage();
@@ -213,11 +93,11 @@ class _MyAppState extends State<MyApp> {
             targetPage = JumpToScorePage();
             break;
         }
-        
+
         if (targetPage != null) {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => targetPage!),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (context) => targetPage!));
         }
       }
     });
@@ -225,6 +105,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _checkFirstOpen() async {
     final prefs = await SharedPreferences.getInstance();
+    await themeController.load();
     // await prefs.setBool('isFirstOpen', true);
     _isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
     if (_isFirstOpen) {
@@ -240,30 +121,50 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const MaterialApp(home: CircularProgressIndicator());
+      return MaterialApp(
+        theme: themeController.lightTheme,
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
     }
 
-    return GetMaterialApp(
-      navigatorKey: navigatorKey,
-      localizationsDelegates: [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ],
-      supportedLocales: [const Locale('zh', 'CH'), const Locale('en', 'US')],
-      locale: Locale('zh'),
-      title: '超级包菜',
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      home: _isFirstOpen ? WelcomepagePage() : const HomeviewPage(),
-      // home: LoginPage(),
-      builder: (context, child) {
-        return ResponsiveBreakpoints.builder(
-          breakpoints: [
-            const Breakpoint(start: 0, end: 800, name: MOBILE),
-            const Breakpoint(start: 801, end: 1920, name: DESKTOP),
-            const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
-          ],
-          child: child ?? const SizedBox.shrink(),
+    return DynamicColorBuilder(
+      builder: (lightDynamic, darkDynamic) {
+        themeController.configureDynamicSchemes(lightDynamic, darkDynamic);
+        return Obx(
+          () => GetMaterialApp(
+            navigatorKey: navigatorKey,
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
+            locale: const Locale('zh', 'CN'),
+            title: '超级包菜',
+            theme: themeController.lightTheme,
+            darkTheme: themeController.darkTheme,
+            themeMode: themeController.themeMode.value,
+            home: _isFirstOpen ? WelcomepagePage() : const HomeviewPage(),
+            builder: (context, child) {
+              final theme = Theme.of(context);
+              final isDark = theme.brightness == Brightness.dark;
+              final overlayStyle = SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness:
+                    isDark ? Brightness.light : Brightness.dark,
+                systemNavigationBarColor: theme.colorScheme.surface,
+                systemNavigationBarIconBrightness:
+                    isDark ? Brightness.light : Brightness.dark,
+              );
+              return AnnotatedRegion<SystemUiOverlayStyle>(
+                value: overlayStyle,
+                child: ResponsiveBreakpoints.builder(
+                  breakpoints: const [
+                    Breakpoint(start: 0, end: 800, name: MOBILE),
+                    Breakpoint(start: 801, end: 1920, name: DESKTOP),
+                    Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+                  ],
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              );
+            },
+          ),
         );
       },
     );
