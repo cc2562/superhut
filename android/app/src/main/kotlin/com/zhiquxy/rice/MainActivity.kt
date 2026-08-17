@@ -1,6 +1,7 @@
 package com.zhiquxy.rice
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -12,6 +13,8 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         const val METHOD_CHANNEL = "com.zhiquxy.rice/live_update"
+        const val COURSE_TABLE_WIDGET_CHANNEL =
+            "com.superhut.rice.superhut/coursetable_widget"
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -59,5 +62,20 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            COURSE_TABLE_WIDGET_CHANNEL
+        ).setMethodCallHandler { call, result ->
+            if (call.method == "refreshCourseTableWidget") {
+                val refreshIntent = Intent(this, CourseTableWidgetProvider::class.java).apply {
+                    action = CourseTableWidgetProvider.ACTION_REFRESH
+                }
+                sendBroadcast(refreshIntent)
+                result.success(true)
+            } else {
+                result.notImplemented()
+            }
+        }
     }
 }

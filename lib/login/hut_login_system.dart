@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
+bool isHutCasAuthenticationPage(String url) {
+  final uri = Uri.tryParse(url);
+  if (uri == null ||
+      uri.host.toLowerCase() != 'mycas.hut.edu.cn' ||
+      uri.path != '/cas/login') {
+    return false;
+  }
+  return true;
+}
+
 class HutLoginSystem extends StatefulWidget {
   /// The initial idToken to pass to the CAS login URL
   final String initialIdToken;
@@ -11,11 +21,16 @@ class HutLoginSystem extends StatefulWidget {
   /// Callback function when an error occurs during the login process
   final Function(String)? onError;
 
+  /// Called when CAS displays its interactive login page instead of completing
+  /// the token exchange.
+  final VoidCallback? onAuthenticationRequired;
+
   const HutLoginSystem({
     Key? key,
     required this.initialIdToken,
     required this.onTokenAndCookieExtracted,
     this.onError,
+    this.onAuthenticationRequired,
   }) : super(key: key);
 
   @override
@@ -28,6 +43,13 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
   String _currentUrl = '';
   final String _targetDomain = 'jwxtsj.hut.edu.cn';
   final String _initialUrl = 'https://mycas.hut.edu.cn/cas/login';
+  bool _authenticationFailureReported = false;
+
+  void _reportAuthenticationRequired() {
+    if (_authenticationFailureReported) return;
+    _authenticationFailureReported = true;
+    widget.onAuthenticationRequired?.call();
+  }
 
   @override
   void initState() {
@@ -66,13 +88,13 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
         if (token != null && token.isNotEmpty && _webViewController != null) {
           // 获取cookie
           String? myClientTicket = await _getCookie('my_client_ticket');
-          
+
           // 创建结果Map
           Map<String, String> result = {
             'token': token,
             'my_client_ticket': myClientTicket ?? '',
           };
-          
+
           widget.onTokenAndCookieExtracted(result);
         }
       } catch (e) {
@@ -86,25 +108,25 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
   // 获取指定名称的cookie
   Future<String?> _getCookie(String cookieName) async {
     if (_webViewController == null) return null;
-    
+
     try {
       CookieManager cookieManager = CookieManager.instance();
       List<Cookie> cookies = await cookieManager.getCookies(
         url: WebUri(_currentUrl),
       );
-      
+
       for (Cookie cookie in cookies) {
         if (cookie.name == cookieName) {
           return cookie.value;
         }
       }
-      
+
       // 如果在当前域名没找到，尝试从其他相关域名获取
       List<String> relatedDomains = [
         'https://mycas.hut.edu.cn',
         'https://jwxtsj.hut.edu.cn',
       ];
-      
+
       for (String domain in relatedDomains) {
         try {
           List<Cookie> domainCookies = await cookieManager.getCookies(
@@ -120,7 +142,7 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
           print('获取域名 $domain 的cookie时出错: $e');
         }
       }
-      
+
       return null;
     } catch (e) {
       print('获取cookie时出错: $e');
@@ -200,10 +222,15 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
             },
             onLoadStop: (controller, url) {
               if (url != null) {
+                final loadedUrl = url.toString();
                 setState(() {
                   _isLoading = false;
-                  _currentUrl = url.toString();
+                  _currentUrl = loadedUrl;
                 });
+                if (isHutCasAuthenticationPage(loadedUrl)) {
+                  _reportAuthenticationRequired();
+                  return;
+                }
                 _checkUrlAndExtractTokenAndCookie(_currentUrl);
 
                 // 输出当前URL到控制台，便于调试

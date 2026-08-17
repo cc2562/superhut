@@ -142,14 +142,19 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
         username: _userNoController.text,
         password: _pwdController.text,
       );
+      if (!mounted) return;
       print('获取Token');
       String? token = await HutCasTokenRetriever.getJwxtToken(context);
-      if (token != null) {
-        // 使用获取到的token
-        print('获取到的教务系统Token: $token');
+      if (!mounted) return;
+      if (token == null || token.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('登录状态已失效，请重新登录')));
+        return;
       }
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isFirstOpen', false);
+      if (!mounted) return;
       Navigator.of(context).pop();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.of(context).push(
@@ -200,16 +205,16 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
         return;
       }
       if (result.success) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(result.message.isEmpty ? '验证码已发送' : result.message)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message.isEmpty ? '验证码已发送' : result.message),
+          ),
         );
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(result.message.isEmpty ? '获取验证码失败' : result.message)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message.isEmpty ? '获取验证码失败' : result.message),
+          ),
         );
       }
     } finally {
@@ -245,10 +250,10 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
         return;
       }
       if (!result.success) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(result.message.isEmpty ? '登录失败' : result.message)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message.isEmpty ? '登录失败' : result.message),
+          ),
         );
         return;
       }
@@ -270,9 +275,9 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
         return;
       }
       if (token == null || token.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('未获取到教务系统令牌，请重试或使用密码登录')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('未获取到教务系统令牌，请重试或使用密码登录')));
         return;
       }
       final prefs = await SharedPreferences.getInstance();
@@ -395,13 +400,13 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
               child:
                   _isLoading
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                       : const Text('工大平台登录'),
             ),
           ],
@@ -467,8 +472,7 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
                 ),
               ),
               TextButton(
-                onPressed:
-                    canRequest ? () => _requestSmsCode() : null,
+                onPressed: canRequest ? () => _requestSmsCode() : null,
                 child: Text(remaining > 0 ? '${remaining}s' : '获取验证码'),
               ),
             ],
@@ -486,13 +490,13 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
               child:
                   _isLoading
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                       : const Text('验证码登录'),
             ),
           ],
@@ -596,7 +600,7 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
                         alignment: Alignment.topRight,
                         margin: const EdgeInsets.only(top: 0),
                         child: SvgPicture.asset(
-                          Assets.illustrationLogin,
+                          Assets.illustration.login.path,
                           width: 150,
                         ),
                       ),

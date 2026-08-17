@@ -51,13 +51,13 @@ class _UserPageState extends State<UserPage> {
 
   Future<Map> getBaseData() async {
     final prefs = await SharedPreferences.getInstance();
-    String name =  prefs.getString('name') ?? "人类";
-    String entranceYear =  prefs.getString('entranceYear') ?? "0001";
-    String academyName =  prefs.getString('academyName') ?? "地球学院";
+    String name = prefs.getString('name') ?? "人类";
+    String entranceYear = prefs.getString('entranceYear') ?? "0001";
+    String academyName = prefs.getString('academyName') ?? "地球学院";
     String clsName = prefs.getString('clsName') ?? "地球1班";
-    String yxzxf =  prefs.getString('yxzxf') ?? "-";
-    String zxfjd =  prefs.getString('zxfjd') ?? "-";
-    String pjxfjd =  prefs.getString('pjxfjd') ?? "-";
+    String yxzxf = prefs.getString('yxzxf') ?? "-";
+    String zxfjd = prefs.getString('zxfjd') ?? "-";
+    String pjxfjd = prefs.getString('pjxfjd') ?? "-";
     Map data = {
       "name": name,
       "entranceYear": entranceYear,
@@ -160,7 +160,9 @@ class _UserPageState extends State<UserPage> {
                         color: Color(0xFFE3F1EC),
                         textColor: Colors.black87,
                         onTap: () async {
-                          await renewToken(context);
+                          if (!await renewToken(context) || !context.mounted) {
+                            return;
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -181,7 +183,9 @@ class _UserPageState extends State<UserPage> {
                         color: Color(0xFFFFF6E0),
                         textColor: Colors.black87,
                         onTap: () async {
-                          await renewToken(context);
+                          if (!await renewToken(context) || !context.mounted) {
+                            return;
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -282,7 +286,7 @@ class _UserPageState extends State<UserPage> {
                   icon: Ionicons.refresh_outline,
                   title: "刷新课表",
                   onTap: () async {
-                    await renewToken(context);
+                    if (!await renewToken(context) || !context.mounted) return;
                     // print("跳转");
                     Navigator.of(context).push(
                       MaterialPageRoute(

@@ -2,9 +2,28 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/widget_refresh_service.dart';
 
 import 'getCourse.dart';
+
+class CourseRefreshProgress {
+  final int completed;
+  final int total;
+
+  const CourseRefreshProgress({required this.completed, required this.total});
+
+  double get value => total == 0 ? 0 : (completed / total).clamp(0, 1);
+}
+
+typedef CourseRefreshProgressCallback =
+    void Function(CourseRefreshProgress progress);
+
+class CourseRefreshResult {
+  final Map<String, List<Course>> courseData;
+
+  const CourseRefreshResult(this.courseData);
+}
 
 class Course {
   final String name;
@@ -86,6 +105,76 @@ Future<void> saveCourseDataToJson(Map<String, List<Course>> courseData) async {
   await WidgetRefreshService.refreshCourseTableWidget();
 }
 
+Future<void> _commitCourseRefresh(
+  Map<String, List<Course>> courseData, {
+  required int firstWeek,
+  required int maxWeek,
+  String? firstDay,
+}) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
+  final File courseFile = File('${appDocumentsDir.path}/course_data.json');
+  final File widgetFile = File(
+    '${appDocumentsDir.path}/app_flutter/course_data.json',
+  );
+  final bool hadCourseFile = await courseFile.exists();
+  final bool hadWidgetFile = await widgetFile.exists();
+  final String? oldCourseData =
+      hadCourseFile ? await courseFile.readAsString() : null;
+  final String? oldWidgetData =
+      hadWidgetFile ? await widgetFile.readAsString() : null;
+  final int? oldFirstWeek = prefs.getInt('firstWeek');
+  final int? oldMaxWeek = prefs.getInt('maxWeek');
+  final String? oldFirstDay = prefs.getString('firstDay');
+
+  try {
+    await saveCourseDataToJson(courseData);
+    await prefs.setInt('firstWeek', firstWeek);
+    await prefs.setInt('maxWeek', maxWeek);
+    if (firstDay != null && firstDay.isNotEmpty) {
+      await prefs.setString('firstDay', firstDay);
+    } else {
+      await prefs.remove('firstDay');
+    }
+  } catch (_) {
+    try {
+      if (hadCourseFile) {
+        await courseFile.writeAsString(oldCourseData!);
+      } else if (await courseFile.exists()) {
+        await courseFile.delete();
+      }
+      if (hadWidgetFile) {
+        await widgetFile.parent.create(recursive: true);
+        await widgetFile.writeAsString(oldWidgetData!);
+      } else if (await widgetFile.exists()) {
+        await widgetFile.delete();
+      }
+      await _restorePreference(prefs, 'firstWeek', oldFirstWeek);
+      await _restorePreference(prefs, 'maxWeek', oldMaxWeek);
+      if (oldFirstDay == null) {
+        await prefs.remove('firstDay');
+      } else {
+        await prefs.setString('firstDay', oldFirstDay);
+      }
+    } catch (_) {
+      // Preserve the original commit error if rollback also fails.
+    }
+    rethrow;
+  }
+}
+
+Future<void> _restorePreference(
+  SharedPreferences prefs,
+  String key,
+  int? value,
+) async {
+  if (value == null) {
+    await prefs.remove(key);
+  } else {
+    await prefs.setInt(key, value);
+  }
+}
+
 // 从 JSON 文件读取并转换为 Map<String, List<Course>>
 Future<Map<String, List<Course>>> readCourseDataFromJson(
   String filePath,
@@ -125,21 +214,46 @@ Future<Map<String, List<Course>>> loadClassFromLocal() async {
   }
 }
 
-Future<String> saveClassToLocal(String token, context) async {
-  final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
-  final String appDocumentsPath = appDocumentsDir.path;
-  try {
-    final Map<String, List<Course>> courseData = await loadClassFormUrl(
-      token,
-      context,
-    );
-    //  print(courseData);
-    await saveCourseDataToJson(courseData);
-    return '200';
-  } catch (e) {
-    print('Error reading JSON file: $e');
-    return '100';
-  }
+Future<CourseRefreshResult> saveClassToLocal(
+  String token, {
+  CourseRefreshProgressCallback? onProgress,
+}) async {
+  final GetOrgDataWeb source = GetOrgDataWeb(token: token)..initData();
+  await source.getTeachingWeek();
+
+  final int weekCount = source.maxWeek - source.firstWeek + 1;
+  final int totalSteps = weekCount * 2;
+  final Map<String, List<Course>> courseData = await source.getAllWeekClass(
+    onProgress: (int completed, int _) {
+      onProgress?.call(
+        CourseRefreshProgress(completed: completed, total: totalSteps),
+      );
+    },
+  );
+  final Map<String, List<Course>> expCourseData = await source
+      .getAllWeekExpClass(
+        onProgress: (int completed, int _) {
+          onProgress?.call(
+            CourseRefreshProgress(
+              completed: weekCount + completed,
+              total: totalSteps,
+            ),
+          );
+        },
+      );
+
+  expCourseData.forEach((String date, List<Course> courses) {
+    courseData.putIfAbsent(date, () => []);
+    courseData[date]!.addAll(courses);
+  });
+
+  await _commitCourseRefresh(
+    courseData,
+    firstWeek: source.firstWeek,
+    maxWeek: source.maxWeek,
+    firstDay: source.firstDay,
+  );
+  return CourseRefreshResult(courseData);
 }
 
 Future<Map<String, List<Course>>> testc() async {
@@ -153,29 +267,5 @@ Future<Map<String, List<Course>>> testc() async {
   oneJson.getWeekDate();
   Map<String, List<Course>> courseData = await oneJson.getSingleClass();
   //print(courseData);
-  return courseData;
-}
-
-Future<Map<String, List<Course>>> loadClassFormUrl(
-  String token,
-  context,
-) async {
-  print("SSSSSSSSSSSSSSSSS");
-  GetOrgDataWeb getOrgDataWeb = GetOrgDataWeb(token: token);
-  getOrgDataWeb.initData();
-  await getOrgDataWeb.getTeachingWeek();
-  Map<String, List<Course>> courseData = await getOrgDataWeb.getAllWeekClass(
-    context,
-  );
-  Map<String, List<Course>> expCourseData = await getOrgDataWeb
-      .getAllWeekExpClass(context);
-  expCourseData.forEach((date, list) {
-    if (courseData.containsKey(date)) {
-      courseData[date]!.addAll(list);
-    } else {
-      courseData[date] = list;
-    }
-  });
-  // print(courseData);
   return courseData;
 }
