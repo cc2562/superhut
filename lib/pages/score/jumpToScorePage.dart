@@ -3,6 +3,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/score/scorepage.dart';
 
 import '../../utils/token.dart';
+
 class JumpToScorePage extends StatefulWidget {
   const JumpToScorePage({super.key});
 
@@ -18,12 +19,13 @@ class _JumpToScorePageState extends State<JumpToScorePage> {
   }
 
   Future<void> jumpFunc() async {
-    await renewToken(context);
+    if (!await renewToken(context) || !mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => ScorePage()),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

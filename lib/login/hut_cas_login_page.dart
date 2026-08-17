@@ -37,6 +37,7 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
   bool _isLoading = true;
   String _idToken = '';
   String? _errorMessage;
+  bool _isFinishing = false;
 
   @override
   void initState() {
@@ -57,8 +58,17 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
       });
 
        */
-      await _api.refreshToken();
+      final refreshed = await _api.refreshToken();
+      if (!refreshed) {
+        await _finishWithAuthenticationFailure();
+        return;
+      }
       _idToken = await _api.getToken();
+      if (_idToken.trim().isEmpty) {
+        await _finishWithAuthenticationFailure();
+        return;
+      }
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -70,19 +80,33 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
     }
   }
 
+  Future<void> _finishWithAuthenticationFailure() async {
+    if (_isFinishing) return;
+    _isFinishing = true;
+    await HutCasTokenRetriever.clearCachedSession();
+    if (mounted) {
+      Navigator.of(context).pop<Map<String, String>?>(null);
+    }
+  }
+
+  Future<void> _handleCasAuthenticationRequired() async {
+    await _api.clearAuthenticationState();
+    await _finishWithAuthenticationFailure();
+  }
+
   // 保存获取到的新token和cookie
   Future<void> _saveTokenAndCookie(Map<String, String> data) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       String token = data['token'] ?? '';
       String myClientTicket = data['my_client_ticket'] ?? '';
-      
+
       // 保存token
       if (token.isNotEmpty) {
         await prefs.setString(widget.tokenKey, token);
       }
-      
+
       // 保存cookie
       if (myClientTicket.isNotEmpty) {
         await prefs.setString(widget.cookieKey, myClientTicket);
@@ -108,7 +132,7 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('HUT统一认证'),leading: SizedBox(),),
+        appBar: AppBar(title: const Text('HUT统一认证'), leading: SizedBox()),
         body: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -124,7 +148,7 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
 
     if (_errorMessage != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('HUT统一认证'),leading: SizedBox(),),
+        appBar: AppBar(title: const Text('HUT统一认证'), leading: SizedBox()),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -152,6 +176,7 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
     return HutLoginSystem(
       initialIdToken: _idToken,
       onTokenAndCookieExtracted: _saveTokenAndCookie,
+      onAuthenticationRequired: _handleCasAuthenticationRequired,
       onError: (errorMessage) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -173,7 +198,11 @@ class HutCasLoginExample extends StatelessWidget {
       onPressed: () async {
         final result = await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => const HutCasLoginPage(tokenKey: 'token', cookieKey: 'my_client_ticket'),
+            builder:
+                (context) => const HutCasLoginPage(
+                  tokenKey: 'token',
+                  cookieKey: 'my_client_ticket',
+                ),
           ),
         );
         String token = result['token'] ?? '';
@@ -202,7 +231,9 @@ class HutCasTokenRetriever {
     await prefs.remove('my_client_ticket');
   }
 
-  static Future<Map<String, String>?> getJwxtTokenAndCookie(BuildContext context) async {
+  static Future<Map<String, String>?> getJwxtTokenAndCookie(
+    BuildContext context,
+  ) async {
     // 先检查是否有缓存的token
     final prefs = await SharedPreferences.getInstance();
     final cachedToken = prefs.getString('token') ?? '';
@@ -213,14 +244,12 @@ class HutCasTokenRetriever {
       bool isTokenValid = await checkTokenValid();
       print(isTokenValid);
       if (isTokenValid) {
-        return {
-          'token': cachedToken,
-          'my_client_ticket': cachedCookie,
-        };
+        return {'token': cachedToken, 'my_client_ticket': cachedCookie};
       }
       // Token无效，需要重新登录
     }
     print('流程');
+    if (!context.mounted) return null;
     // 如果没有缓存或缓存无效，进行登录流程
     final completer = Completer<Map<String, String>?>();
 

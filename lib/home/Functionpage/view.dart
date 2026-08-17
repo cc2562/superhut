@@ -128,7 +128,7 @@ class _FunctionPageState extends State<FunctionPage> {
               onTap: () async {
                 _setLoading("empty_room", true);
                 try {
-                  await renewToken(context);
+                  if (!await renewToken(context) || !context.mounted) return;
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => BuildingPage()),
@@ -151,7 +151,7 @@ class _FunctionPageState extends State<FunctionPage> {
               onTap: () async {
                 _setLoading("score", true);
                 try {
-                  await renewToken(context);
+                  if (!await renewToken(context) || !context.mounted) return;
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => ScorePage()),
@@ -207,7 +207,7 @@ class _FunctionPageState extends State<FunctionPage> {
               onTap: () async {
                 _setLoading("exam", true);
                 try {
-                  await renewToken(context);
+                  if (!await renewToken(context) || !context.mounted) return;
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => ExamSchedulePage()),
@@ -243,7 +243,7 @@ class _FunctionPageState extends State<FunctionPage> {
               onTap: () async {
                 _setLoading("commentary", true);
                 try {
-                  await renewToken(context);
+                  if (!await renewToken(context) || !context.mounted) return;
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => commentaryPage1()),
@@ -262,7 +262,7 @@ class _FunctionPageState extends State<FunctionPage> {
               color: Colors.orange.shade100,
               hasArrow: true,
               onTap: () async {
-                await renewToken(context);
+                if (!await renewToken(context) || !context.mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => HutMainPage()),
