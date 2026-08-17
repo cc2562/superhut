@@ -71,7 +71,8 @@ class _GetcoursepageState extends State<Getcoursepage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool canPop = _viewState == CourseRefreshViewState.failure;
+    final bool canPop =
+        _viewState == CourseRefreshViewState.failure && widget.renew;
     return PopScope(
       canPop: canPop,
       child: Scaffold(
@@ -82,7 +83,8 @@ class _GetcoursepageState extends State<Getcoursepage> {
             progress: _progress,
             isRenew: widget.renew,
             onRetry: _refreshCourses,
-            onBack: () => Navigator.of(context).maybePop(),
+            onBack:
+                widget.renew ? () => Navigator.of(context).maybePop() : null,
           ),
         ),
       ),
@@ -123,7 +125,7 @@ class CourseRefreshContent extends StatelessWidget {
       CourseRefreshViewState.loading => '正在同步课程数据，请稍候',
       CourseRefreshViewState.success => '最新课程已经准备好了',
       CourseRefreshViewState.failure =>
-        isRenew ? '请检查网络后重试，原有课表不会受到影响' : '请检查网络后重试，或返回重新登录',
+        isRenew ? '请检查网络后重试，原有课表不会受到影响' : '请检查网络后重试',
     };
 
     return LayoutBuilder(
@@ -223,14 +225,16 @@ class CourseRefreshContent extends StatelessWidget {
                           child: const Text('重新尝试'),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton(
-                          onPressed: onBack,
-                          child: const Text('返回'),
+                      if (isRenew) ...[
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: TextButton(
+                            onPressed: onBack,
+                            child: const Text('返回'),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ],
                 ),
