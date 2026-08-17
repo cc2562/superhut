@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:dio/dio.dart';
 
 import '../withhttp.dart';
@@ -362,48 +364,61 @@ class GetOrgDataWeb {
     CourseWeekProgress? onProgress,
   }) async {
     final Map<String, List<Course>> expCourseData = {};
-    if (semesterId == null || semesterId!.isEmpty) {
-      await getCurrentSemesterId();
-    }
-    final String sid = semesterId ?? '';
-    if (sid.isEmpty) {
-      throw const FormatException('无法获取当前学期');
-    }
-
-    await configureDioFromStorage();
     final int total = maxWeek - firstWeek + 1;
     int completed = 0;
-    for (int i = firstWeek; i <= maxWeek; i++) {
-      final Response response = await postDioWithCookie(
-        '/njwhd/teacher/courseScheduleExp?xnxq01id=$sid&week=$i',
-        {},
-      );
-      if (response.data is! Map) {
-        throw FormatException('第$i周课程数据格式不正确');
+    try {
+      if (semesterId == null || semesterId!.isEmpty) {
+        await getCurrentSemesterId();
       }
-      final Map data = response.data;
-      final dynamic rawWeekData = data['data'];
-      if (rawWeekData != null && rawWeekData is! List) {
-        throw FormatException('第$i周课程列表格式不正确');
+      final String sid = semesterId ?? '';
+      if (sid.isEmpty) {
+        developer.log('未获取到当前学期，跳过实验课表同步', name: 'course.refresh');
+        onProgress?.call(total, total);
+        return expCourseData;
       }
 
-      final List weekData = rawWeekData is List ? rawWeekData : const [];
-      if (weekData.isNotEmpty) {
-        final GetSingleWeekExpClass expWeek = GetSingleWeekExpClass(
-          orgdata: data,
-        );
-        expWeek.initData();
-        expWeek.getWeekDate();
-        final Map<String, List<Course>> tempData =
-            await expWeek.getSingleClass();
-        tempData.forEach((String date, List<Course> courses) {
-          expCourseData.putIfAbsent(date, () => []);
-          expCourseData[date]!.addAll(courses);
-        });
-      }
+      await configureDioFromStorage();
+      for (int i = firstWeek; i <= maxWeek; i++) {
+        try {
+          final Response response = await postDioWithCookie(
+            '/njwhd/teacher/courseScheduleExp?xnxq01id=$sid&week=$i',
+            {},
+          );
+          if (response.data is! Map) {
+            throw FormatException('第$i周实验课数据格式不正确');
+          }
+          final Map data = response.data;
+          final dynamic rawWeekData = data['data'];
+          if (rawWeekData != null && rawWeekData is! List) {
+            throw FormatException('第$i周实验课列表格式不正确');
+          }
 
-      completed++;
-      onProgress?.call(completed, total);
+          final List weekData = rawWeekData is List ? rawWeekData : const [];
+          if (weekData.isNotEmpty) {
+            final GetSingleWeekExpClass expWeek = GetSingleWeekExpClass(
+              orgdata: data,
+            );
+            expWeek.initData();
+            expWeek.getWeekDate();
+            final Map<String, List<Course>> tempData =
+                await expWeek.getSingleClass();
+            tempData.forEach((String date, List<Course> courses) {
+              expCourseData.putIfAbsent(date, () => []);
+              expCourseData[date]!.addAll(courses);
+            });
+          }
+        } catch (e) {
+          developer.log('获取第$i周实验课表出错，已跳过', name: 'course.refresh', error: e);
+        } finally {
+          completed++;
+          onProgress?.call(completed, total);
+        }
+      }
+    } catch (e) {
+      developer.log('实验课表同步失败，继续保存普通课表', name: 'course.refresh', error: e);
+      if (completed < total) {
+        onProgress?.call(total, total);
+      }
     }
     return expCourseData;
   }
