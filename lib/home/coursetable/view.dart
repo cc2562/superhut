@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -7,6 +9,7 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../utils/course/coursemain.dart';
+import '../../utils/course/class_time_table.dart';
 import '../../widget_refresh_service.dart';
 import 'logic.dart';
 import '../../utils/course/getCourse.dart';
@@ -40,6 +43,8 @@ DateTime getMondayOfCurrentWeek() {
 }
 
 class _CourseTableViewState extends State<CourseTableView> {
+  static const String _viewModePreferenceKey = 'courseTableViewMode';
+
   final CourseTableViewLogic logic = Get.put(CourseTableViewLogic());
 
   // DateTime _currentDate = DateTime.now();
@@ -52,6 +57,11 @@ class _CourseTableViewState extends State<CourseTableView> {
 
   //当前实际周数
   int _currentRealWeek = 1;
+
+  CourseTableViewMode _viewMode = CourseTableViewMode.week;
+  DateTime _now = DateTime.now();
+  Timer? _clockTimer;
+  late final Future<void> _initializationFuture;
 
   /*
    * 课程数据存储器
@@ -74,42 +84,35 @@ class _CourseTableViewState extends State<CourseTableView> {
   @override
   void initState() {
     super.initState();
+    _initializationFuture = _initializeCourseTable();
+    _clockTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _now = DateTime.now();
+      });
+    });
     //_loadExampleData();
     //_courseData = testc();
   }
 
-  // 综合计算周数的完整函数
-  int calculateSchoolWeek(String? firstDayString) {
-    // 异常情况处理
-    if (firstDayString == null) throw ArgumentError('firstDay 不能为空');
-    if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(firstDayString)) {
-      throw FormatException('日期格式应为 yyyy-MM-dd');
-    }
-
-    // 1. 字符串转DateTime
-    final firstDay = DateTime.parse(firstDayString);
-
-    // 2. 转换为当周周一
-    final firstMonday = firstDay.subtract(Duration(days: firstDay.weekday - 1));
-
-    // 3. 计算当前周数
-    final now = DateTime.now();
-    final difference = now.difference(firstMonday).inDays + 1;
-
-    // 处理早于开学日的情况
-    if (difference < 0) return 0;
-
-    return (difference / 7).ceil();
+  @override
+  void dispose() {
+    _clockTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> getWeek() async {
     final prefs = await SharedPreferences.getInstance();
-    var firstDay = prefs.getString('firstDay');
     _allWeek = prefs.getInt('maxWeek') ?? 1;
-    setState(() {
-      _currentWeek = calculateSchoolWeek(firstDay);
-      _currentRealWeek = _currentWeek;
-    });
+    final calculatedWeek = calculateSchoolWeekFromFirstDay(
+      prefs.getString('firstDay'),
+      DateTime.now(),
+    );
+    if (calculatedWeek == null) {
+      return;
+    }
+    _currentWeek = calculatedWeek;
+    _currentRealWeek = calculatedWeek;
   }
 
   /*
@@ -122,15 +125,15 @@ class _CourseTableViewState extends State<CourseTableView> {
   }
 
   void _backToRealWeek() {
-    if (_currentWeek == _currentRealWeek) {
+    final today = normalizeCourseDate(DateTime.now());
+    if (_currentWeek == _currentRealWeek &&
+        (_viewMode == CourseTableViewMode.week ||
+            isSameCourseDate(_currentDate, today))) {
       return;
     }
     setState(() {
-      _currentDate = DateTime(
-        _currentDate.year,
-        _currentDate.month,
-        _currentDate.day - 7 * (_currentWeek - _currentRealWeek),
-      );
+      _currentDate =
+          _viewMode == CourseTableViewMode.day ? today : _getStartOfWeek(today);
       _currentWeek = _currentRealWeek;
     });
   }
@@ -153,6 +156,19 @@ class _CourseTableViewState extends State<CourseTableView> {
     });
   }
 
+  void _previousDay() {
+    final selection = moveCourseTableDay(
+      date: _currentDate,
+      currentWeek: _currentWeek,
+      allWeeks: _allWeek,
+      dayDelta: -1,
+    );
+    setState(() {
+      _currentDate = selection.date;
+      _currentWeek = selection.week;
+    });
+  }
+
   /*
    * 切换到下个月视图
    * 更新_currentDate为下月第一天
@@ -169,6 +185,53 @@ class _CourseTableViewState extends State<CourseTableView> {
       );
       _currentWeek = _currentWeek + 1;
     });
+  }
+
+  void _nextDay() {
+    final selection = moveCourseTableDay(
+      date: _currentDate,
+      currentWeek: _currentWeek,
+      allWeeks: _allWeek,
+      dayDelta: 1,
+    );
+    setState(() {
+      _currentDate = selection.date;
+      _currentWeek = selection.week;
+    });
+  }
+
+  void _goToPreviousPeriod() {
+    if (_viewMode == CourseTableViewMode.day) {
+      _previousDay();
+    } else {
+      _previousWeek();
+    }
+  }
+
+  void _goToNextPeriod() {
+    if (_viewMode == CourseTableViewMode.day) {
+      _nextDay();
+    } else {
+      _nextWeek();
+    }
+  }
+
+  Future<void> _setViewMode(CourseTableViewMode mode) async {
+    if (_viewMode == mode) return;
+    final today = normalizeCourseDate(DateTime.now());
+    setState(() {
+      if (mode == CourseTableViewMode.day) {
+        _currentDate =
+            _currentWeek == _currentRealWeek
+                ? today
+                : _getStartOfWeek(_currentDate);
+      } else {
+        _currentDate = _getStartOfWeek(_currentDate);
+      }
+      _viewMode = mode;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_viewModePreferenceKey, mode.name);
   }
 
   /*
@@ -556,20 +619,327 @@ class _CourseTableViewState extends State<CourseTableView> {
     );
   }
 
-  bool firstload = true;
+  String _courseTimeText(DateTime day, Course course) {
+    final range = ClassTimeTable.getCourseTimeRange(day, course);
+    return '${DateFormat('HH:mm').format(range['start']!)}–${DateFormat('HH:mm').format(range['end']!)}';
+  }
 
-  Future<void> doOnlyOne() async {
-    if (firstload) {
-      firstload = false;
-      getWeek();
-      _courseData = await loadClassFromLocal();
-      LiveNotificationManager.syncSchedule(_courseData);
-    } else {
-      firstload = false;
-      //getWeek();
-      //_courseData = await loadClassFromLocal();
-      return;
+  String _courseSectionText(Course course) {
+    final endSection = course.startSection + course.duration - 1;
+    return '第${course.startSection}–$endSection节';
+  }
+
+  void _showCourseDetails(Course course) {
+    showCupertinoModalBottomSheet(
+      expand: false,
+      context: context,
+      builder:
+          (context) => Material(
+            child: SizedBox(
+              height: course.isExp ? 400 : 350,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  Text(
+                    course.name,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 10),
+                  ListTile(
+                    leading: Icon(
+                      Ionicons.calendar_outline,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    title: Text(course.weekDuration),
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      Ionicons.time_outline,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    title: Text(_courseSectionText(course)),
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      Ionicons.person_outline,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    title: Text(course.teacherName),
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      Ionicons.location_outline,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    title: Text(course.location),
+                  ),
+                  if (course.isExp && course.pcid.isNotEmpty)
+                    ListTile(
+                      leading: Icon(
+                        Ionicons.people_outline,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      title: const Text('查看人员名单'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showExpStudents(course.pcid);
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
+  Widget _buildNextCourseCard() {
+    final courses = _courseData[_dateKey(_currentDate)] ?? const <Course>[];
+    final nextCourses = findNextCoursesForDay(
+      day: _currentDate,
+      now: _now,
+      courses: courses,
+    );
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '下一节课',
+            style: TextStyle(
+              color: colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (nextCourses.isEmpty)
+            Text(
+              '今天没有下一节课',
+              style: TextStyle(color: colorScheme.onPrimaryContainer),
+            )
+          else
+            ...nextCourses.indexed.map((entry) {
+              final index = entry.$1;
+              final course = entry.$2;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (index > 0)
+                    Divider(
+                      color: colorScheme.onPrimaryContainer.withAlpha(50),
+                    ),
+                  Text(
+                    course.name,
+                    style: TextStyle(
+                      color: colorScheme.onPrimaryContainer,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${_courseTimeText(_currentDate, course)}  ${course.location}',
+                    style: TextStyle(color: colorScheme.onPrimaryContainer),
+                  ),
+                ],
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayTimeline() {
+    final courses = sortCoursesForDay(
+      _courseData[_dateKey(_currentDate)] ?? const <Course>[],
+    );
+    if (courses.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Ionicons.calendar_outline,
+              size: 42,
+              color: Theme.of(context).colorScheme.outline,
+            ),
+            const SizedBox(height: 10),
+            const Text('当天没有课程'),
+          ],
+        ),
+      );
     }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 100),
+      itemCount: courses.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final course = courses[index];
+        final courseColor = _getCourseColor(course.name);
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 78,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _courseTimeText(_currentDate, course),
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _courseSectionText(course),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.outline,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Material(
+                color: courseColor,
+                borderRadius: BorderRadius.circular(12),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => _showCourseDetails(course),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          course.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          course.location.isEmpty ? '地点待定' : course.location,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        if (course.teacherName.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            course.teacherName,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _initializeCourseTable() async {
+    final prefs = await SharedPreferences.getInstance();
+    _viewMode = courseTableViewModeFromPreference(
+      prefs.getString(_viewModePreferenceKey),
+    );
+    await getWeek();
+    if (_viewMode == CourseTableViewMode.day) {
+      _currentDate = normalizeCourseDate(DateTime.now());
+    }
+    _courseData = await loadClassFromLocal();
+    LiveNotificationManager.syncSchedule(_courseData);
+  }
+
+  Widget _buildWeekHeader(List<DateTime> weekDays) {
+    return Row(
+      children: [
+        const Expanded(child: SizedBox()),
+        ...weekDays.map((day) {
+          final showText =
+              '${_weekdayMap[day.weekday]!}\n${DateFormat('M-d').format(day)}';
+          return Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                showText,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+                maxLines: 2,
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildWeekGrid(List<DateTime> weekDays) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 100),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SizedBox(
+                width: 40,
+                child: Column(
+                  children: List.generate(10, (index) {
+                    return Container(
+                      height: 60,
+                      margin: const EdgeInsets.fromLTRB(0, 1, 0, 1),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+            ...weekDays.map((day) {
+              return Expanded(
+                flex: 4,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Column(
+                    children: _buildDayCourses(
+                      _courseData[_dateKey(day)] ?? [],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -580,46 +950,47 @@ class _CourseTableViewState extends State<CourseTableView> {
     if (_currentWeek != _currentRealWeek) {
       showWeekStr = "第$_currentWeek周（当前第$_currentRealWeek周）";
     }
+    final isViewingToday = isSameCourseDate(_currentDate, _now);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: EnhancedFutureBuilder(
-          future: doOnlyOne(),
+          future: _initializationFuture,
           rememberFutureResult: true,
-          whenDone: (da) {
-            //_courseData = da;
+          whenDone: (_) {
             return Padding(
-              padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Column(
                 children: [
-                  /* 月份切换控制区域 */
                   Padding(
-                    padding: const EdgeInsets.all(1.0),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
-                        //日期显示
                         Expanded(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                DateFormat('yyyy/M/dd').format(_currentDate),
+                                _viewMode == CourseTableViewMode.day
+                                    ? '${DateFormat('yyyy/M/dd').format(_currentDate)} ${_weekdayMap[_currentDate.weekday]}'
+                                    : DateFormat(
+                                      'yyyy/M/dd',
+                                    ).format(_currentDate),
                                 style: const TextStyle(fontSize: 18),
                               ),
-                              PopupMenuButton(
-                                onSelected: (re) {},
-                                itemBuilder: (BuildContext context) {
-                                  return [
-                                    PopupMenuItem(
-                                      value: "1",
-                                      child: Text('回到当前周'),
-                                      onTap: () {
-                                        _backToRealWeek();
-                                      },
-                                    ),
-                                  ];
-                                },
+                              PopupMenuButton<String>(
+                                onSelected: (_) => _backToRealWeek(),
+                                itemBuilder:
+                                    (_) => [
+                                      PopupMenuItem(
+                                        value: 'current',
+                                        child: Text(
+                                          _viewMode == CourseTableViewMode.day
+                                              ? '回到今天'
+                                              : '回到当前周',
+                                        ),
+                                      ),
+                                    ],
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -631,144 +1002,63 @@ class _CourseTableViewState extends State<CourseTableView> {
                             ],
                           ),
                         ),
-                        //上下切换按钮
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.chevron_left),
-                              onPressed: _previousWeek,
-                            ),
-
-                            IconButton(
-                              icon: const Icon(Icons.chevron_right),
-                              onPressed: _nextWeek,
-                            ),
+                        ToggleButtons(
+                          constraints: const BoxConstraints(
+                            minWidth: 42,
+                            minHeight: 34,
+                          ),
+                          borderRadius: BorderRadius.circular(9),
+                          isSelected: [
+                            _viewMode == CourseTableViewMode.week,
+                            _viewMode == CourseTableViewMode.day,
                           ],
+                          onPressed: (index) {
+                            _setViewMode(
+                              index == 0
+                                  ? CourseTableViewMode.week
+                                  : CourseTableViewMode.day,
+                            );
+                          },
+                          children: const [Text('周'), Text('日')],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: _goToPreviousPeriod,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: _goToNextPeriod,
                         ),
                       ],
                     ),
                   ),
-
-                  /* 周视图表头（星期几） */
-                  Row(
-                    children: [
-                      // 添加一个空的Container作为课程编号列的表头占位符
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            //   border: Border.all(color: Colors.grey),
-                            // color: Colors.blue[200],
-                          ),
-                          child: Text(
-                            "",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                      ...weekDays.map((day) {
-                        String showText =
-                            '${_weekdayMap[day.weekday]!}\n${DateFormat('M-d').format(day)}';
-                        return Expanded(
-                          flex: 4,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              // border: Border.all(color: Colors.grey),
-                              // color: Colors.blue[200],
-                            ),
-                            child: Text(
-                              showText ?? '',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey,
-                              ),
-                              maxLines: 2,
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-
-                  /* 课程表主体内容区域 */
+                  if (_viewMode == CourseTableViewMode.week)
+                    _buildWeekHeader(weekDays),
+                  if (_viewMode == CourseTableViewMode.day && isViewingToday)
+                    _buildNextCourseCard(),
                   Expanded(
                     child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onHorizontalDragEnd: (details) {
-                        if (details.primaryVelocity! > 10) {
-                          _previousWeek();
-                        } else {
-                          _nextWeek();
+                        final velocity = details.primaryVelocity ?? 0;
+                        if (velocity > 10) {
+                          _goToPreviousPeriod();
+                        } else if (velocity < -10) {
+                          _goToNextPeriod();
                         }
                       },
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: 100),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 添加课程编号列
-                              Expanded(
-                                child: SizedBox(
-                                  width: 40,
-                                  child: Column(
-                                    children: List.generate(10, (index) {
-                                      return Container(
-                                        height: 60,
-                                        decoration: BoxDecoration(),
-                                        margin: const EdgeInsets.fromLTRB(
-                                          0,
-                                          1,
-                                          0,
-                                          1,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '${index + 1}',
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                                  ),
-                                ),
-                              ),
-                              ...weekDays.map((day) {
-                                return Expanded(
-                                  flex: 4,
-                                  child: Container(
-                                    padding: EdgeInsets.only(top: 1),
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        //right: BorderSide(color: Colors.grey),
-                                        // top: BorderSide(color: Colors.grey),
-                                      ),
-                                    ),
-                                    child: Column(
-                                      children: _buildDayCourses(
-                                        _courseData[_dateKey(day)] ?? [],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ],
-                          ),
-                        ),
-                      ),
+                      child:
+                          _viewMode == CourseTableViewMode.day
+                              ? _buildDayTimeline()
+                              : _buildWeekGrid(weekDays),
                     ),
                   ),
                 ],
               ),
             );
           },
-          whenNotDone: Center(child: Text('Waiting...')),
+          whenError: (_) => const Center(child: Text('课程表加载失败，请重新进入页面')),
+          whenNotDone: const Center(child: Text('课程表加载中…')),
         ),
       ),
     );
