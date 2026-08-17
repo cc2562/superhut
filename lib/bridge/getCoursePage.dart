@@ -122,10 +122,10 @@ class CourseRefreshContent extends StatelessWidget {
       CourseRefreshViewState.failure => '刷新失败',
     };
     final String description = switch (state) {
-      CourseRefreshViewState.loading => '正在同步课程数据，请稍候',
+      CourseRefreshViewState.loading => '从包菜服务器获取课表中，请稍候',
       CourseRefreshViewState.success => '最新课程已经准备好了',
       CourseRefreshViewState.failure =>
-        isRenew ? '请检查网络后重试，原有课表不会受到影响' : '请检查网络后重试',
+        isRenew ? '请检查网络后重试，原有课表不会受到影响（一般是学校的服务器坏掉了导致的）' : '请检查网络后重试',
     };
 
     return LayoutBuilder(
