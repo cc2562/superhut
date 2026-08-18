@@ -9,7 +9,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.7.0+-blue.svg)](https://flutter.dev/)
 [![Dart](https://img.shields.io/badge/Dart-3.7.0+-blue.svg)](https://dart.dev/)
 [![License](https://img.shields.io/badge/GPL-3.0-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.1.1-brightgreen.svg)](pubspec.yaml)
+[![Version](https://img.shields.io/badge/Version-1.3.0-brightgreen.svg)](pubspec.yaml)
 
 </div>
 
