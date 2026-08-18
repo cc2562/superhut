@@ -107,9 +107,9 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
                                                   Text(
                                                     '选择节次范围',
                                                     style:
-                                                        Theme.of(context)
-                                                            .textTheme
-                                                            .titleLarge,
+                                                        Theme.of(
+                                                          context,
+                                                        ).textTheme.titleLarge,
                                                   ),
                                                   SizedBox(height: 10),
                                                   RangeSlider(
@@ -234,8 +234,7 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
                                                     count,
                                                     // 动态数量，例如设置为7，则会生成7个
                                                     (indexs) {
-                                                      String slot = (indexs +
-                                                              1)
+                                                      String slot = (indexs + 1)
                                                           .toString()
                                                           .padLeft(2, '0');
                                                       bool isBooked =
@@ -248,11 +247,15 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
                                                             color:
                                                                 isBooked
                                                                     ? Theme.of(
-                                                                      context,
-                                                                    ).colorScheme.primary
+                                                                          context,
+                                                                        )
+                                                                        .colorScheme
+                                                                        .primary
                                                                     : Theme.of(
-                                                                      context,
-                                                                    ).colorScheme.surfaceContainerHighest,
+                                                                          context,
+                                                                        )
+                                                                        .colorScheme
+                                                                        .surfaceContainerHighest,
                                                             borderRadius: BorderRadius.only(
                                                               topLeft:
                                                                   indexs == 0
@@ -296,8 +299,10 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
                                                               style: TextStyle(
                                                                 color:
                                                                     Theme.of(
-                                                                      context,
-                                                                    ).colorScheme.onPrimary,
+                                                                          context,
+                                                                        )
+                                                                        .colorScheme
+                                                                        .onPrimary,
                                                               ),
                                                             ),
                                                           ),
@@ -352,9 +357,7 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
                                                   leading: Icon(
                                                     Ionicons.location_outline,
                                                   ),
-                                                  title: Text(
-                                                    data[index].name,
-                                                  ),
+                                                  title: Text(data[index].name),
                                                 ),
                                                 ListTile(
                                                   leading: Icon(

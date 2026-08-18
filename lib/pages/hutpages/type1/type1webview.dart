@@ -95,10 +95,10 @@ class _Type1WebviewState extends State<Type1Webview> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                           LoadingAnimationWidget.inkDrop(
-                        color: Theme.of(context).primaryColor,
-          size: 40,
-          ),
+                          LoadingAnimationWidget.inkDrop(
+                            color: Theme.of(context).primaryColor,
+                            size: 40,
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             '加载中...',

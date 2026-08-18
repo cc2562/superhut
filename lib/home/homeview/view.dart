@@ -104,23 +104,26 @@ class _HomeviewPageState extends State<HomeviewPage>
 
   Future<void> _checkVersion() async {
     print("DO");
-    final dio = Dio();
-    final response = await dio.get(
-      'https://super.ccrice.com/api/check_version.php?version=$_currentVersion',
-    );
-    print(_currentVersion);
-    print(response.data);
-    final Map<String, dynamic> data = response.data;
-    setState(() {
-      _isUpdateAvailable = !data['is_latest'];
-      _latestVersion = data['latest_version'];
-      _updateDescription = data['description'];
-      _isForcedUpdate = data['is_forced'];
-      _downloadUrl = data['download_url'];
-    });
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        'https://super.ccrice.com/api/check_version.php?version=$_currentVersion',
+      );
+      final Map<String, dynamic> data = response.data;
+      if (!mounted) return;
+      setState(() {
+        _isUpdateAvailable = !data['is_latest'];
+        _latestVersion = data['latest_version'];
+        _updateDescription = data['description'];
+        _isForcedUpdate = data['is_forced'];
+        _downloadUrl = data['download_url'];
+      });
 
-    if (_isUpdateAvailable) {
-      _showUpdateDialog();
+      if (_isUpdateAvailable) {
+        _showUpdateDialog();
+      }
+    } on DioException catch (error) {
+      debugPrint('版本检查失败: ${error.message}');
     }
   }
 

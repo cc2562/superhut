@@ -201,7 +201,7 @@ class FunctionHotWaterLogic extends GetxController {
         )
         .then((value) {
           state.isLoading.value = false;
-          if (value['success']&&value['result']=="000000") {
+          if (value['success'] && value['result'] == "000000") {
             Get.snackbar(
               '提示',
               '开启设备成功！',

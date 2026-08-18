@@ -97,7 +97,6 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // 添加背景渐变
           Positioned.fill(
             child: GetBuilder<FunctionHotWaterLogic>(
               builder: (logic) {
@@ -217,7 +216,10 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Icon(Icons.arrow_forward_ios, color: Colors.grey),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ],
                     ),
                   ],
@@ -251,7 +253,10 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios, color: Colors.grey),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ],
                   ),
                 ],
@@ -370,14 +375,16 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
           width: 60,
           height: 60,
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.onPrimary,
+            ),
             strokeWidth: 4,
           ),
         ),
         // 中心的图标
         Icon(
           isWaterOn ? Icons.play_arrow : Icons.stop_circle_outlined,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
           size: 30,
         ),
       ],
@@ -394,14 +401,16 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
           width: 60,
           height: 60,
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.onPrimary,
+            ),
             strokeWidth: 4,
           ),
         ),
         // 中心的图标
         Icon(
           Icons.search, // 使用搜索图标表示正在检查
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
           size: 30,
         ),
       ],
@@ -418,51 +427,47 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
             return SizedBox.shrink();
           }
 
-          return Card(
-            elevation: 0,
-            color: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
+          return Card.filled(
+            child: SizedBox(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Colors.white.withAlpha(20),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.account_balance_wallet,
-                        color: Colors.orange,
-                        size: 28,
-                      ),
-                      SizedBox(width: 12),
-                      Text(
-                        S
-                            .of(context)
-                            .function_hot_water_campus_balance(
-                              logic.state.balance.value,
-                            ),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.account_balance_wallet,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 28,
                         ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.arrow_forward_ios, size: 16),
-                    color: Colors.grey,
-                    onPressed: () {
-                      _launchUrl();
-                    },
-                  ),
-                ],
+                        SizedBox(width: 12),
+                        Text(
+                          S
+                              .of(context)
+                              .function_hot_water_campus_balance(
+                                logic.state.balance.value,
+                              ),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.arrow_forward_ios, size: 16),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      onPressed: () {
+                        _launchUrl();
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -511,10 +516,15 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                             Navigator.pop(context);
                             _showDeviceManagementDialog(context);
                           },
-                          icon: Icon(Icons.settings, color: Colors.orange),
+                          icon: Icon(
+                            Icons.settings,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                           label: Text(
                             '管理设备',
-                            style: TextStyle(color: Colors.orange),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                         ),
                       ],
@@ -531,7 +541,10 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                                 Icon(
                                   Icons.hot_tub,
                                   size: 48,
-                                  color: Colors.grey,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                 ),
                                 SizedBox(height: 10),
                                 Text('暂无可用设备，请先添加设备'),
@@ -561,7 +574,10 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                                   logic.state.choiceDevice.value == index
                                       ? Icon(
                                         Ionicons.checkmark_circle,
-                                        color: Colors.orange,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
                                       )
                                       : null,
                               onTap: () {
@@ -626,11 +642,13 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                           },
                           icon: Icon(
                             Icons.add_circle_outline,
-                            color: Colors.orange,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                           label: Text(
                             '添加设备',
-                            style: TextStyle(color: Colors.orange),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                         ),
                       ],
@@ -662,7 +680,10 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                                       Icon(
                                         Icons.hot_tub,
                                         size: 48,
-                                        color: Colors.grey,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
                                       ),
                                       SizedBox(height: 10),
                                       Text('暂无设备，请先添加设备'),
@@ -692,7 +713,8 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                                     trailing: IconButton(
                                       icon: Icon(
                                         Icons.delete_outline,
-                                        color: Colors.red,
+                                        color:
+                                            Theme.of(context).colorScheme.error,
                                       ),
                                       onPressed: () async {
                                         // 显示确认对话框
@@ -727,7 +749,10 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                                                     child: Text(
                                                       '确定',
                                                       style: TextStyle(
-                                                        color: Colors.red,
+                                                        color:
+                                                            Theme.of(
+                                                              context,
+                                                            ).colorScheme.error,
                                                       ),
                                                     ),
                                                   ),
@@ -801,7 +826,11 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                         SizedBox(height: 5),
                         Text(
                           '请输入6位设备号码',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                         SizedBox(height: 20),
 
@@ -814,14 +843,17 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
+                            fillColor:
+                                Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 12,
                             ),
                             prefixIcon: Icon(
                               Icons.confirmation_number_outlined,
-                              color: Colors.orange,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                           keyboardType: TextInputType.number,
@@ -834,7 +866,7 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                         SizedBox(
                           width: double.infinity,
                           height: 50,
-                          child: ElevatedButton(
+                          child: FilledButton(
                             onPressed: () async {
                               String deviceCode =
                                   deviceCodeController.text.trim();
@@ -851,13 +883,6 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                                 _showDeviceSelectionDialog(context);
                               }
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
                             child: Text('添加设备', style: TextStyle(fontSize: 18)),
                           ),
                         ),
@@ -866,11 +891,14 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                         SizedBox(height: 20),
                         Card(
                           elevation: 0,
-                          color: Colors.transparent,
+                          color: Theme.of(context).colorScheme.surfaceContainer,
                           child: Container(
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Column(
@@ -880,7 +908,8 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
                                   children: [
                                     Icon(
                                       Icons.info_outline,
-                                      color: Colors.orange,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                     ),
                                     SizedBox(width: 8),
                                     Text(

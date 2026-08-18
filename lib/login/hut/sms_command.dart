@@ -5,15 +5,17 @@ import 'package:flutter/foundation.dart';
 import '../../utils/hut_user_api.dart';
 
 typedef HutSmsInit = Future<HutAuthResult> Function();
-typedef HutSmsSend = Future<HutAuthResult> Function({
-  required String mobile,
-  required String nonce,
-});
-typedef HutSmsLogin = Future<HutAuthResult> Function({
-  required String mobile,
-  required String smscode,
-  required String nonce,
-});
+typedef HutSmsSend =
+    Future<HutAuthResult> Function({
+      required String mobile,
+      required String nonce,
+    });
+typedef HutSmsLogin =
+    Future<HutAuthResult> Function({
+      required String mobile,
+      required String smscode,
+      required String nonce,
+    });
 
 /// 短信验证码登录编排：nonce 生命周期 + 发送倒计时 + 防重入。
 class HutSmsLoginCommand {

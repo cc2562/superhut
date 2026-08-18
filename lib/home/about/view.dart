@@ -498,7 +498,10 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                 height: 120,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10),
-                                  color: Colors.grey.shade200,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
 
                                   boxShadow: [
                                     BoxShadow(
@@ -571,7 +574,10 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                             width: leftEdgeWidth,
                                             child: Container(
                                               decoration: BoxDecoration(
-                                                color: Colors.grey[300],
+                                                color:
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .outlineVariant,
                                                 borderRadius: BorderRadius.only(
                                                   topLeft: Radius.circular(6),
                                                   bottomLeft: Radius.circular(
@@ -582,8 +588,12 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                                   begin: Alignment.centerLeft,
                                                   end: Alignment.centerRight,
                                                   colors: [
-                                                    Colors.grey[400]!,
-                                                    Colors.grey[300]!,
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .surfaceContainerHigh,
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .surfaceContainerHighest,
                                                   ],
                                                 ),
                                               ),
@@ -599,7 +609,10 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                             width: rightEdgeWidth,
                                             child: Container(
                                               decoration: BoxDecoration(
-                                                color: Colors.grey[300],
+                                                color:
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .outlineVariant,
                                                 borderRadius: BorderRadius.only(
                                                   topRight: Radius.circular(6),
                                                   bottomRight: Radius.circular(
@@ -610,8 +623,12 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                                                   begin: Alignment.centerRight,
                                                   end: Alignment.centerLeft,
                                                   colors: [
-                                                    Colors.grey[400]!,
-                                                    Colors.grey[300]!,
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .surfaceContainerHigh,
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .surfaceContainerHighest,
                                                   ],
                                                 ),
                                               ),
@@ -737,11 +754,17 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                 Text(
                   textAlign: TextAlign.center,
                   "本项目的诞生离不开开源社区。\n感谢YiQiuYes提供的喝水以及洗澡代码\n感谢开源项目onexiaolaji/qzjw的密码加密方法",
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 Text(
                   "版本: 1.2.0",
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),

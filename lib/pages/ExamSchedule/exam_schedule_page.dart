@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/ExamSchedule/exam_schedule_bridge.dart';
+import 'package:superhut/theme/app_theme.dart';
 
 class ExamSchedulePage extends StatefulWidget {
   const ExamSchedulePage({super.key});
@@ -249,18 +250,18 @@ class _ExamSchedulePageState extends State<ExamSchedulePage> {
 
   Color _getDaysLeftColor(String text, BuildContext context) {
     if (text.contains("今天")) {
-      return Colors.red; // 今天考试用红色
+      return Theme.of(context).colorScheme.error;
     } else if (text.contains("还有")) {
       // 提取天数
       int days = int.tryParse(text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
 
       if (days <= 3) {
-        return Colors.orange; // 3天内用橙色
+        return context.semanticColors.warning;
       } else {
         return Theme.of(context).colorScheme.onSurface; // 其他用默认颜色
       }
     } else {
-      return Colors.grey; // 已结束用灰色
+      return Theme.of(context).colorScheme.onSurfaceVariant;
     }
   }
 }

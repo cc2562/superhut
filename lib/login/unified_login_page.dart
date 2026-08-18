@@ -394,16 +394,15 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
             FilledButton(
               onPressed: _loginWithCAS,
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.orangeAccent,
                 minimumSize: const Size.fromHeight(48),
               ),
               child:
                   _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           strokeWidth: 2,
                         ),
                       )
@@ -484,16 +483,15 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
             FilledButton(
               onPressed: _isLoading ? null : () => _loginWithSms(),
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.orangeAccent,
                 minimumSize: const Size.fromHeight(48),
               ),
               child:
                   _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           strokeWidth: 2,
                         ),
                       )
@@ -588,7 +586,12 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
                             const SizedBox(height: 20),
                             Text(
                               '请使用智慧工大账号进行登录',
-                              style: TextStyle(color: Colors.grey),
+                              style: TextStyle(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),

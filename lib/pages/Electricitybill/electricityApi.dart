@@ -180,7 +180,7 @@ class ElectricityApi {
       //"partnerjourno": partnerjourno,
       "payorderno": payorderno,
       "txdate": txdate,
-      "code":'true'
+      "code": 'true',
     };
   }
 
