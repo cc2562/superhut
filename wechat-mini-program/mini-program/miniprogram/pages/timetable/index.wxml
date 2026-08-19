@@ -1,0 +1,63 @@
+<view class="page timetable" bind:touchstart="onTouchStart" bind:touchend="onTouchEnd">
+  <view class="topbar">
+    <view bind:tap="goToday"
+      ><text class="eyebrow">{{mode === 'week' ? '课程表' : '当天课程'}}</text
+      ><text class="page-title">{{title}}</text></view
+    >
+    <view class="modes"
+      ><view class="mode {{mode === 'week' ? 'active' : ''}}" data-mode="week" bind:tap="setMode"
+        >周</view
+      ><view class="mode {{mode === 'day' ? 'active' : ''}}" data-mode="day" bind:tap="setMode"
+        >日</view
+      ></view
+    >
+  </view>
+  <view wx:if="{{hasData}}">
+    <view wx:if="{{nextCourses.length}}" class="next card"
+      ><text class="eyebrow">下一节课</text
+      ><block wx:for="{{nextCourses}}" wx:key="id"
+        ><text class="next-name">{{item.name}}</text
+        ><text class="muted">第 {{item.startSection}} 节 · {{item.location}}</text></block
+      ></view
+    >
+    <view wx:if="{{stale}}" class="stale">当前展示上次成功课表，可稍后刷新</view>
+    <view class="day" wx:for="{{days}}" wx:key="date">
+      <view class="day-head"
+        ><view
+          ><text class="weekday {{item.today ? 'today' : ''}}">{{item.weekday}}</text
+          ><text class="date">{{item.label}}</text></view
+        ><text class="today-tag" wx:if="{{item.today}}">今天</text></view
+      >
+      <view wx:if="{{!item.courses.length}}" class="empty-day">今天没有课程</view>
+      <view
+        class="course {{course.isExperiment ? 'experiment' : ''}}"
+        wx:for="{{item.courses}}"
+        wx:for-item="course"
+        wx:key="id"
+      >
+        <view class="section"
+          ><text>{{course.startSection}}</text><text class="dash">—</text
+          ><text>{{course.startSection + course.duration - 1}}</text></view
+        >
+        <view class="course-main"
+          ><text class="course-name">{{course.name}}</text
+          ><text class="course-meta">{{course.location}} · {{course.teacherName}}</text></view
+        >
+        <text wx:if="{{course.isExperiment}}" class="experiment-tag">实验</text>
+      </view>
+    </view>
+    <view class="footer"
+      ><text>更新于 {{fetchedAt}}</text
+      ><t-button size="small" variant="outline" loading="{{loading}}" bind:tap="refresh"
+        >刷新课表</t-button
+      ></view
+    >
+  </view>
+  <view wx:else class="empty card"
+    ><text class="section-title">还没有课表</text
+    ><text class="muted">登录教务系统并完成第一次同步后，课表会缓存在本机。</text
+    ><view class="actions"
+      ><t-button block theme="primary" bind:tap="goLogin">去登录</t-button></view
+    ></view
+  >
+</view>

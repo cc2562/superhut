@@ -1,0 +1,9 @@
+{
+  "name": "@superhut/mini-program-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@superhut/domain-rules": "file:../../packages/domain-rules",
+    "tdesign-miniprogram": "^1.10.0"
+  }
+}

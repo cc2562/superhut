@@ -1,0 +1,6 @@
+<view class="page center">
+  <view class="mark">菜</view>
+  <text class="title">超级包菜</text>
+  <text class="muted">{{message}}</text>
+  <t-loading theme="circular" size="48rpx" />
+</view>

@@ -1,0 +1,9 @@
+.agreement {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin: 34rpx 4rpx;
+  color: #43564b;
+  font-size: 26rpx;
+  line-height: 1.5;
+}

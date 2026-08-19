@@ -1,0 +1,29 @@
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.status view {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+.status-title {
+  font-size: 31rpx;
+  font-weight: 720;
+}
+.statement {
+  margin-top: 24rpx;
+}
+.version {
+  display: block;
+  margin-top: 22rpx;
+  color: #8b9790;
+  font-size: 22rpx;
+}
+.danger-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin: 34rpx 0;
+}

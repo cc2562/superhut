@@ -1,0 +1,19 @@
+.score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.score view {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+.score-name {
+  font-size: 29rpx;
+  font-weight: 700;
+}
+.score-value {
+  color: #177049;
+  font-size: 42rpx;
+  font-weight: 760;
+}

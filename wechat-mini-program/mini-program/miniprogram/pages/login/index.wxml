@@ -1,0 +1,36 @@
+<view class="page">
+  <view class="hero"
+    ><text class="eyebrow">教务服务</text><text class="title">登录教务系统</text
+    ><text class="subtitle"
+      >登录后可以使用课表、成绩、考试和空教室。密码只用于本次向教务系统换取登录状态。</text
+    ></view
+  >
+  <view class="card form">
+    <t-input
+      label="学号"
+      type="number"
+      value="{{studentId}}"
+      placeholder="请输入教务系统学号"
+      clearable
+      bind:change="onStudentId"
+    />
+    <t-input
+      label="密码"
+      type="password"
+      value="{{password}}"
+      placeholder="请输入教务系统密码"
+      clearable
+      bind:change="onPassword"
+    />
+    <view class="remember"
+      ><view
+        ><text class="remember-title">在本机记住密码</text
+        ><text class="muted"
+          >默认关闭；开启后通过微信加密 Storage 保存 30 天，可随时删除。</text
+        ></view
+      ><t-switch value="{{remember}}" bind:change="onRemember"
+    /></view>
+  </view>
+  <t-button block theme="primary" loading="{{loading}}" bind:tap="submit">登录并同步课表</t-button>
+  <text class="footnote">第三方学生工具 · 非学校官方应用</text>
+</view>

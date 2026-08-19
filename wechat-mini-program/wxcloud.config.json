@@ -1,0 +1,8 @@
+{
+  "type": "run",
+  "server": {
+    "port": 3000,
+    "buildDir": ".",
+    "versionRemark": "superhut-api"
+  }
+}

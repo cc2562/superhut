@@ -1,0 +1,37 @@
+{
+  "name": "@superhut/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src test",
+    "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@fastify/helmet": "^13.0.1",
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/platform-fastify": "^11.1.6",
+    "@superhut/api-contract": "workspace:*",
+    "@superhut/domain-rules": "workspace:*",
+    "drizzle-orm": "^0.44.5",
+    "fastify": "^5.5.0",
+    "pino": "^9.9.0",
+    "mysql2": "^3.14.4",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.1.6",
+    "drizzle-kit": "^0.31.4",
+    "tsx": "^4.20.5"
+  }
+}

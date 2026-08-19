@@ -1,0 +1,63 @@
+page {
+  background: #f5fbf7;
+  color: #173126;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 32rpx;
+}
+.hero {
+  padding: 44rpx 8rpx 28rpx;
+}
+.eyebrow {
+  color: #287b57;
+  font-size: 24rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+}
+.title {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 52rpx;
+  font-weight: 750;
+  line-height: 1.2;
+}
+.subtitle {
+  display: block;
+  margin-top: 16rpx;
+  color: #607067;
+  font-size: 28rpx;
+  line-height: 1.65;
+}
+.card {
+  margin-bottom: 24rpx;
+  padding: 28rpx;
+  border: 1rpx solid #dce8e1;
+  border-radius: 28rpx;
+  background: #fff;
+  box-shadow: 0 12rpx 36rpx rgba(41, 84, 62, 0.07);
+}
+.section-title {
+  display: block;
+  margin-bottom: 18rpx;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+.muted {
+  color: #718078;
+  font-size: 25rpx;
+  line-height: 1.6;
+}
+.actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 28rpx;
+}
+.actions t-button {
+  flex: 1;
+}
+.danger {
+  color: #a53b32;
+}

@@ -1,0 +1,20 @@
+<view class="page"
+  ><view class="hero"
+    ><text class="eyebrow">教务服务</text><text class="title">空教室</text
+    ><text class="subtitle">选择日期和教学楼，查询第一大节空闲教室。</text></view
+  >
+  <view class="card filters"
+    ><picker mode="date" value="{{date}}" bindchange="onDate"
+      ><view class="picker"><text>日期</text><text>{{date}} ›</text></view></picker
+    ><picker range="{{buildings}}" range-key="name" bindchange="onBuilding"
+      ><view class="picker"
+        ><text>教学楼</text><text>{{buildingName || '请选择'}} ›</text></view
+      ></picker
+    ><t-button block theme="primary" loading="{{loading}}" bind:tap="search"
+      >查询空教室</t-button
+    ></view
+  >
+  <view class="room card" wx:for="{{rooms}}" wx:key="id"
+    ><text>{{item.name}}</text><text class="available">空闲</text></view
+  ><t-empty wx:if="{{!loading && !rooms.length}}" description="选择条件后开始查询" />
+</view>

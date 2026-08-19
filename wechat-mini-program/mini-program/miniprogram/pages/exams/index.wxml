@@ -1,0 +1,13 @@
+<view class="page"
+  ><view class="hero"
+    ><text class="eyebrow">教务服务</text><text class="title">考试安排</text
+    ><text class="subtitle">请以学校最新通知为准</text></view
+  ><t-loading wx:if="{{loading}}" text="正在读取考试安排" />
+  <block wx:elif="{{exams.length}}">
+    <view class="card exam" wx:for="{{exams}}" wx:key="courseName"
+      ><text class="exam-date">{{item.date}}</text><text class="exam-name">{{item.courseName}}</text
+      ><text class="muted">{{item.detail}}</text></view
+    >
+  </block>
+  <t-empty wx:else description="暂无考试安排" />
+</view>

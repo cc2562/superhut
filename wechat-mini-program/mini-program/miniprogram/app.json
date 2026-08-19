@@ -1,0 +1,43 @@
+{
+  "pages": [
+    "pages/bootstrap/index",
+    "pages/privacy/index",
+    "pages/login/index",
+    "pages/timetable/index",
+    "pages/services/index",
+    "pages/profile/index",
+    "pages/scores/index",
+    "pages/exams/index",
+    "pages/rooms/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "超级包菜",
+    "navigationBarBackgroundColor": "#f5fbf7",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5fbf7",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#66736b",
+    "selectedColor": "#176b47",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/timetable/index", "text": "课表" },
+      { "pagePath": "pages/services/index", "text": "服务" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
+    "t-switch": "tdesign-miniprogram/switch/switch",
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-empty": "tdesign-miniprogram/empty/empty"
+  }
+}

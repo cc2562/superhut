@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1787155352644,
+      "tag": "0000_brave_oracle",
+      "breakpoints": true
+    }
+  ]
+}

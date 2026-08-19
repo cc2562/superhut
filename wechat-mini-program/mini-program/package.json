@@ -1,0 +1,19 @@
+{
+  "name": "@superhut/mini-program",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint miniprogram"
+  },
+  "dependencies": {
+    "@superhut/api-contract": "workspace:*",
+    "@superhut/domain-rules": "workspace:*",
+    "tdesign-miniprogram": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/wechat-miniprogram": "^3.4.8"
+  }
+}

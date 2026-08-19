@@ -1,0 +1,8 @@
+**/node_modules/
+**/dist/
+mini-program/miniprogram_npm/
+mini-program/miniprogram/miniprogram_npm/
+mini-program/project.config.json
+mini-program/project.private.config.json
+mini-program/miniprogram/project.config.json
+mini-program/miniprogram/project.private.config.json

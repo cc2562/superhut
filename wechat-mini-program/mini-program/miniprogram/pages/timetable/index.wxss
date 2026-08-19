@@ -1,0 +1,150 @@
+.timetable {
+  padding-top: 22rpx;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 6rpx 30rpx;
+}
+.page-title {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 44rpx;
+  font-weight: 760;
+}
+.modes {
+  display: flex;
+  padding: 6rpx;
+  border-radius: 22rpx;
+  background: #e8f2ec;
+}
+.mode {
+  padding: 13rpx 25rpx;
+  border-radius: 17rpx;
+  color: #597066;
+  font-size: 26rpx;
+}
+.mode.active {
+  color: #fff;
+  background: #267653;
+  box-shadow: 0 6rpx 18rpx rgba(38, 118, 83, 0.2);
+}
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: 7rpx;
+  background: linear-gradient(145deg, #eef9f2, #fff);
+}
+.next-name {
+  font-size: 34rpx;
+  font-weight: 720;
+}
+.stale {
+  margin-bottom: 20rpx;
+  padding: 18rpx 24rpx;
+  border-radius: 18rpx;
+  color: #77591c;
+  background: #fff6dc;
+  font-size: 25rpx;
+}
+.day {
+  margin-bottom: 28rpx;
+}
+.day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10rpx 8rpx 16rpx;
+}
+.day-head view {
+  display: flex;
+  align-items: baseline;
+  gap: 18rpx;
+}
+.weekday {
+  font-size: 30rpx;
+  font-weight: 720;
+}
+.weekday.today {
+  color: #187049;
+}
+.date {
+  color: #718078;
+  font-size: 24rpx;
+}
+.today-tag {
+  padding: 7rpx 14rpx;
+  border-radius: 99rpx;
+  color: #187049;
+  background: #def2e6;
+  font-size: 22rpx;
+}
+.course {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  margin-bottom: 14rpx;
+  padding: 23rpx 22rpx;
+  border: 1rpx solid #dce9e1;
+  border-left: 8rpx solid #3b8b63;
+  border-radius: 23rpx;
+  background: #fff;
+}
+.course.experiment {
+  border-left-color: #8472b8;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 48rpx;
+  color: #39765a;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+.dash {
+  color: #b2c0b8;
+  line-height: 0.7;
+}
+.course-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 0;
+}
+.course-name {
+  font-size: 29rpx;
+  font-weight: 700;
+}
+.course-meta {
+  overflow: hidden;
+  color: #728078;
+  font-size: 23rpx;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.experiment-tag {
+  color: #6d5e9f;
+  font-size: 21rpx;
+}
+.empty-day {
+  padding: 38rpx;
+  border: 1rpx dashed #cad9d0;
+  border-radius: 22rpx;
+  color: #89968f;
+  text-align: center;
+  font-size: 25rpx;
+}
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 6rpx 34rpx;
+  color: #7a8981;
+  font-size: 23rpx;
+}
+.empty {
+  margin-top: 90rpx;
+}

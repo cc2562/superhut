@@ -1,0 +1,18 @@
+<view class="page"
+  ><view class="hero"
+    ><text class="eyebrow">教务服务</text><text class="title">常用查询</text
+    ><text class="subtitle">只保留当前真正可用的三项服务。</text></view
+  >
+  <view
+    class="service card {{item.tone}}"
+    wx:for="{{services}}"
+    wx:key="route"
+    data-route="{{item.route}}"
+    bind:tap="open"
+    ><view class="icon">{{item.initial}}</view
+    ><view class="copy"
+      ><text class="service-title">{{item.title}}</text
+      ><text class="muted">{{item.description}}</text></view
+    ><text class="arrow">›</text></view
+  >
+</view>

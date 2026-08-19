@@ -1,0 +1,28 @@
+<view class="page">
+  <view class="hero">
+    <text class="eyebrow">SUPERHUT MINI</text>
+    <text class="title">先了解我们如何使用数据</text>
+    <text class="subtitle">超级包菜是由学生维护的第三方工具，不是湖南工业大学官方小程序。</text>
+  </view>
+  <view class="card"
+    ><text class="section-title">为提供教务查询，我们需要</text
+    ><text class="muted"
+      >使用微信 OpenID 建立 SuperHUT 会话；在你主动登录时处理学号和密码；保存加密的教务 Token
+      与最后一次成功课表。学校密码默认不保存。</text
+    ></view
+  >
+  <view class="card"
+    ><text class="section-title">我们不会默认收集</text
+    ><text class="muted"
+      >微信头像、昵称、手机号、通讯录或定位，也不会把学校密码保存到服务器。</text
+    ></view
+  >
+  <view class="agreement"
+    ><t-switch value="{{agreed}}" bind:change="onAgreementChange" /><text
+      >我已阅读并同意隐私政策与账号授权说明</text
+    ></view
+  >
+  <t-button block theme="primary" disabled="{{!agreed}}" loading="{{loading}}" bind:tap="continue"
+    >同意并继续</t-button
+  >
+</view>

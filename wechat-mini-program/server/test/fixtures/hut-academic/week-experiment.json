@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "date": [{ "mxrq": "2026-09-07", "xqid": 1 }],
+      "courses": [
+        {
+          "weekDay": "1",
+          "weekNoteDetail": "0101,0102",
+          "courseName": "程序设计",
+          "syxmName": "虚构实验",
+          "teacherName": "测试教师",
+          "kkzc": "1",
+          "classroomName": "实验楼 201"
+        }
+      ]
+    }
+  ]
+}

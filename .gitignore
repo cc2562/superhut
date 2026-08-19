@@ -46,3 +46,23 @@ app.*.map.json
 /key/
 /android/app/key/
 /.vscode/
+
+# SuperHUT Mini / Node.js
+node_modules/
+**/node_modules/
+**/dist/
+**/.env
+!**/.env.example
+coverage/
+.pnpm-store/
+mini-program/miniprogram_npm/
+wechat-mini-program/mini-program/miniprogram_npm/
+wechat-mini-program/mini-program/miniprogram/miniprogram_npm/
+wechat-mini-program/mini-program/miniprogram/package-lock.json
+wechat-mini-program/mini-program/project.private.config.json
+wechat-mini-program/mini-program/miniprogram/project.private.config.json
+wechat-mini-program/mini-program/miniprogram/project.config.json
+wechat-mini-program/project.private.config.json
+wechat-mini-program/project.config.json
+wechat-mini-program/mini-program/miniprogram/**/*.js
+wechat-mini-program/mini-program/miniprogram/**/*.js.map

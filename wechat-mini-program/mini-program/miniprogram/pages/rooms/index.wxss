@@ -1,0 +1,24 @@
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 22rpx;
+}
+.picker {
+  display: flex;
+  justify-content: space-between;
+  padding: 24rpx 4rpx;
+  border-bottom: 1rpx solid #e4ece7;
+  color: #52645a;
+  font-size: 27rpx;
+}
+.room {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 29rpx;
+  font-weight: 650;
+}
+.available {
+  color: #267653;
+  font-size: 23rpx;
+}

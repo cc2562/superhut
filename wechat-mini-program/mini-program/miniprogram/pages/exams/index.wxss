@@ -1,0 +1,14 @@
+.exam {
+  display: flex;
+  flex-direction: column;
+  gap: 9rpx;
+}
+.exam-date {
+  color: #267653;
+  font-size: 23rpx;
+  font-weight: 650;
+}
+.exam-name {
+  font-size: 30rpx;
+  font-weight: 720;
+}

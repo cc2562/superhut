@@ -1,0 +1,4 @@
+packages:
+  - mini-program
+  - server
+  - packages/*

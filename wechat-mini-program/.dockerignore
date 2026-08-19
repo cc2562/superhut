@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+node_modules
+**/node_modules
+**/dist
+coverage
+.pnpm-store
+mini-program
+docs
+deploy
+*.log
+**/.env
+**/project.private.config.json

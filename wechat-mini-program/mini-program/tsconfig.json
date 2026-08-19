@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["wechat-miniprogram"],
+    "declaration": false,
+    "noEmit": true
+  },
+  "include": ["miniprogram/**/*.ts"]
+}

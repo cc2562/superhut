@@ -1,0 +1,39 @@
+.service {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 30rpx;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  width: 78rpx;
+  height: 78rpx;
+  border-radius: 24rpx;
+  color: #246747;
+  background: #e0f3e7;
+  font-size: 30rpx;
+  font-weight: 750;
+}
+.blue .icon {
+  color: #38658c;
+  background: #e3eff9;
+}
+.purple .icon {
+  color: #705f9f;
+  background: #eee9f8;
+}
+.copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8rpx;
+}
+.service-title {
+  font-size: 31rpx;
+  font-weight: 720;
+}
+.arrow {
+  color: #8ba097;
+  font-size: 48rpx;
+}

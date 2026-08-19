@@ -1,0 +1,24 @@
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24rpx;
+}
+.mark {
+  display: grid;
+  place-items: center;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 38rpx;
+  color: white;
+  background: linear-gradient(145deg, #1b7a50, #60a879);
+  font-size: 58rpx;
+  font-weight: 800;
+  box-shadow: 0 20rpx 50rpx rgba(31, 119, 78, 0.22);
+}
+.title {
+  margin-top: 12rpx;
+  font-size: 46rpx;
+  font-weight: 750;
+}

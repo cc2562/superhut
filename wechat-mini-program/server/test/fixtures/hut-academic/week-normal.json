@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "date": [
+        { "mxrq": "2026-09-07", "xqid": "1" },
+        { "mxrq": "2026-09-08", "xqid": 2 }
+      ],
+      "item": [
+        {
+          "classTime": "10102",
+          "courseName": "离散数学",
+          "teacherName": "测试教师",
+          "classWeek": "1-16",
+          "location": "测试楼 101"
+        }
+      ]
+    }
+  ]
+}

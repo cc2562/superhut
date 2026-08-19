@@ -1,0 +1,43 @@
+<view class="page"
+  ><view class="hero"
+    ><text class="eyebrow">我的</text><text class="title">账号与隐私</text
+    ><text class="subtitle">{{displayName || '超级包菜用户'}} · {{studentIdMasked}}</text></view
+  >
+  <view class="card status"
+    ><view
+      ><text class="status-title">教务账号</text
+      ><text class="muted">{{studentIdMasked}}</text></view
+    ><t-button size="small" variant="outline" bind:tap="relogin">重新登录</t-button></view
+  >
+  <t-cell-group theme="card"
+    ><t-cell
+      title="本机保存的密码"
+      note="{{credentialSaved ? '已加密保存，最长 30 天' : '未保存'}}"
+      arrow="{{false}}"
+      ><t-button
+        slot="right-icon"
+        wx:if="{{credentialSaved}}"
+        size="extra-small"
+        variant="text"
+        bind:tap="deleteCredential"
+        >删除</t-button
+      ></t-cell
+    ><t-cell title="课表缓存" note="{{cacheTime}}" arrow bind:tap="clearCache" /><t-cell
+      title="隐私政策与用户协议"
+      note="第三方、非官方声明"
+      arrow
+  /></t-cell-group>
+  <view class="card statement"
+    ><text class="section-title">关于超级包菜</text
+    ><text class="muted"
+      >由学生，为学生。超级包菜不是湖南工业大学官方产品，仅提供经用户授权的教务查询能力。</text
+    ><text class="version">SuperHUT Mini 0.1.0</text></view
+  >
+  <view class="danger-actions"
+    ><t-button block variant="outline" bind:tap="logout">退出登录</t-button
+    ><t-button block variant="outline" bind:tap="unbind">解绑教务账号</t-button
+    ><t-button block theme="danger" variant="text" bind:tap="deleteAccount"
+      >注销 SuperHUT 账号</t-button
+    ></view
+  >
+</view>
