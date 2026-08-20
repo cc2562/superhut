@@ -1,4 +1,14 @@
-import type { SuccessResponse, Timetable } from '@superhut/api-contract';
+import type {
+  EvaluationBatch,
+  EvaluationBatchRequest,
+  EvaluationBatchResult,
+  EvaluationItem,
+  EvaluationItemRequest,
+  EvaluationQuestion,
+  EvaluationSubmitRequest,
+  SuccessResponse,
+  Timetable,
+} from '@superhut/api-contract';
 import { storage } from './storage';
 
 interface SessionData {
@@ -36,6 +46,16 @@ export class ClientApiError extends Error {
   }
 }
 
+export function toastRequestError(error: unknown, fallback: string): void {
+  const message =
+    error instanceof ClientApiError && error.code === 'AUTH_REQUIRED'
+      ? '请先登录教务账号'
+      : error instanceof Error
+        ? error.message
+        : fallback;
+  wx.showToast({ title: message, icon: 'none', duration: 3000 });
+}
+
 interface CallContainerResult<T> {
   statusCode: number;
   data: T;
@@ -52,6 +72,44 @@ interface CallContainerApi {
     fail: (error: unknown) => void;
   }): void;
 }
+async function createWechatSession(): Promise<void> {
+  const privacyConsentVersion = storage.privacyAccepted();
+  if (!privacyConsentVersion)
+    throw new ClientApiError('PRIVACY_CONSENT_REQUIRED', '请先同意隐私指引');
+  const session = await request<SessionData>('/v1/auth/wechat/login', {
+    method: 'POST',
+    data: { privacyConsentVersion },
+  });
+  storage.saveSession(session.data.accessToken, session.data.refreshToken);
+}
+
+export async function ensureWechatSession(): Promise<void> {
+  if (!storage.accessToken()) await createWechatSession();
+}
+
+async function recoverWechatSession(hadAccessToken: boolean): Promise<boolean> {
+  const refreshToken = storage.refreshToken();
+  if (refreshToken) {
+    try {
+      const refreshed = await request<{ accessToken: string; refreshToken: string }>(
+        '/v1/auth/refresh',
+        { method: 'POST', data: { refreshToken }, retried: true },
+      );
+      storage.saveSession(refreshed.data.accessToken, refreshed.data.refreshToken);
+      return true;
+    } catch {
+      storage.clearSession();
+    }
+  }
+  if (!hadAccessToken) return false;
+  try {
+    await createWechatSession();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function request<T>(
   path: string,
   options: {
@@ -91,20 +149,11 @@ async function request<T>(
       response.statusCode === 401 &&
       error?.code === 'AUTH_REQUIRED' &&
       options.authenticated &&
-      !options.retried &&
-      storage.refreshToken()
+      !options.retried
     ) {
-      const refreshed = await request<{
-        accessToken: string;
-        refreshToken: string;
-        expiresIn: number;
-      }>('/v1/auth/refresh', {
-        method: 'POST',
-        data: { refreshToken: storage.refreshToken() },
-        retried: true,
-      });
-      storage.saveSession(refreshed.data.accessToken, refreshed.data.refreshToken);
-      return request(path, { ...options, retried: true });
+      if (await recoverWechatSession(Boolean(token))) {
+        return request(path, { ...options, retried: true });
+      }
     }
     if (error?.code === 'AUTH_ACADEMIC_EXPIRED' && options.authenticated && !options.retried) {
       const credential = await storage.credential();
@@ -333,6 +382,7 @@ export const api = {
   async logout() {
     await request('/v1/auth/logout', { method: 'POST', authenticated: true });
     storage.clearSession();
+    storage.clearTimetable();
     await storage.deleteCredential();
   },
   async unbind() {
@@ -343,5 +393,53 @@ export const api = {
   async deleteAccount() {
     await request('/v1/me', { method: 'DELETE', authenticated: true });
     await storage.clearAll();
+  },
+  async evaluationBatches() {
+    return (
+      await request<EvaluationBatch[]>('/v1/academic/evaluation/batches', { authenticated: true })
+    ).data;
+  },
+  async evaluationList(batch: EvaluationBatchRequest) {
+    const query = `batchId=${encodeURIComponent(batch.batchId)}&pj01id=${encodeURIComponent(batch.pj01id)}&pj05id=${encodeURIComponent(batch.pj05id)}`;
+    return (
+      await request<EvaluationItem[]>(`/v1/academic/evaluation/list?${query}`, {
+        authenticated: true,
+      })
+    ).data;
+  },
+  async evaluationQuestions(item: EvaluationItemRequest) {
+    const query = `batchId=${encodeURIComponent(item.batchId)}&evaluationCategoriesId=${encodeURIComponent(item.evaluationCategoriesId)}&courseId=${encodeURIComponent(item.courseId)}&teacherId=${encodeURIComponent(item.teacherId)}&noticeId=${encodeURIComponent(item.noticeId)}`;
+    return (
+      await request<EvaluationQuestion[]>(`/v1/academic/evaluation/questions?${query}`, {
+        authenticated: true,
+      })
+    ).data;
+  },
+  async submitEvaluation(submission: EvaluationSubmitRequest) {
+    return (
+      await request<{ submitted: boolean }>('/v1/academic/evaluation/submit', {
+        method: 'POST',
+        data: submission,
+        authenticated: true,
+      })
+    ).data;
+  },
+  async autoSubmitEvaluation(item: EvaluationItemRequest) {
+    return (
+      await request<{ submitted: boolean }>('/v1/academic/evaluation/auto', {
+        method: 'POST',
+        data: item,
+        authenticated: true,
+      })
+    ).data;
+  },
+  async autoSubmitAll(batch: EvaluationBatchRequest) {
+    return (
+      await request<EvaluationBatchResult>('/v1/academic/evaluation/auto-all', {
+        method: 'POST',
+        data: batch,
+        authenticated: true,
+      })
+    ).data;
   },
 };

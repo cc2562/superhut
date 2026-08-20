@@ -1,5 +1,5 @@
 import { toDateKey } from '@superhut/domain-rules';
-import { api } from '../../services/api';
+import { api, toastRequestError } from '../../services/api';
 
 Page({
   data: {
@@ -20,7 +20,7 @@ Page({
         buildingName: buildings[0]?.name ?? '',
       });
     } catch (error) {
-      wx.showToast({ title: error instanceof Error ? error.message : '加载失败', icon: 'none' });
+      toastRequestError(error, '加载失败');
     }
   },
   onDate(event: WechatMiniprogram.CustomEvent<{ value: string }>) {
@@ -38,7 +38,7 @@ Page({
         rooms: await api.rooms(this.data.date, this.data.nodeId, this.data.buildingId),
       });
     } catch (error) {
-      wx.showToast({ title: error instanceof Error ? error.message : '查询失败', icon: 'none' });
+      toastRequestError(error, '查询失败');
     } finally {
       this.setData({ loading: false });
     }

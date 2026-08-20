@@ -1,4 +1,4 @@
-import { api, ClientApiError } from '../../services/api';
+import { api, ClientApiError, ensureWechatSession } from '../../services/api';
 import { storage } from '../../services/storage';
 
 Page({
@@ -25,6 +25,7 @@ Page({
     if (this.data.loading) return;
     this.setData({ loading: true });
     try {
+      await ensureWechatSession();
       await api.academicLogin(this.data.studentId, this.data.password);
       if (this.data.remember) await storage.saveCredential(this.data.studentId, this.data.password);
       else await storage.deleteCredential();

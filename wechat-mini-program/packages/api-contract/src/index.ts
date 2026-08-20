@@ -87,6 +87,79 @@ export const ExamSchema = z.object({
 });
 export const BuildingSchema = z.object({ id: z.string(), name: z.string() });
 export const FreeRoomSchema = z.object({ id: z.string(), name: z.string() });
+
+export const EvaluationBatchSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  semesterName: z.string(),
+  pj01id: z.string(),
+  pj05id: z.string(),
+});
+export const EvaluationItemSchema = z.object({
+  courseId: z.string(),
+  courseName: z.string(),
+  courseNumber: z.string(),
+  teacherName: z.string(),
+  evaluationCategoriesId: z.string(),
+  teacherId: z.string(),
+  noticeId: z.string(),
+  submitted: z.boolean(),
+});
+export const EvaluationOptionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  score: z.number(),
+});
+export const EvaluationQuestionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  options: z.array(EvaluationOptionSchema),
+});
+export const EvaluationTargetSchema = z.object({
+  questionId: z.string(),
+  optionId: z.string(),
+});
+export const EvaluationSubmitRequestSchema = z
+  .object({
+    batchId: z.string(),
+    courseId: z.string(),
+    evaluationCategoriesId: z.string(),
+    teacherId: z.string(),
+    noticeId: z.string(),
+    target: z.array(EvaluationTargetSchema).min(1),
+  })
+  .strict();
+export const EvaluationItemRequestSchema = z
+  .object({
+    batchId: z.string(),
+    courseId: z.string(),
+    evaluationCategoriesId: z.string(),
+    teacherId: z.string(),
+    noticeId: z.string(),
+  })
+  .strict();
+export const EvaluationBatchRequestSchema = z
+  .object({
+    pj01id: z.string(),
+    batchId: z.string(),
+    pj05id: z.string(),
+  })
+  .strict();
+export const EvaluationBatchResultSchema = z.object({
+  total: z.number().int(),
+  succeeded: z.number().int(),
+  failed: z.number().int(),
+  results: z.array(
+    z.object({
+      courseId: z.string(),
+      courseName: z.string(),
+      success: z.boolean(),
+      message: z.string().optional(),
+    }),
+  ),
+});
+
 export const SessionSchema = z.object({
   accessToken: z.string(),
   refreshToken: z.string(),
@@ -96,6 +169,15 @@ export const SessionSchema = z.object({
 
 export type WechatLoginRequest = z.infer<typeof WechatLoginRequestSchema>;
 export type AcademicLoginRequest = z.infer<typeof AcademicLoginRequestSchema>;
+export type EvaluationBatch = z.infer<typeof EvaluationBatchSchema>;
+export type EvaluationItem = z.infer<typeof EvaluationItemSchema>;
+export type EvaluationOption = z.infer<typeof EvaluationOptionSchema>;
+export type EvaluationQuestion = z.infer<typeof EvaluationQuestionSchema>;
+export type EvaluationTarget = z.infer<typeof EvaluationTargetSchema>;
+export type EvaluationSubmitRequest = z.infer<typeof EvaluationSubmitRequestSchema>;
+export type EvaluationItemRequest = z.infer<typeof EvaluationItemRequestSchema>;
+export type EvaluationBatchRequest = z.infer<typeof EvaluationBatchRequestSchema>;
+export type EvaluationBatchResult = z.infer<typeof EvaluationBatchResultSchema>;
 export interface SuccessResponse<T> {
   data: T;
   meta: z.infer<typeof MetaSchema>;

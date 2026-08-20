@@ -1,0 +1,33 @@
+.group-title {
+  display: block;
+  margin: 8rpx 8rpx 18rpx;
+  color: #718078;
+  font-size: 25rpx;
+  font-weight: 600;
+}
+.course {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.course view {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+.course-name {
+  font-size: 29rpx;
+  font-weight: 700;
+}
+.go {
+  color: #176b47;
+  font-size: 27rpx;
+  font-weight: 600;
+}
+.done {
+  opacity: 0.66;
+}
+.tag {
+  color: #718078;
+  font-size: 24rpx;
+}

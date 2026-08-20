@@ -8,13 +8,14 @@ Page({
       await wx.redirectTo({ url: '/pages/privacy/index' });
       return;
     }
+    if (!storage.accessToken()) {
+      await wx.switchTab({ url: '/pages/timetable/index' });
+      return;
+    }
     const cache = storage.timetable();
     if (cache) {
       await wx.switchTab({ url: '/pages/timetable/index' });
       return;
-    }
-    if (!storage.accessToken()) {
-      await this.createWechatSession();
     }
     try {
       const status = await api.status();
@@ -24,9 +25,5 @@ Page({
     } catch {
       await wx.redirectTo({ url: '/pages/login/index' });
     }
-  },
-  async createWechatSession() {
-    const session = await api.wechatLogin(storage.privacyAccepted());
-    storage.saveSession(session.accessToken, session.refreshToken);
   },
 });

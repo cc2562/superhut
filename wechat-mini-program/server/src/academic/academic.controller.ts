@@ -1,6 +1,11 @@
-import { Controller, Get, Headers, Inject, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Inject, Post, Query, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import { successResponse } from '@superhut/api-contract';
+import {
+  EvaluationBatchRequestSchema,
+  EvaluationItemRequestSchema,
+  EvaluationSubmitRequestSchema,
+  successResponse,
+} from '@superhut/api-contract';
 import { requestId } from '../common/request-context.js';
 import { SessionService } from '../auth/session.service.js';
 import { AcademicService } from './academic.service.js';
@@ -80,6 +85,84 @@ export class AcademicController {
   ) {
     return successResponse(
       await this.academic.freeRooms(await this.user(authorization), { date, nodeId, buildingId }),
+      requestId(request),
+    );
+  }
+  @Get('evaluation/batches') async evaluationBatches(
+    @Headers('authorization') authorization: string | undefined,
+    @Req() request: FastifyRequest,
+  ) {
+    return successResponse(
+      await this.academic.evaluationBatches(await this.user(authorization)),
+      requestId(request),
+    );
+  }
+  @Get('evaluation/list') async evaluationList(
+    @Headers('authorization') authorization: string | undefined,
+    @Query('batchId') batchId: string,
+    @Query('pj01id') pj01id: string,
+    @Query('pj05id') pj05id: string,
+    @Req() request: FastifyRequest,
+  ) {
+    return successResponse(
+      await this.academic.evaluationList(await this.user(authorization), {
+        batchId,
+        pj01id: pj01id ?? '',
+        pj05id: pj05id ?? '',
+      }),
+      requestId(request),
+    );
+  }
+  @Get('evaluation/questions') async evaluationQuestions(
+    @Headers('authorization') authorization: string | undefined,
+    @Query('batchId') batchId: string,
+    @Query('evaluationCategoriesId') evaluationCategoriesId: string,
+    @Query('courseId') courseId: string,
+    @Query('teacherId') teacherId: string,
+    @Query('noticeId') noticeId: string,
+    @Req() request: FastifyRequest,
+  ) {
+    return successResponse(
+      await this.academic.evaluationQuestions(await this.user(authorization), {
+        batchId,
+        evaluationCategoriesId,
+        courseId,
+        teacherId,
+        noticeId,
+      }),
+      requestId(request),
+    );
+  }
+  @Post('evaluation/submit') async evaluationSubmit(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ) {
+    const submission = EvaluationSubmitRequestSchema.parse(body);
+    return successResponse(
+      await this.academic.submitEvaluation(await this.user(authorization), submission),
+      requestId(request),
+    );
+  }
+  @Post('evaluation/auto') async evaluationAuto(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ) {
+    const item = EvaluationItemRequestSchema.parse(body);
+    return successResponse(
+      await this.academic.autoSubmitOne(await this.user(authorization), item),
+      requestId(request),
+    );
+  }
+  @Post('evaluation/auto-all') async evaluationAutoAll(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ) {
+    const batch = EvaluationBatchRequestSchema.parse(body);
+    return successResponse(
+      await this.academic.autoSubmitAll(await this.user(authorization), batch),
       requestId(request),
     );
   }

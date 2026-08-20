@@ -22,6 +22,13 @@ Page({
         route: '/pages/rooms/index',
         tone: 'purple',
       },
+      {
+        title: '评教',
+        initial: '评',
+        description: '查看待评课程，支持手动或一键评教',
+        route: '/pages/evaluation/batches/index',
+        tone: 'orange',
+      },
     ],
   },
   open(event: WechatMiniprogram.BaseEvent) {

@@ -1,0 +1,38 @@
+<view class="page"
+  ><view class="hero"
+    ><text class="eyebrow">教务服务</text><text class="title">评教问卷</text
+    ><text class="subtitle">逐题选择最符合的选项，或一键完成。</text></view
+  >
+  <view class="card"
+    ><t-button block variant="outline" loading="{{submitting}}" bind:tap="auto"
+      >一键评教（自动满分）</t-button
+    ></view
+  >
+  <t-loading wx:if="{{loading}}" text="正在读取评教题目" />
+  <block wx:else>
+    <view
+      class="question card"
+      wx:for="{{questions}}"
+      wx:key="id"
+      wx:for-item="question"
+      wx:for-index="qi"
+      ><text class="q-name">{{qi + 1}}. {{question.name}}</text
+      ><view
+        class="option {{option.selected ? 'selected' : ''}}"
+        wx:for="{{question.options}}"
+        wx:for-item="option"
+        wx:key="id"
+        wx:for-index="oi"
+        data-qi="{{qi}}"
+        data-oi="{{oi}}"
+        bind:tap="select"
+        ><text>{{option.name}}</text></view
+      ></view
+    >
+    <view class="card"
+      ><t-button block theme="primary" loading="{{submitting}}" bind:tap="submit"
+        >提交评教</t-button
+      ></view
+    >
+  </block>
+</view>

@@ -7,14 +7,21 @@ Page({
     displayName: '',
     credentialSaved: false,
     cacheTime: '暂无缓存',
+    loggedIn: true,
   },
   async onShow() {
     const cache = storage.timetable();
     const credential = await storage.credential();
+    const loggedIn = Boolean(storage.accessToken());
     this.setData({
       credentialSaved: Boolean(credential),
       cacheTime: cache ? new Date(cache.fetchedAt).toLocaleString() : '暂无缓存',
+      loggedIn,
     });
+    if (!loggedIn) {
+      this.setData({ studentIdMasked: '未登录', displayName: '' });
+      return;
+    }
     try {
       const status = await api.status();
       this.setData({
@@ -49,12 +56,26 @@ Page({
       content: '将删除教务登录状态和服务端课表快照，需要重新登录才能恢复。',
     });
     if (!confirm.confirm) return;
-    await api.unbind();
-    await wx.reLaunch({ url: '/pages/login/index' });
+    try {
+      await api.unbind();
+      await wx.reLaunch({ url: '/pages/login/index' });
+    } catch (error) {
+      wx.showToast({
+        title: error instanceof Error ? error.message : '解绑失败，请重试',
+        icon: 'none',
+      });
+    }
   },
   async logout() {
-    await api.logout();
-    await wx.reLaunch({ url: '/pages/bootstrap/index' });
+    try {
+      await api.logout();
+      await wx.reLaunch({ url: '/pages/bootstrap/index' });
+    } catch (error) {
+      wx.showToast({
+        title: error instanceof Error ? error.message : '退出失败，请重试',
+        icon: 'none',
+      });
+    }
   },
   async deleteAccount() {
     const confirm = await wx.showModal({
@@ -63,7 +84,14 @@ Page({
       confirmColor: '#a53b32',
     });
     if (!confirm.confirm) return;
-    await api.deleteAccount();
-    await wx.reLaunch({ url: '/pages/privacy/index' });
+    try {
+      await api.deleteAccount();
+      await wx.reLaunch({ url: '/pages/privacy/index' });
+    } catch (error) {
+      wx.showToast({
+        title: error instanceof Error ? error.message : '注销失败，请重试',
+        icon: 'none',
+      });
+    }
   },
 });

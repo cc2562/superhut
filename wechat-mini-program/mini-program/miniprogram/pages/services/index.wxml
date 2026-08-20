@@ -1,7 +1,7 @@
 <view class="page"
   ><view class="hero"
     ><text class="eyebrow">教务服务</text><text class="title">常用查询</text
-    ><text class="subtitle">只保留当前真正可用的三项服务。</text></view
+    ><text class="subtitle">成绩、考试、空教室与一键评教。</text></view
   >
   <view
     class="service card {{item.tone}}"

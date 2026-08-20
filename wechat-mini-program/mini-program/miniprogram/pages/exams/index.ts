@@ -1,4 +1,4 @@
-import { api } from '../../services/api';
+import { api, toastRequestError } from '../../services/api';
 interface ExamView {
   courseName: string;
   date: string;
@@ -17,7 +17,7 @@ Page({
         })),
       });
     } catch (error) {
-      wx.showToast({ title: error instanceof Error ? error.message : '加载失败', icon: 'none' });
+      toastRequestError(error, '加载失败');
     } finally {
       this.setData({ loading: false });
     }

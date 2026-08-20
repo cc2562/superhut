@@ -1,4 +1,4 @@
-import { api } from '../../services/api';
+import { api, toastRequestError } from '../../services/api';
 
 interface ScoreView {
   courseName: string;
@@ -19,7 +19,7 @@ Page({
       this.setData({ semesters, selectedId });
       await this.loadScores();
     } catch (error) {
-      wx.showToast({ title: error instanceof Error ? error.message : '加载失败', icon: 'none' });
+      toastRequestError(error, '加载失败');
     } finally {
       this.setData({ loading: false });
     }

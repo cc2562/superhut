@@ -1,0 +1,24 @@
+.q-name {
+  display: block;
+  margin-bottom: 18rpx;
+  font-size: 29rpx;
+  font-weight: 700;
+}
+.option {
+  margin-bottom: 16rpx;
+  padding: 22rpx 24rpx;
+  border: 1rpx solid #dce8e1;
+  border-radius: 18rpx;
+  background: #f7fbf8;
+  color: #3c5247;
+  font-size: 27rpx;
+}
+.option:last-child {
+  margin-bottom: 0;
+}
+.option.selected {
+  border-color: #176b47;
+  background: #eaf6ef;
+  color: #176b47;
+  font-weight: 600;
+}

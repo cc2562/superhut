@@ -8,6 +8,10 @@ import type {
   AcademicAccount,
   AcademicProvider,
   BuildingDto,
+  EvaluationBatchDto,
+  EvaluationItemDto,
+  EvaluationQuestionDto,
+  EvaluationSubmissionDto,
   ExamDto,
   FreeRoomDto,
   ScoreDto,
@@ -81,7 +85,7 @@ export class RealAcademicProvider implements AcademicProvider {
   }
   private async post(
     path: string,
-    options: { token?: string; auth?: UpstreamAuth } = {},
+    options: { token?: string; auth?: UpstreamAuth; body?: unknown } = {},
   ): Promise<JsonObject> {
     let response: Response;
     try {
@@ -92,7 +96,9 @@ export class RealAcademicProvider implements AcademicProvider {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64',
           ...(options.token ? { Token: options.token } : {}),
+          ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
         },
+        ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
         signal: AbortSignal.timeout(20_000),
       });
     } catch {
@@ -443,5 +449,117 @@ export class RealAcademicProvider implements AcademicProvider {
       const name = text(row.classroomname);
       return { id: text(row.classroomId) || `${input.buildingId}-${index}`, name };
     });
+  }
+  async evaluationBatches(token: string): Promise<EvaluationBatchDto[]> {
+    const payload = await this.post('/njwhd/student/studentEvaluate', {
+      token,
+      auth: 'token',
+      body: {},
+    });
+    return asArray(payload.data ?? []).map((item) => {
+      const row = asObject(item);
+      return {
+        id: text(row.BATCHID),
+        name: text(row.EVALUATIONBATCH),
+        category: text(row.KCLBMC),
+        semesterName: text(row.XQMC),
+        pj01id: text(row.PJ01ID),
+        pj05id: text(row.PJ05ID),
+      };
+    });
+  }
+  async evaluationList(
+    token: string,
+    batch: { pj01id: string; batchId: string; pj05id: string },
+  ): Promise<EvaluationItemDto[]> {
+    const query = new URLSearchParams({
+      pj01id: batch.pj01id,
+      batchId: batch.batchId,
+      pj05id: batch.pj05id,
+      issubmit: 'all',
+    });
+    const payload = await this.post(`/njwhd/student/teachingEvaluation?${query.toString()}`, {
+      token,
+      auth: 'token',
+      body: {},
+    });
+    return asArray(payload.data ?? []).map((item) => {
+      const row = asObject(item);
+      return {
+        courseId: text(row.courseId),
+        courseName: text(row.courseName),
+        courseNumber: text(row.courseNumber),
+        teacherName: text(row.teacherName),
+        evaluationCategoriesId: text(row.evaluationCategoriesId),
+        teacherId: text(row.teacherId),
+        noticeId: text(row.noticeId),
+        submitted: text(row.isSubmitCode) === '1',
+      };
+    });
+  }
+  async evaluationQuestions(
+    token: string,
+    item: {
+      batchId: string;
+      evaluationCategoriesId: string;
+      courseId: string;
+      teacherId: string;
+      noticeId: string;
+    },
+  ): Promise<EvaluationQuestionDto[]> {
+    const query = new URLSearchParams({
+      batchId: item.batchId,
+      evaluationCategoriesId: item.evaluationCategoriesId,
+      courseId: item.courseId,
+      teacherId: item.teacherId,
+      noticeId: item.noticeId,
+      schoolClassificationId: '',
+    });
+    const payload = await this.post(`/njwhd/student/evaluationIndex?${query.toString()}`, {
+      token,
+      auth: 'token',
+      body: {},
+    });
+    const data = asObject(payload.data ?? {});
+    const questions: EvaluationQuestionDto[] = [];
+    for (const raw of asArray(data.targetData ?? [])) {
+      const row = asObject(raw);
+      if (text(row.parentTargetId) === '') continue;
+      const options = asArray(row.optionData ?? []).map((rawOption) => {
+        const option = asObject(rawOption);
+        return {
+          id: text(option.optionId),
+          name: text(option.optionName),
+          score: numberValue(option.optionScoreValue) ?? 0,
+        };
+      });
+      if (options.length === 0) continue;
+      questions.push({ id: text(row.targetId), name: text(row.targetName), options });
+    }
+    return questions;
+  }
+  async submitEvaluation(token: string, submission: EvaluationSubmissionDto): Promise<void> {
+    const payload = await this.post('/njwhd/student/saveEvaluate', {
+      token,
+      auth: 'token',
+      body: {
+        batchId: submission.batchId,
+        courseId: submission.courseId,
+        evaluationCategoriesId: submission.evaluationCategoriesId,
+        teacherId: submission.teacherId,
+        noticeId: submission.noticeId,
+        schoolClassificationId: '',
+        target: submission.target.map((target) => ({
+          targetid: target.questionId,
+          targetval: target.optionId,
+        })),
+      },
+    });
+    if (text(payload.code) === 'success') return;
+    throw new ApiError(
+      'ACADEMIC_UPSTREAM_CHANGED',
+      502,
+      text(payload.errorMessage) || '评教提交失败，请稍后重试',
+    );
   }
 }

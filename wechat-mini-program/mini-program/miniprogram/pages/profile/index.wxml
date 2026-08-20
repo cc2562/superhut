@@ -7,7 +7,9 @@
     ><view
       ><text class="status-title">教务账号</text
       ><text class="muted">{{studentIdMasked}}</text></view
-    ><t-button size="small" variant="outline" bind:tap="relogin">重新登录</t-button></view
+    ><t-button size="small" variant="outline" bind:tap="relogin"
+      >{{loggedIn ? '重新登录' : '去登录'}}</t-button
+    ></view
   >
   <t-cell-group theme="card"
     ><t-cell
@@ -33,7 +35,7 @@
       >由学生，为学生。超级包菜不是湖南工业大学官方产品，仅提供经用户授权的教务查询能力。</text
     ><text class="version">SuperHUT Mini 0.1.0</text></view
   >
-  <view class="danger-actions"
+  <view wx:if="{{loggedIn}}" class="danger-actions"
     ><t-button block variant="outline" bind:tap="logout">退出登录</t-button
     ><t-button block variant="outline" bind:tap="unbind">解绑教务账号</t-button
     ><t-button block theme="danger" variant="text" bind:tap="deleteAccount"

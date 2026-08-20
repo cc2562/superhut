@@ -1,0 +1,40 @@
+<view class="page"
+  ><view class="hero"
+    ><text class="eyebrow">教务服务</text><text class="title">待评课程</text
+    ><text class="subtitle"
+      >{{pending.length ? '还有 ' + pending.length + ' 门课程待评' : '本批次已全部评完'}}</text
+    ></view
+  >
+  <view wx:if="{{pending.length}}" class="card"
+    ><t-button block theme="primary" loading="{{autoLoading}}" bind:tap="autoAll"
+      >一键评完所有未评课程</t-button
+    ></view
+  >
+  <t-loading wx:if="{{loading}}" text="正在读取评教列表" />
+  <block wx:elif="{{pending.length || done.length}}">
+    <view wx:if="{{pending.length}}">
+      <text class="group-title">待评教</text>
+      <view
+        class="course card"
+        wx:for="{{pending}}"
+        wx:key="courseId"
+        data-index="{{index}}"
+        bind:tap="open"
+        ><view
+          ><text class="course-name">{{item.courseName}}</text
+          ><text class="muted">{{item.teacherName}} · {{item.courseNumber}}</text></view
+        ><text class="go">去评教 ›</text></view
+      >
+    </view>
+    <view wx:if="{{done.length}}">
+      <text class="group-title">已评教</text>
+      <view class="course card done" wx:for="{{done}}" wx:key="courseId"
+        ><view
+          ><text class="course-name">{{item.courseName}}</text
+          ><text class="muted">{{item.teacherName}} · {{item.courseNumber}}</text></view
+        ><text class="tag">已完成</text></view
+      >
+    </view>
+  </block>
+  <t-empty wx:else description="暂无评教课程" />
+</view>

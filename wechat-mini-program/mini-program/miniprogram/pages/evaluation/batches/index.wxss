@@ -1,0 +1,18 @@
+.batch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.batch view {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+.batch-name {
+  font-size: 29rpx;
+  font-weight: 700;
+}
+.arrow {
+  color: #9fb0a6;
+  font-size: 40rpx;
+}

@@ -54,8 +54,8 @@
     >
   </view>
   <view wx:else class="empty card"
-    ><text class="section-title">还没有课表</text
-    ><text class="muted">登录教务系统并完成第一次同步后，课表会缓存在本机。</text
+    ><text class="section-title">暂无课表</text
+    ><text class="muted">登录教务系统并完成同步后，课表会缓存在本机。</text
     ><view class="actions"
       ><t-button block theme="primary" bind:tap="goLogin">去登录</t-button></view
     ></view

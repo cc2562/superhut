@@ -6,7 +6,12 @@ import { ApiError } from '../common/api-error.js';
 import { decryptField, encryptField } from '../common/security.js';
 import { environment } from '../config.js';
 import { StateService } from '../state/state.service.js';
-import type { AcademicProvider } from './academic-provider.js';
+import type {
+  AcademicProvider,
+  EvaluationQuestionDto,
+  EvaluationSubmissionDto,
+  EvaluationTargetDto,
+} from './academic-provider.js';
 import { FixtureAcademicProvider } from './fixture-academic.provider.js';
 import { RealAcademicProvider } from './real-academic.provider.js';
 
@@ -149,4 +154,124 @@ export class AcademicService {
     await this.coordination.setJson(key, value, 300);
     return value;
   }
+  async evaluationBatches(userId: string) {
+    return this.provider().evaluationBatches(await this.tokenFor(userId));
+  }
+  async evaluationList(userId: string, batch: { pj01id: string; batchId: string; pj05id: string }) {
+    if (!batch.batchId) throw new ApiError('VALIDATION_ERROR', 400, '请选择评教批次');
+    return this.provider().evaluationList(await this.tokenFor(userId), batch);
+  }
+  async evaluationQuestions(
+    userId: string,
+    item: {
+      batchId: string;
+      evaluationCategoriesId: string;
+      courseId: string;
+      teacherId: string;
+      noticeId: string;
+    },
+  ) {
+    if (!item.courseId) throw new ApiError('VALIDATION_ERROR', 400, '请选择要评教的课程');
+    return this.provider().evaluationQuestions(await this.tokenFor(userId), item);
+  }
+  async submitEvaluation(userId: string, submission: EvaluationSubmissionDto) {
+    if (submission.target.length === 0)
+      throw new ApiError('VALIDATION_ERROR', 400, '请完成所有题目后再提交');
+    await this.provider().submitEvaluation(await this.tokenFor(userId), submission);
+    return { submitted: true };
+  }
+  async autoSubmitOne(
+    userId: string,
+    item: {
+      batchId: string;
+      evaluationCategoriesId: string;
+      courseId: string;
+      teacherId: string;
+      noticeId: string;
+    },
+  ) {
+    const token = await this.tokenFor(userId);
+    const questions = await this.provider().evaluationQuestions(token, item);
+    if (questions.length === 0)
+      throw new ApiError('ACADEMIC_UPSTREAM_CHANGED', 502, '未获取到评教题目');
+    await this.provider().submitEvaluation(token, {
+      batchId: item.batchId,
+      courseId: item.courseId,
+      evaluationCategoriesId: item.evaluationCategoriesId,
+      teacherId: item.teacherId,
+      noticeId: item.noticeId,
+      target: buildAutoEvaluationTargets(questions),
+    });
+    return { submitted: true };
+  }
+  async autoSubmitAll(userId: string, batch: { pj01id: string; batchId: string; pj05id: string }) {
+    const token = await this.tokenFor(userId);
+    const items = await this.provider().evaluationList(token, batch);
+    const pending = items.filter((item) => !item.submitted);
+    const results: Array<{
+      courseId: string;
+      courseName: string;
+      success: boolean;
+      message?: string;
+    }> = [];
+    for (const item of pending) {
+      try {
+        const questions = await this.provider().evaluationQuestions(token, {
+          batchId: batch.batchId,
+          evaluationCategoriesId: item.evaluationCategoriesId,
+          courseId: item.courseId,
+          teacherId: item.teacherId,
+          noticeId: item.noticeId,
+        });
+        await this.provider().submitEvaluation(token, {
+          batchId: batch.batchId,
+          courseId: item.courseId,
+          evaluationCategoriesId: item.evaluationCategoriesId,
+          teacherId: item.teacherId,
+          noticeId: item.noticeId,
+          target: buildAutoEvaluationTargets(questions),
+        });
+        results.push({ courseId: item.courseId, courseName: item.courseName, success: true });
+      } catch (error) {
+        results.push({
+          courseId: item.courseId,
+          courseName: item.courseName,
+          success: false,
+          message: error instanceof Error ? error.message : '评教失败',
+        });
+      }
+    }
+    return {
+      total: pending.length,
+      succeeded: results.filter((result) => result.success).length,
+      failed: results.filter((result) => !result.success).length,
+      results,
+    };
+  }
+}
+
+/**
+ * 自动评教：复刻 Flutter 版策略——第 1 题选低于 4.75 分的选项、其余题选不低于 4.75 分的
+ * 选项（最高分好评）。若某题没有符合条件的选项，则退而选该题分数最低（第 1 题）或最高
+ * （其余题）的选项，避免漏题导致提交失败。
+ */
+export function buildAutoEvaluationTargets(
+  questions: EvaluationQuestionDto[],
+): EvaluationTargetDto[] {
+  return questions
+    .map((question, index) => {
+      const options = question.options;
+      if (options.length === 0) return null;
+      let selected =
+        index === 0
+          ? options.find((option) => option.score < 4.75)
+          : options.find((option) => option.score >= 4.75);
+      if (!selected) {
+        selected = [...options].sort((a, b) =>
+          index === 0 ? a.score - b.score : b.score - a.score,
+        )[0];
+      }
+      return selected ? { questionId: question.id, optionId: selected.id } : null;
+    })
+    .filter((target): target is EvaluationTargetDto => target !== null);
 }

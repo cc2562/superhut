@@ -23,6 +23,10 @@
   color: #705f9f;
   background: #eee9f8;
 }
+.orange .icon {
+  color: #9a6426;
+  background: #f9ead9;
+}
 .copy {
   display: flex;
   flex: 1;

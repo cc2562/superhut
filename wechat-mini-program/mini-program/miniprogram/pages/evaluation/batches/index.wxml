@@ -1,0 +1,16 @@
+<view class="page"
+  ><view class="hero"
+    ><text class="eyebrow">教务服务</text><text class="title">学生评教</text
+    ><text class="subtitle">选择评教批次，查看待评课程。</text></view
+  >
+  <t-loading wx:if="{{loading}}" text="正在读取评教批次" />
+  <block wx:elif="{{batches.length}}">
+    <view class="batch card" wx:for="{{batches}}" wx:key="id" data-index="{{index}}" bind:tap="open"
+      ><view
+        ><text class="batch-name">{{item.name}}</text
+        ><text class="muted">{{item.category}} · {{item.semesterName}}</text></view
+      ><text class="arrow">›</text></view
+    >
+  </block>
+  <t-empty wx:else description="暂无评教批次" />
+</view>

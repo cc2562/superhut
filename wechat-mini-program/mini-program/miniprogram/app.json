@@ -8,7 +8,10 @@
     "pages/profile/index",
     "pages/scores/index",
     "pages/exams/index",
-    "pages/rooms/index"
+    "pages/rooms/index",
+    "pages/evaluation/batches/index",
+    "pages/evaluation/list/index",
+    "pages/evaluation/form/index"
   ],
   "window": {
     "navigationBarTitleText": "超级包菜",

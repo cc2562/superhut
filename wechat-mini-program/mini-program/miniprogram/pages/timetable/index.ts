@@ -35,6 +35,11 @@ Page({
   timetable: null as Timetable | null,
   touchX: 0,
   onShow() {
+    if (!storage.accessToken()) {
+      this.timetable = null;
+      this.setData({ hasData: false, days: [], nextCourses: [], fetchedAt: '', stale: false });
+      return;
+    }
     const cache = storage.timetable();
     if (cache) {
       this.render(cache.value, cache.fetchedAt);
