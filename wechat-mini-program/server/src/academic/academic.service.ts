@@ -98,7 +98,6 @@ export class AcademicService {
     }
   }
   async scores(userId: string, semesterId: string) {
-    if (!semesterId) throw new ApiError('VALIDATION_ERROR', 400, '请选择学期');
     const value = await this.provider().scores(await this.tokenFor(userId), semesterId);
     await this.state.saveSnapshot(
       userId,

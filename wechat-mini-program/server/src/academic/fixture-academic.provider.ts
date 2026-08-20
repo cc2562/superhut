@@ -10,7 +10,7 @@ import type {
   EvaluationSubmissionDto,
   ExamDto,
   FreeRoomDto,
-  ScoreDto,
+  ScoresResultDto,
   SemesterDto,
 } from './academic-provider.js';
 
@@ -128,20 +128,27 @@ export class FixtureAcademicProvider implements AcademicProvider {
   async refreshTimetable(): Promise<Timetable> {
     return structuredClone(timetable);
   }
-  async scores(): Promise<ScoreDto[]> {
-    return [
-      {
-        courseName: '高等数学',
-        courseAttribute: '必修',
-        courseNature: '专业基础课',
-        examName: '期末考试',
-        examNature: '正常考试',
-        score: '88',
-        passed: true,
-        gradePoint: 3.8,
-        credit: 4,
+  async scores(): Promise<ScoresResultDto> {
+    return {
+      scores: [
+        {
+          courseName: '高等数学',
+          courseAttribute: '必修',
+          courseNature: '专业基础课',
+          examName: '期末考试',
+          examNature: '正常考试',
+          score: '88',
+          passed: true,
+          gradePoint: 3.8,
+          credit: 4,
+        },
+      ],
+      summary: {
+        earnedCredits: '40',
+        totalGradePoints: '150',
+        averageGradePoint: '3.75',
       },
-    ];
+    };
   }
   async exams(): Promise<ExamDto[]> {
     return [

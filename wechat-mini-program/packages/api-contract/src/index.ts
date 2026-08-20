@@ -78,6 +78,15 @@ export const ScoreSchema = z.object({
   gradePoint: z.number().nullable(),
   credit: z.number().nullable(),
 });
+export const ScoreSummarySchema = z.object({
+  earnedCredits: z.string(),
+  totalGradePoints: z.string(),
+  averageGradePoint: z.string(),
+});
+export const ScoresResponseSchema = z.object({
+  scores: z.array(ScoreSchema),
+  summary: ScoreSummarySchema,
+});
 export const ExamSchema = z.object({
   courseName: z.string(),
   date: z.string(),
@@ -178,6 +187,8 @@ export type EvaluationSubmitRequest = z.infer<typeof EvaluationSubmitRequestSche
 export type EvaluationItemRequest = z.infer<typeof EvaluationItemRequestSchema>;
 export type EvaluationBatchRequest = z.infer<typeof EvaluationBatchRequestSchema>;
 export type EvaluationBatchResult = z.infer<typeof EvaluationBatchResultSchema>;
+export type ScoreSummary = z.infer<typeof ScoreSummarySchema>;
+export type ScoresResponse = z.infer<typeof ScoresResponseSchema>;
 export interface SuccessResponse<T> {
   data: T;
   meta: z.infer<typeof MetaSchema>;

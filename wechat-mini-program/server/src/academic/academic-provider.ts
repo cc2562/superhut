@@ -23,6 +23,15 @@ export interface ScoreDto {
   gradePoint: number | null;
   credit: number | null;
 }
+export interface ScoreSummaryDto {
+  earnedCredits: string;
+  totalGradePoints: string;
+  averageGradePoint: string;
+}
+export interface ScoresResultDto {
+  scores: ScoreDto[];
+  summary: ScoreSummaryDto;
+}
 export interface ExamDto {
   courseName: string;
   date: string;
@@ -84,7 +93,7 @@ export interface AcademicProvider {
   validateToken(token: string): Promise<boolean>;
   semesters(token: string): Promise<SemesterDto[]>;
   refreshTimetable(token: string): Promise<Timetable>;
-  scores(token: string, semesterId: string): Promise<ScoreDto[]>;
+  scores(token: string, semesterId: string): Promise<ScoresResultDto>;
   exams(token: string): Promise<ExamDto[]>;
   buildings(token: string): Promise<BuildingDto[]>;
   freeRooms(

@@ -6,6 +6,7 @@ import type {
   EvaluationItemRequest,
   EvaluationQuestion,
   EvaluationSubmitRequest,
+  ScoresResponse,
   SuccessResponse,
   Timetable,
 } from '@superhut/api-contract';
@@ -232,7 +233,7 @@ export const api = {
   },
   async scores(semesterId: string) {
     return (
-      await request<Array<Record<string, unknown>>>(
+      await request<ScoresResponse>(
         `/v1/academic/scores?semesterId=${encodeURIComponent(semesterId)}`,
         { authenticated: true },
       )
@@ -327,14 +328,14 @@ export const api = {
       });
     }
 
-    const scores = await request<Array<Record<string, unknown>>>(
+    const scores = await request<ScoresResponse>(
       `/v1/academic/scores?semesterId=${encodeURIComponent(semester.id)}`,
       { authenticated: true },
     );
     items.push({
       key: 'scores',
       label: '成绩',
-      count: scores.data.length,
+      count: scores.data.scores.length,
       requestId: scores.meta.requestId,
     });
 

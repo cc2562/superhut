@@ -54,7 +54,7 @@ export class AcademicController {
     @Req() request: FastifyRequest,
   ) {
     return successResponse(
-      await this.academic.scores(await this.user(authorization), semesterId),
+      await this.academic.scores(await this.user(authorization), semesterId ?? ''),
       requestId(request),
     );
   }

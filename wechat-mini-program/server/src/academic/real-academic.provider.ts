@@ -14,7 +14,7 @@ import type {
   EvaluationSubmissionDto,
   ExamDto,
   FreeRoomDto,
-  ScoreDto,
+  ScoresResultDto,
   SemesterDto,
 } from './academic-provider.js';
 
@@ -364,15 +364,20 @@ export class RealAcademicProvider implements AcademicProvider {
       }
     }
   }
-  async scores(token: string, semesterId: string): Promise<ScoreDto[]> {
+  async scores(token: string, semesterId: string): Promise<ScoresResultDto> {
     const payload = await this.post(
       `/njwhd/student/termGPA?semester=${encodeURIComponent(semesterId)}&type=1`,
       { token, auth: 'token' },
     );
     const groups = asArray(payload.data ?? []);
-    if (groups.length === 0) return [];
+    if (groups.length === 0) {
+      return {
+        scores: [],
+        summary: { earnedCredits: '', totalGradePoints: '', averageGradePoint: '' },
+      };
+    }
     const group = asObject(groups[0]);
-    return asArray(group.achievement).map((item) => {
+    const scores = asArray(group.achievement ?? []).map((item) => {
       const row = asObject(item);
       return {
         courseName: text(row.courseName),
@@ -386,6 +391,14 @@ export class RealAcademicProvider implements AcademicProvider {
         credit: numberValue(row.credit),
       };
     });
+    return {
+      scores,
+      summary: {
+        earnedCredits: text(group.yxzxf),
+        totalGradePoints: text(group.zxfjd),
+        averageGradePoint: text(group.pjxfjd),
+      },
+    };
   }
   async exams(token: string): Promise<ExamDto[]> {
     const payload = await this.post('/njwhd/student/examinationArrangement', {
