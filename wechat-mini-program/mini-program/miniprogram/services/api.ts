@@ -6,6 +6,7 @@ import type {
   EvaluationItemRequest,
   EvaluationQuestion,
   EvaluationSubmitRequest,
+  FreeRoom,
   ScoresResponse,
   SuccessResponse,
   Timetable,
@@ -260,7 +261,7 @@ export const api = {
   },
   async rooms(date: string, nodeId: string, buildingId: string) {
     return (
-      await request<Array<{ id: string; name: string }>>(
+      await request<FreeRoom[]>(
         `/v1/academic/rooms/free?date=${encodeURIComponent(date)}&nodeId=${encodeURIComponent(nodeId)}&buildingId=${encodeURIComponent(buildingId)}`,
         { authenticated: true },
       )

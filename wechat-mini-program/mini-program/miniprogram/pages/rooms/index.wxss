@@ -11,14 +11,76 @@
   color: #52645a;
   font-size: 27rpx;
 }
+.picker-row {
+  display: flex;
+  gap: 24rpx;
+}
+.picker-half {
+  flex: 1;
+}
 .room {
+  padding: 24rpx 28rpx;
+}
+.room-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 29rpx;
-  font-weight: 650;
+  gap: 16rpx;
 }
-.available {
-  color: #267653;
-  font-size: 23rpx;
+.room-name {
+  flex: 1;
+  font-size: 29rpx;
+  font-weight: 700;
+}
+.room-seats {
+  color: #718078;
+  font-size: 24rpx;
+}
+.arrow {
+  color: #8ba097;
+  font-size: 40rpx;
+}
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #eef3f0;
+}
+.slot {
+  width: 62rpx;
+  height: 52rpx;
+  display: grid;
+  place-items: center;
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  color: #52645a;
+}
+.slot.free {
+  background: #e7f5ec;
+  color: #176b47;
+}
+.slot.booked {
+  background: #f2f4f3;
+  color: #9aa7a0;
+}
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  width: 100%;
+  margin-top: 6rpx;
+  color: #718078;
+  font-size: 22rpx;
+}
+.legend-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+}
+.legend-dot.free {
+  background: #176b47;
+}
+.legend-dot.booked {
+  background: #cfd6d2;
 }

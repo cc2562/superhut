@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../src/common/api-error.js';
 import { RealAcademicProvider } from '../src/academic/real-academic.provider.js';
+import { isValidNodeId } from '../src/academic/academic.service.js';
 
 const fixtureDirectory = resolve(dirname(fileURLToPath(import.meta.url)), 'fixtures/hut-academic');
 
@@ -218,5 +219,45 @@ describe('real academic upstream contract', () => {
         'fictional-semester',
       ),
     ).toThrowError(ApiError);
+  });
+
+  it('parses free room seat count and occupied slots from zyjc', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/currentTerm'))
+        return Promise.resolve(jsonResponse({ data: [{ semesterId: 'fictional-semester' }] }));
+      return Promise.resolve(
+        jsonResponse({
+          data: [
+            { classroomId: 'c1', classroomname: '101', seatnumber: '60', zyjc: '10102,10304' },
+            { classroomId: 'c2', classroomname: '203', seatnumber: '48', zyjc: '' },
+          ],
+        }),
+      );
+    });
+
+    const rooms = await new RealAcademicProvider().freeRooms('fictional-token', {
+      date: '2026-09-07',
+      nodeId: '0102',
+      buildingId: 'public',
+    });
+
+    expect(rooms).toEqual([
+      { id: 'c1', name: '101', seatNumber: '60', occupied: ['0102', '0304'] },
+      { id: 'c2', name: '203', seatNumber: '48', occupied: ['00'] },
+    ]);
+  });
+});
+
+describe('isValidNodeId', () => {
+  it('accepts valid 1-12 lesson ranges and rejects invalid ones', () => {
+    expect(isValidNodeId('0102')).toBe(true);
+    expect(isValidNodeId('0112')).toBe(true);
+    expect(isValidNodeId('1212')).toBe(true);
+    expect(isValidNodeId('0201')).toBe(false);
+    expect(isValidNodeId('0012')).toBe(false);
+    expect(isValidNodeId('0113')).toBe(false);
+    expect(isValidNodeId('010')).toBe(false);
+    expect(isValidNodeId('abcd')).toBe(false);
   });
 });

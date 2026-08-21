@@ -169,8 +169,8 @@ export class FixtureAcademicProvider implements AcademicProvider {
   }
   async freeRooms(_token: string, input: { buildingId: string }): Promise<FreeRoomDto[]> {
     return [
-      { id: `${input.buildingId}-101`, name: '101' },
-      { id: `${input.buildingId}-203`, name: '203' },
+      { id: `${input.buildingId}-101`, name: '101', seatNumber: '60', occupied: ['0102'] },
+      { id: `${input.buildingId}-203`, name: '203', seatNumber: '48', occupied: ['00'] },
     ];
   }
   async evaluationBatches(): Promise<EvaluationBatchDto[]> {

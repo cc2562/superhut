@@ -1,5 +1,17 @@
 # SuperHUT Mini Changelog
 
+## 2026-08-21 — 空教室查询支持任意节次、座位数与空闲状态条
+
+状态：已完成
+
+- 空教室查询对齐 Flutter 版：新增「起始节 / 结束节」两个下拉（1~12 节），生成 4 位 nodeId 查询，不再写死第 1-2 节。
+- 结果卡片新增座位数展示；点击教室展开 1~12 节空闲状态条（占用/空闲双色图例）。
+- 后端 FreeRoomDto/FreeRoomSchema 扩展 `seatNumber`（座位数）与 `occupied`（占用节次区间，由 `zyjc` 解析：逗号分隔、每段去首字符，空串表全天空闲）。
+- 服务端 nodeId 校验加强：起始/结束节 ∈ [1,12] 且起始 ≤ 结束，非法返回 VALIDATION_ERROR。
+- 服务端新增 2 项契约/单测（freeRooms 解析 seatnumber/zyjc、isValidNodeId 边界）。
+- `pnpm run ci` 通过：格式、Lint、类型、MySQL 迁移一致性、70 项测试（6 项领域规则、20 项客户端请求层、44 项 BFF）及全部构建成功。
+- 真机回归待真实 `zyjc` 样本验证占用区间格式与状态条边界（如 `0112` 全占用）。
+
 ## 2026-08-21 — 教务 Token 过期检测与错误提示区分
 
 状态：已完成

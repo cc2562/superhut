@@ -169,7 +169,7 @@ export class AcademicService {
     return buildings;
   }
   async freeRooms(userId: string, input: { date: string; nodeId: string; buildingId: string }) {
-    if (!parseStrictDate(input.date) || !/^\d{4}$/.test(input.nodeId))
+    if (!parseStrictDate(input.date) || !isValidNodeId(input.nodeId))
       throw new ApiError('VALIDATION_ERROR', 400, '日期或节次不正确');
     const cachedAllowlist = await this.coordination.getJson<string[]>(
       `building-allowlist:${userId}`,
@@ -309,4 +309,14 @@ export function buildAutoEvaluationTargets(
       return selected ? { questionId: question.id, optionId: selected.id } : null;
     })
     .filter((target): target is EvaluationTargetDto => target !== null);
+}
+
+/**
+ * 空教室 nodeId：起止节次各补零到两位拼接，如 0102、0112；起始/结束节 ∈ [1,12] 且起始 ≤ 结束。
+ */
+export function isValidNodeId(nodeId: string): boolean {
+  if (!/^\d{4}$/.test(nodeId)) return false;
+  const start = Number(nodeId.slice(0, 2));
+  const end = Number(nodeId.slice(2, 4));
+  return start >= 1 && start <= 12 && end >= 1 && end <= 12 && start <= end;
 }

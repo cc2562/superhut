@@ -50,6 +50,15 @@ const numberValue = (value: unknown): number | null => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 };
+// zyjc 为逗号分隔的占用节次区间，每段去掉首字符得到形如 "0102" 的区间；空串表示全天空闲。
+const occupiedFromZyJc = (value: unknown): string[] => {
+  const raw = text(value);
+  if (!raw) return ['00'];
+  return raw
+    .split(',')
+    .map((segment) => (segment.length <= 2 ? '' : segment.slice(1)))
+    .filter((segment) => segment.length > 0);
+};
 
 const isFailureCode = (value: unknown): boolean =>
   value === 0 || value === '0' || value === -1 || value === '-1' || value === false;
@@ -459,8 +468,12 @@ export class RealAcademicProvider implements AcademicProvider {
     });
     return asArray(payload.data ?? []).map((item, index) => {
       const row = asObject(item);
-      const name = text(row.classroomname);
-      return { id: text(row.classroomId) || `${input.buildingId}-${index}`, name };
+      return {
+        id: text(row.classroomId) || `${input.buildingId}-${index}`,
+        name: text(row.classroomname),
+        seatNumber: text(row.seatnumber),
+        occupied: occupiedFromZyJc(row.zyjc),
+      };
     });
   }
   async evaluationBatches(token: string): Promise<EvaluationBatchDto[]> {

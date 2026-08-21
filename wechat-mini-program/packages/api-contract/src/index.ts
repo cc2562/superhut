@@ -95,7 +95,12 @@ export const ExamSchema = z.object({
   seat: z.string().optional(),
 });
 export const BuildingSchema = z.object({ id: z.string(), name: z.string() });
-export const FreeRoomSchema = z.object({ id: z.string(), name: z.string() });
+export const FreeRoomSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  seatNumber: z.string(),
+  occupied: z.array(z.string()),
+});
 
 export const EvaluationBatchSchema = z.object({
   id: z.string(),
@@ -189,6 +194,7 @@ export type EvaluationBatchRequest = z.infer<typeof EvaluationBatchRequestSchema
 export type EvaluationBatchResult = z.infer<typeof EvaluationBatchResultSchema>;
 export type ScoreSummary = z.infer<typeof ScoreSummarySchema>;
 export type ScoresResponse = z.infer<typeof ScoresResponseSchema>;
+export type FreeRoom = z.infer<typeof FreeRoomSchema>;
 export interface SuccessResponse<T> {
   data: T;
   meta: z.infer<typeof MetaSchema>;

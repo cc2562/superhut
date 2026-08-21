@@ -46,6 +46,8 @@ export interface BuildingDto {
 export interface FreeRoomDto {
   id: string;
   name: string;
+  seatNumber: string;
+  occupied: string[];
 }
 export interface EvaluationBatchDto {
   id: string;

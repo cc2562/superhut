@@ -1,7 +1,7 @@
 <view class="page"
   ><view class="hero"
     ><text class="eyebrow">教务服务</text><text class="title">空教室</text
-    ><text class="subtitle">选择日期和教学楼，查询第一大节空闲教室。</text></view
+    ><text class="subtitle">选择日期、教学楼和节次，查询空闲教室。</text></view
   >
   <view class="card filters"
     ><picker mode="date" value="{{date}}" bindchange="onDate"
@@ -10,11 +10,43 @@
       ><view class="picker"
         ><text>教学楼</text><text>{{buildingName || '请选择'}} ›</text></view
       ></picker
+    ><view class="picker-row"
+      ><picker
+        class="picker-half"
+        range="{{lessonRange}}"
+        value="{{startLesson - 1}}"
+        bindchange="onStart"
+        ><view class="picker"><text>起始节</text><text>第{{startLesson}}节 ›</text></view></picker
+      ><picker
+        class="picker-half"
+        range="{{lessonRange}}"
+        value="{{endLesson - 1}}"
+        bindchange="onEnd"
+        ><view class="picker"><text>结束节</text><text>第{{endLesson}}节 ›</text></view></picker
+      ></view
     ><t-button block theme="primary" loading="{{loading}}" bind:tap="search"
       >查询空教室</t-button
     ></view
   >
-  <view class="room card" wx:for="{{rooms}}" wx:key="id"
-    ><text>{{item.name}}</text><text class="available">空闲</text></view
-  ><t-empty wx:if="{{!loading && !rooms.length}}" description="选择条件后开始查询" />
+  <block wx:for="{{rooms}}" wx:key="id" wx:for-index="index">
+    <view class="room card" data-index="{{index}}" bind:tap="toggle"
+      ><view class="room-head"
+        ><text class="room-name">{{item.name}}</text
+        ><text class="room-seats">座位 {{item.seatNumber}}</text
+        ><text class="arrow">{{item.expanded ? '▾' : '›'}}</text></view
+      ><view class="slots" wx:if="{{item.expanded}}">
+        <view
+          class="slot {{slot.booked ? 'booked' : 'free'}}"
+          wx:for="{{item.slots}}"
+          wx:for-item="slot"
+          wx:key="label"
+          ><text>{{slot.label}}</text></view
+        ><view class="legend"
+          ><text class="legend-dot booked"></text><text>占用</text
+          ><text class="legend-dot free"></text><text>空闲</text></view
+        ></view
+      ></view
+    >
+  </block>
+  <t-empty wx:if="{{!loading && !rooms.length}}" description="选择条件后开始查询" />
 </view>
