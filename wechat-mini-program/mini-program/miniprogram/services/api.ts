@@ -48,13 +48,20 @@ export class ClientApiError extends Error {
 }
 
 export function toastRequestError(error: unknown, fallback: string): void {
-  const message =
-    error instanceof ClientApiError && error.code === 'AUTH_REQUIRED'
-      ? '请先登录教务账号'
-      : error instanceof Error
-        ? error.message
-        : fallback;
-  wx.showToast({ title: message, icon: 'none', duration: 3000 });
+  if (error instanceof ClientApiError && error.code === 'AUTH_REQUIRED') {
+    wx.showToast({ title: '请先登录教务账号', icon: 'none' });
+    return;
+  }
+  if (error instanceof ClientApiError && error.code === 'AUTH_ACADEMIC_EXPIRED') {
+    wx.showToast({ title: '教务登录已过期，请重新登录', icon: 'none', duration: 3000 });
+    setTimeout(() => void wx.navigateTo({ url: '/pages/login/index' }), 600);
+    return;
+  }
+  wx.showToast({
+    title: error instanceof Error ? error.message : fallback,
+    icon: 'none',
+    duration: 3000,
+  });
 }
 
 interface CallContainerResult<T> {

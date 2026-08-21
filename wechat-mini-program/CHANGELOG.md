@@ -1,5 +1,16 @@
 # SuperHUT Mini Changelog
 
+## 2026-08-21 — 教务 Token 过期检测与错误提示区分
+
+状态：已完成
+
+- 修复：教务 token 过期且未保存密码时，刷新课表/查成绩不再误报「学校服务不可用」，而是提示「教务登录已过期」并跳转登录页。
+- 服务端新增 token 过期检测：业务查询遇上游 500 时二次调用 `/njwhd/noticeTab` 校验 token，过期则把 binding 标记为 expired 并抛 `AUTH_ACADEMIC_EXPIRED`；标记后后续查询直接返回过期，不再调学校。
+- 错误文案区分：`ACADEMIC_UPSTREAM_UNAVAILABLE` 的 message 改为「学校服务器不可用」，明确是学校侧故障，与我方 `INTERNAL_ERROR` 的「服务暂时不可用」区分，避免用户误解为超级包菜服务器故障。
+- 客户端 `toastRequestError` 对 `AUTH_ACADEMIC_EXPIRED` 提示「教务登录已过期，请重新登录」并跳转登录页；课表页刷新失败改用统一错误处理。
+- `pnpm run ci` 通过：格式、Lint、类型、MySQL 迁移一致性、68 项测试（6 项领域规则、20 项客户端请求层、42 项 BFF）及全部构建成功。
+- 真机回归待真实过期 token 验证业务接口响应码与跳转路径。
+
 ## 2026-08-21 — 成绩查询支持任意学期、全部学期与学分绩点汇总
 
 状态：已完成

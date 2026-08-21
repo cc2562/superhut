@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { api, ClientApiError, ensureWechatSession } from './api';
+import { api, ClientApiError, ensureWechatSession, toastRequestError } from './api';
 
 interface CallRecord {
   path: string;
@@ -11,6 +11,8 @@ type Outcome = { statusCode: number; data: unknown } | { fail: unknown };
 
 const store = new Map<string, unknown>();
 const calls: CallRecord[] = [];
+const showToast = vi.fn();
+const navigateTo = vi.fn();
 let respond: (call: CallRecord) => Outcome = () => ({ statusCode: 500, data: {} });
 
 const ok = (data: unknown, requestId = 'req-1') => ({
@@ -40,11 +42,15 @@ const credentialRecord = {
 beforeEach(() => {
   store.clear();
   calls.length = 0;
+  showToast.mockClear();
+  navigateTo.mockClear();
   respond = () => ({ statusCode: 500, data: {} });
   vi.stubGlobal('getApp', () => ({
     globalData: { cloudEnvId: 'test-env', cloudService: 'superhut-api' },
   }));
   vi.stubGlobal('wx', {
+    showToast,
+    navigateTo,
     getStorageSync: (key: string) => store.get(key) ?? '',
     setStorageSync: (key: string, value: unknown) => void store.set(key, value),
     removeStorageSync: (key: string) => void store.delete(key),
@@ -299,5 +305,30 @@ describe('client api request layer', () => {
     respond = () => apiError(500, 'INTERNAL_ERROR');
     await ensureWechatSession();
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe('toastRequestError', () => {
+  it('prompts and navigates to login on AUTH_ACADEMIC_EXPIRED', () => {
+    vi.useFakeTimers();
+    toastRequestError(
+      new ClientApiError('AUTH_ACADEMIC_EXPIRED', '教务登录状态已失效，请重新登录'),
+      '加载失败',
+    );
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '教务登录已过期，请重新登录' }),
+    );
+    vi.runAllTimers();
+    expect(navigateTo).toHaveBeenCalledWith({ url: '/pages/login/index' });
+    vi.useRealTimers();
+  });
+
+  it('shows a plain toast for other errors without navigating', () => {
+    toastRequestError(
+      new ClientApiError('ACADEMIC_UPSTREAM_UNAVAILABLE', '学校服务器不可用'),
+      '加载失败',
+    );
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ title: '学校服务器不可用' }));
+    expect(navigateTo).not.toHaveBeenCalled();
   });
 });

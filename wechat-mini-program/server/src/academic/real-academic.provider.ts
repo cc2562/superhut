@@ -102,7 +102,7 @@ export class RealAcademicProvider implements AcademicProvider {
         signal: AbortSignal.timeout(20_000),
       });
     } catch {
-      throw new ApiError('ACADEMIC_UPSTREAM_UNAVAILABLE', 503, '学校服务暂时不可用');
+      throw new ApiError('ACADEMIC_UPSTREAM_UNAVAILABLE', 503, '学校服务器不可用');
     }
     if (response.status === 429)
       throw new ApiError('ACADEMIC_RATE_LIMITED', 429, '请求较频繁，请稍后重试');
@@ -118,10 +118,10 @@ export class RealAcademicProvider implements AcademicProvider {
             if (error instanceof ApiError && error.code === 'AUTH_ACADEMIC_EXPIRED') throw error;
           }
         }
-        throw new ApiError('ACADEMIC_UPSTREAM_UNAVAILABLE', 503, '学校服务暂时不可用');
+        throw new ApiError('ACADEMIC_UPSTREAM_UNAVAILABLE', 503, '学校服务器不可用');
       }
       if (response.status >= 500)
-        throw new ApiError('ACADEMIC_UPSTREAM_UNAVAILABLE', 503, '学校服务暂时不可用');
+        throw new ApiError('ACADEMIC_UPSTREAM_UNAVAILABLE', 503, '学校服务器不可用');
       if (options.auth === 'login' && [400, 401, 403].includes(response.status))
         throw new ApiError(
           'AUTH_ACADEMIC_INVALID_CREDENTIALS',

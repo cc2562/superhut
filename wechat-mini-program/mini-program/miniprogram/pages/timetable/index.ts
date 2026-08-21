@@ -6,7 +6,7 @@ import {
   sortCourses,
   toDateKey,
 } from '@superhut/domain-rules';
-import { api } from '../../services/api';
+import { api, toastRequestError } from '../../services/api';
 import { storage } from '../../services/storage';
 
 interface DayView {
@@ -162,11 +162,7 @@ Page({
       storage.saveTimetable(response.data, fetchedAt);
       this.render(response.data, fetchedAt);
     } catch (error) {
-      wx.showToast({
-        title: error instanceof Error ? error.message : '刷新失败，已保留原课表',
-        icon: 'none',
-        duration: 3000,
-      });
+      toastRequestError(error, '刷新失败，已保留原课表');
     } finally {
       this.setData({ loading: false });
     }

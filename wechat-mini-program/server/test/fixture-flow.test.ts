@@ -105,7 +105,7 @@ describe('fixture API flow', () => {
     const failure = vi
       .spyOn(provider, 'refreshTimetable')
       .mockRejectedValueOnce(
-        new ApiError('ACADEMIC_UPSTREAM_UNAVAILABLE', 503, '学校服务暂时不可用'),
+        new ApiError('ACADEMIC_UPSTREAM_UNAVAILABLE', 503, '学校服务器不可用'),
       );
     const refreshed = await http.inject({
       method: 'POST',

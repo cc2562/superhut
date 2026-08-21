@@ -164,6 +164,19 @@ export class StateService {
     });
   }
 
+  async markBindingExpired(userId: string): Promise<void> {
+    if (environment().APP_MODE === 'fixture') {
+      const user = await this.findById(userId);
+      if (user?.binding) user.binding.status = 'expired';
+      return;
+    }
+    await this.database
+      .db()
+      .update(academicBindings)
+      .set({ status: 'expired' })
+      .where(eq(academicBindings.userId, userId));
+  }
+
   async saveSnapshot<T>(
     userId: string,
     kind: 'timetable' | 'scores' | 'exams',

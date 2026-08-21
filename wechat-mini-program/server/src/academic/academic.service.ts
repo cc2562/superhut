@@ -50,8 +50,36 @@ export class AcademicService {
       throw new ApiError('AUTH_ACADEMIC_EXPIRED', 401, '教务登录状态已失效，请重新登录');
     return decryptField(binding.tokenCiphertext);
   }
+  private async guardUnavailable<T>(
+    userId: string,
+    token: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'ACADEMIC_UPSTREAM_UNAVAILABLE') {
+        let expired = false;
+        try {
+          expired = !(await this.provider().validateToken(token));
+        } catch {
+          // validateToken 也失败（学校整体故障），保持原 unavailable，不误判为过期
+          expired = false;
+        }
+        if (expired) {
+          await this.state.markBindingExpired(userId);
+          throw new ApiError('AUTH_ACADEMIC_EXPIRED', 401, '教务登录状态已失效，请重新登录');
+        }
+      }
+      throw error;
+    }
+  }
+  private async withToken<T>(userId: string, fn: (token: string) => Promise<T>): Promise<T> {
+    const token = await this.tokenFor(userId);
+    return this.guardUnavailable(userId, token, () => fn(token));
+  }
   async semesters(userId: string) {
-    return this.provider().semesters(await this.tokenFor(userId));
+    return this.withToken(userId, (token) => this.provider().semesters(token));
   }
   async timetable(
     userId: string,
@@ -82,7 +110,9 @@ export class AcademicService {
       if (!owner) throw new ApiError('ACADEMIC_RATE_LIMITED', 429, '课表正在刷新，请稍候');
     }
     try {
-      const value = await this.provider().refreshTimetable(await this.tokenFor(userId));
+      const value = await this.withToken(userId, (token) =>
+        this.provider().refreshTimetable(token),
+      );
       const snapshot = await this.state.saveSnapshot(
         userId,
         'timetable',
@@ -98,7 +128,9 @@ export class AcademicService {
     }
   }
   async scores(userId: string, semesterId: string) {
-    const value = await this.provider().scores(await this.tokenFor(userId), semesterId);
+    const value = await this.withToken(userId, (token) =>
+      this.provider().scores(token, semesterId),
+    );
     await this.state.saveSnapshot(
       userId,
       'scores',
@@ -110,7 +142,7 @@ export class AcademicService {
     return value;
   }
   async exams(userId: string) {
-    const value = await this.provider().exams(await this.tokenFor(userId));
+    const value = await this.withToken(userId, (token) => this.provider().exams(token));
     await this.state.saveSnapshot(
       userId,
       'exams',
@@ -125,7 +157,8 @@ export class AcademicService {
     const cached = await this.coordination.getJson<Array<{ id: string; name: string }>>(
       `buildings:${userId}`,
     );
-    const buildings = cached ?? (await this.provider().buildings(await this.tokenFor(userId)));
+    const buildings =
+      cached ?? (await this.withToken(userId, (token) => this.provider().buildings(token)));
     if (!cached) await this.coordination.setJson(`buildings:${userId}`, buildings, 3600);
     this.fixtureBuildingAllowlist.set(userId, new Set(buildings.map(({ id }) => id)));
     await this.coordination.setJson(
@@ -149,16 +182,16 @@ export class AcademicService {
     const key = `free-rooms:${userId}:${input.date}:${input.nodeId}:${input.buildingId}`;
     const cached = await this.coordination.getJson<Array<{ id: string; name: string }>>(key);
     if (cached) return cached;
-    const value = await this.provider().freeRooms(await this.tokenFor(userId), input);
+    const value = await this.withToken(userId, (token) => this.provider().freeRooms(token, input));
     await this.coordination.setJson(key, value, 300);
     return value;
   }
   async evaluationBatches(userId: string) {
-    return this.provider().evaluationBatches(await this.tokenFor(userId));
+    return this.withToken(userId, (token) => this.provider().evaluationBatches(token));
   }
   async evaluationList(userId: string, batch: { pj01id: string; batchId: string; pj05id: string }) {
     if (!batch.batchId) throw new ApiError('VALIDATION_ERROR', 400, '请选择评教批次');
-    return this.provider().evaluationList(await this.tokenFor(userId), batch);
+    return this.withToken(userId, (token) => this.provider().evaluationList(token, batch));
   }
   async evaluationQuestions(
     userId: string,
@@ -171,12 +204,12 @@ export class AcademicService {
     },
   ) {
     if (!item.courseId) throw new ApiError('VALIDATION_ERROR', 400, '请选择要评教的课程');
-    return this.provider().evaluationQuestions(await this.tokenFor(userId), item);
+    return this.withToken(userId, (token) => this.provider().evaluationQuestions(token, item));
   }
   async submitEvaluation(userId: string, submission: EvaluationSubmissionDto) {
     if (submission.target.length === 0)
       throw new ApiError('VALIDATION_ERROR', 400, '请完成所有题目后再提交');
-    await this.provider().submitEvaluation(await this.tokenFor(userId), submission);
+    await this.withToken(userId, (token) => this.provider().submitEvaluation(token, submission));
     return { submitted: true };
   }
   async autoSubmitOne(
@@ -189,23 +222,26 @@ export class AcademicService {
       noticeId: string;
     },
   ) {
-    const token = await this.tokenFor(userId);
-    const questions = await this.provider().evaluationQuestions(token, item);
-    if (questions.length === 0)
-      throw new ApiError('ACADEMIC_UPSTREAM_CHANGED', 502, '未获取到评教题目');
-    await this.provider().submitEvaluation(token, {
-      batchId: item.batchId,
-      courseId: item.courseId,
-      evaluationCategoriesId: item.evaluationCategoriesId,
-      teacherId: item.teacherId,
-      noticeId: item.noticeId,
-      target: buildAutoEvaluationTargets(questions),
+    return this.withToken(userId, async (token) => {
+      const questions = await this.provider().evaluationQuestions(token, item);
+      if (questions.length === 0)
+        throw new ApiError('ACADEMIC_UPSTREAM_CHANGED', 502, '未获取到评教题目');
+      await this.provider().submitEvaluation(token, {
+        batchId: item.batchId,
+        courseId: item.courseId,
+        evaluationCategoriesId: item.evaluationCategoriesId,
+        teacherId: item.teacherId,
+        noticeId: item.noticeId,
+        target: buildAutoEvaluationTargets(questions),
+      });
+      return { submitted: true };
     });
-    return { submitted: true };
   }
   async autoSubmitAll(userId: string, batch: { pj01id: string; batchId: string; pj05id: string }) {
     const token = await this.tokenFor(userId);
-    const items = await this.provider().evaluationList(token, batch);
+    const items = await this.guardUnavailable(userId, token, () =>
+      this.provider().evaluationList(token, batch),
+    );
     const pending = items.filter((item) => !item.submitted);
     const results: Array<{
       courseId: string;
