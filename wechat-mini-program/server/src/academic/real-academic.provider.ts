@@ -78,6 +78,31 @@ const semesterFirstDayFromCurrentWeek = (currentWeek: number, now = new Date()):
   return date.toISOString().slice(0, 10);
 };
 
+// 带并发上限地 map：并发调用 fn 但结果按原顺序返回。用于课表刷新时并发拉取多周，
+// 避免串行 20 周 × 2 请求把总耗时拖到客户端超时（历史课表数据多时尤其明显）。
+const mapConcurrent = async <T, R>(
+  items: readonly T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> => {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Array.from(
+    { length: Math.min(Math.max(1, concurrency), items.length) },
+    async () => {
+      while (next < items.length) {
+        const index = next;
+        next += 1;
+        const item = items[index];
+        if (item === undefined) break;
+        results[index] = await fn(item);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
+};
+
 @Injectable()
 export class RealAcademicProvider implements AcademicProvider {
   private readonly baseUrl = environment().HUT_ACADEMIC_BASE_URL;
@@ -211,10 +236,16 @@ export class RealAcademicProvider implements AcademicProvider {
     const targetId = semesterId || current?.id || '';
     if (!targetId) throw new ApiError('ACADEMIC_UPSTREAM_CHANGED', 502, '未找到当前学期');
     const historical = semesterId !== '';
+    const weekNumbers: number[] = [];
+    for (let week = firstWeek; week <= maxWeek; week += 1) weekNumbers.push(week);
+    const payloads = await mapConcurrent(weekNumbers, 4, (week) =>
+      this.fetchWeek(token, targetId, week, historical),
+    );
     const coursesByDate: Record<string, Course[]> = {};
     let firstDay = '';
-    for (let week = firstWeek; week <= maxWeek; week += 1) {
-      const weekPayloads = await this.fetchWeek(token, targetId, week, historical);
+    weekNumbers.forEach((week, index) => {
+      const weekPayloads = payloads[index];
+      if (!weekPayloads) return;
       this.mapWeek(weekPayloads, targetId, coursesByDate);
       if (!firstDay) {
         const monday = Object.keys(coursesByDate).sort()[0];
@@ -224,7 +255,7 @@ export class RealAcademicProvider implements AcademicProvider {
           firstDay = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         }
       }
-    }
+    });
     // A student can legitimately have no normal or experiment courses for the
     // whole term. In that case the authoritative teaching-week number still
     // provides the semester anchor without inventing course data.

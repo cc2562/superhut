@@ -144,7 +144,7 @@ async function request<T>(
               'content-type': 'application/json',
               ...(options.authenticated && token ? { Authorization: `Bearer ${token}` } : {}),
             },
-            timeout: 20_000,
+            timeout: 45_000,
             success: resolve,
             fail: reject,
           },
