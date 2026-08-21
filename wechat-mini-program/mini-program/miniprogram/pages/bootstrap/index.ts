@@ -1,4 +1,3 @@
-import { api } from '../../services/api';
 import { storage } from '../../services/storage';
 
 Page({
@@ -8,22 +7,6 @@ Page({
       await wx.redirectTo({ url: '/pages/privacy/index' });
       return;
     }
-    if (!storage.accessToken()) {
-      await wx.switchTab({ url: '/pages/timetable/index' });
-      return;
-    }
-    const cache = storage.timetable();
-    if (cache) {
-      await wx.switchTab({ url: '/pages/timetable/index' });
-      return;
-    }
-    try {
-      const status = await api.status();
-      if (status.academicBinding.status === 'active')
-        await wx.switchTab({ url: '/pages/timetable/index' });
-      else await wx.redirectTo({ url: '/pages/login/index' });
-    } catch {
-      await wx.redirectTo({ url: '/pages/login/index' });
-    }
+    await wx.switchTab({ url: '/pages/timetable/index' });
   },
 });

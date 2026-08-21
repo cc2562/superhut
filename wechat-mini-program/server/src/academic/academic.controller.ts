@@ -40,9 +40,13 @@ export class AcademicController {
   }
   @Post('timetable/refresh') async refresh(
     @Headers('authorization') authorization: string | undefined,
+    @Query('semesterId') semesterId: string,
     @Req() request: FastifyRequest,
   ) {
-    const snapshot = await this.academic.refreshTimetable(await this.user(authorization));
+    const snapshot = await this.academic.refreshTimetable(
+      await this.user(authorization),
+      semesterId ?? '',
+    );
     return {
       data: snapshot.value,
       meta: { requestId: requestId(request), fetchedAt: snapshot.fetchedAt, stale: false },

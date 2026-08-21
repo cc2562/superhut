@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Course } from '@superhut/api-contract';
 import {
+  buildWeekSlots,
   calculateSchoolWeek,
+  courseColor,
   courseTimeRange,
   findNextCourses,
   moveCourseDay,
@@ -55,5 +57,20 @@ describe('course domain rules', () => {
     expect(stableCourseId('2026-1', '2026-08-18', input)).toBe(
       stableCourseId('2026-1', '2026-08-18', input),
     );
+  });
+  it('assigns a stable valid color per course name', () => {
+    expect(courseColor('高等数学')).toBe(courseColor('高等数学'));
+    expect(courseColor('高等数学')).toMatch(/^#[0-9a-f]{6}$/);
+    expect(courseColor('大学英语')).toMatch(/^#[0-9a-f]{6}$/);
+  });
+  it('lays out week slots with placeholders and a fixed total height', () => {
+    const slots = buildWeekSlots([
+      course({ name: 'A', startSection: 3, duration: 2 }),
+      course({ name: 'B', startSection: 7, duration: 1 }),
+    ]);
+    expect(slots.reduce((sum, slot) => sum + slot.height, 0)).toBe(10);
+    expect(slots.filter(({ kind }) => kind === 'course')).toHaveLength(2);
+    expect(slots.find(({ course: c }) => c?.name === 'A')?.height).toBe(2);
+    expect(slots[0]).toMatchObject({ section: 1, kind: 'empty' });
   });
 });

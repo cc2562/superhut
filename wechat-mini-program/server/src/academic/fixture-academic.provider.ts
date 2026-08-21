@@ -125,7 +125,9 @@ export class FixtureAcademicProvider implements AcademicProvider {
   async semesters(): Promise<SemesterDto[]> {
     return [{ id: '2026-2027-1', name: '2026-2027 学年第一学期', current: true }];
   }
-  async refreshTimetable(): Promise<Timetable> {
+  async refreshTimetable(_token: string, _semesterId: string): Promise<Timetable> {
+    void _token;
+    void _semesterId;
     return structuredClone(timetable);
   }
   async scores(): Promise<ScoresResultDto> {

@@ -13,45 +13,81 @@
     >
   </view>
   <view wx:if="{{hasData}}">
-    <view wx:if="{{nextCourses.length}}" class="next card"
-      ><text class="eyebrow">下一节课</text
-      ><block wx:for="{{nextCourses}}" wx:key="id"
-        ><text class="next-name">{{item.name}}</text
-        ><text class="muted">第 {{item.startSection}} 节 · {{item.location}}</text></block
-      ></view
+    <picker range="{{semesterNames}}" value="{{semesterIndex}}" bindchange="onSemesterChange"
+      ><view class="semester-picker"
+        ><text>{{semesterNames[semesterIndex] || '选择学期'}}</text
+        ><text class="arrow">▾</text></view
+      ></picker
     >
     <view wx:if="{{stale}}" class="stale">当前展示上次成功课表，可稍后刷新</view>
-    <view class="day" wx:for="{{days}}" wx:key="date">
-      <view class="day-head"
-        ><view
-          ><text class="weekday {{item.today ? 'today' : ''}}">{{item.weekday}}</text
+    <view wx:if="{{mode === 'week'}}" class="week-grid">
+      <view class="week-header"
+        ><view class="grid-corner"></view
+        ><view class="weekday-col {{item.today ? 'today' : ''}}" wx:for="{{days}}" wx:key="date"
+          ><text class="weekday">{{item.weekday}}</text
           ><text class="date">{{item.label}}</text></view
-        ><text class="today-tag" wx:if="{{item.today}}">今天</text></view
+        ></view
       >
-      <view wx:if="{{!item.courses.length}}" class="empty-day">今天没有课程</view>
-      <view
-        class="course {{course.isExperiment ? 'experiment' : ''}}"
-        wx:for="{{item.courses}}"
-        wx:for-item="course"
-        wx:key="id"
-      >
-        <view class="section"
-          ><text>{{course.startSection}}</text><text class="dash">—</text
-          ><text>{{course.startSection + course.duration - 1}}</text></view
-        >
-        <view class="course-main"
-          ><text class="course-name">{{course.name}}</text
-          ><text class="course-meta">{{course.location}} · {{course.teacherName}}</text></view
-        >
-        <text wx:if="{{course.isExperiment}}" class="experiment-tag">实验</text>
+      <view class="week-body"
+        ><view class="section-axis"
+          ><view class="section-label" wx:for="{{sectionNumbers}}" wx:key="*this"
+            >{{item}}</view
+          ></view
+        ><view class="day-col" wx:for="{{days}}" wx:for-item="day" wx:key="date">
+          <block
+            wx:for="{{day.slots}}"
+            wx:for-item="slot"
+            wx:for-index="slotIndex"
+            wx:key="slotIndex"
+          >
+            <view
+              wx:if="{{slot.kind === 'course'}}"
+              class="course-block"
+              style="height: {{slot.height * 120}}rpx; border-left-color: {{slot.color}}"
+              ><text class="course-block-name">{{slot.course.name}}</text
+              ><text class="course-block-location">{{slot.course.location}}</text
+              ><text class="course-block-teacher">{{slot.course.teacherName}}</text></view
+            >
+            <view wx:else class="slot-empty" style="height: 120rpx"></view>
+          </block>
+        </view>
       </view>
     </view>
-    <view class="footer"
-      ><text>更新于 {{fetchedAt}}</text
-      ><t-button size="small" variant="outline" loading="{{loading}}" bind:tap="refresh"
-        >刷新课表</t-button
-      ></view
-    >
+    <view wx:else>
+      <view wx:if="{{nextCourses.length}}" class="next card"
+        ><text class="eyebrow">下一节课</text
+        ><block wx:for="{{nextCourses}}" wx:key="id"
+          ><text class="next-name">{{item.name}}</text
+          ><text class="muted">第 {{item.startSection}} 节 · {{item.location}}</text></block
+        ></view
+      >
+      <view class="day" wx:for="{{days}}" wx:key="date">
+        <view class="day-head"
+          ><view
+            ><text class="weekday {{item.today ? 'today' : ''}}">{{item.weekday}}</text
+            ><text class="date">{{item.label}}</text></view
+          ><text class="today-tag" wx:if="{{item.today}}">今天</text></view
+        >
+        <view wx:if="{{!item.courses.length}}" class="empty-day">今天没有课程</view>
+        <view
+          class="course {{course.isExperiment ? 'experiment' : ''}}"
+          wx:for="{{item.courses}}"
+          wx:for-item="course"
+          wx:key="id"
+        >
+          <view class="section"
+            ><text>{{course.startSection}}</text><text class="dash">—</text
+            ><text>{{course.startSection + course.duration - 1}}</text></view
+          >
+          <view class="course-main"
+            ><text class="course-name">{{course.name}}</text
+            ><text class="course-meta">{{course.location}} · {{course.teacherName}}</text></view
+          >
+          <text wx:if="{{course.isExperiment}}" class="experiment-tag">实验</text>
+        </view>
+      </view>
+    </view>
+    <view class="footer"><text>更新于 {{fetchedAt}}</text></view>
   </view>
   <view wx:else class="empty card"
     ><text class="section-title">暂无课表</text

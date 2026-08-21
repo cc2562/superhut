@@ -14,7 +14,7 @@ Page({
       storage.acceptPrivacy(PRIVACY_VERSION);
       const session = await api.wechatLogin(PRIVACY_VERSION);
       storage.saveSession(session.accessToken, session.refreshToken);
-      await wx.redirectTo({ url: '/pages/login/index' });
+      await wx.switchTab({ url: '/pages/timetable/index' });
     } catch {
       wx.showToast({ title: '暂时无法登录，请稍后重试', icon: 'none' });
     } finally {

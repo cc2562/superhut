@@ -9,7 +9,7 @@
   gap: 20rpx;
   padding: 28rpx 12rpx 8rpx;
 }
-.remember view {
+.remember-copy {
   flex: 1;
 }
 .remember-title {

@@ -5,7 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18rpx 6rpx 30rpx;
+  padding: 18rpx 6rpx 22rpx;
 }
 .page-title {
   display: block;
@@ -30,6 +30,121 @@
   background: #267653;
   box-shadow: 0 6rpx 18rpx rgba(38, 118, 83, 0.2);
 }
+.semester-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  padding: 14rpx 20rpx;
+  border-radius: 16rpx;
+  color: #52645a;
+  background: #eef5f1;
+  font-size: 25rpx;
+}
+.semester-picker .arrow {
+  color: #8ba097;
+}
+.stale {
+  margin-bottom: 20rpx;
+  padding: 18rpx 24rpx;
+  border-radius: 18rpx;
+  color: #77591c;
+  background: #fff6dc;
+  font-size: 25rpx;
+}
+.week-grid {
+  display: flex;
+  flex-direction: column;
+}
+.week-header {
+  display: flex;
+  align-items: stretch;
+}
+.grid-corner {
+  width: 60rpx;
+  flex-shrink: 0;
+}
+.weekday-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  padding: 12rpx 0;
+  border-radius: 12rpx;
+}
+.weekday-col.today {
+  background: #e2f2e9;
+}
+.weekday-col .weekday {
+  font-size: 24rpx;
+  font-weight: 650;
+  color: #3a4a41;
+}
+.weekday-col.today .weekday {
+  color: #176b47;
+}
+.weekday-col .date {
+  font-size: 20rpx;
+  color: #8a958f;
+}
+.week-body {
+  display: flex;
+  align-items: stretch;
+}
+.section-axis {
+  width: 60rpx;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.section-label {
+  height: 120rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 6rpx;
+  color: #9aa69f;
+  font-size: 20rpx;
+}
+.day-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.course-block {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+  padding: 6rpx;
+  border: 1rpx solid #e3ece7;
+  border-left: 6rpx solid;
+  border-radius: 10rpx;
+  background: #f6faf8;
+  overflow: hidden;
+}
+.course-block-name {
+  font-size: 20rpx;
+  font-weight: 650;
+  color: #25332b;
+  line-height: 1.25;
+  overflow: hidden;
+}
+.course-block-location,
+.course-block-teacher {
+  font-size: 17rpx;
+  color: #7c8a82;
+  line-height: 1.2;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.slot-empty {
+  box-sizing: border-box;
+  border-bottom: 1rpx solid #eef3f0;
+}
 .next {
   display: flex;
   flex-direction: column;
@@ -39,14 +154,6 @@
 .next-name {
   font-size: 34rpx;
   font-weight: 720;
-}
-.stale {
-  margin-bottom: 20rpx;
-  padding: 18rpx 24rpx;
-  border-radius: 18rpx;
-  color: #77591c;
-  background: #fff6dc;
-  font-size: 25rpx;
 }
 .day {
   margin-bottom: 28rpx;
@@ -138,12 +245,10 @@
   font-size: 25rpx;
 }
 .footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: 18rpx 6rpx 34rpx;
   color: #7a8981;
   font-size: 23rpx;
+  text-align: center;
 }
 .empty {
   margin-top: 90rpx;

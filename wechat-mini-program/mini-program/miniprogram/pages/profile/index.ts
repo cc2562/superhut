@@ -1,4 +1,4 @@
-import { api } from '../../services/api';
+import { api, ensureWechatSession, toastRequestError } from '../../services/api';
 import { storage } from '../../services/storage';
 
 Page({
@@ -10,7 +10,7 @@ Page({
     loggedIn: true,
   },
   async onShow() {
-    const cache = storage.timetable();
+    const cache = storage.latestTimetable();
     const credential = await storage.credential();
     const loggedIn = Boolean(storage.accessToken());
     this.setData({
@@ -32,13 +32,39 @@ Page({
       /* cached account state remains */
     }
   },
-  relogin() {
+  async relogin() {
+    if (this.data.loggedIn) {
+      void wx.navigateTo({ url: '/pages/login/index' });
+      return;
+    }
+    try {
+      await ensureWechatSession();
+      const status = await api.status();
+      if (status.academicBinding.status === 'active') {
+        wx.showToast({ title: '登录成功', icon: 'success' });
+        await this.onShow();
+        return;
+      }
+    } catch {
+      /* 恢复失败或未绑定，走登录页 */
+    }
     void wx.navigateTo({ url: '/pages/login/index' });
   },
   async deleteCredential() {
     await storage.deleteCredential();
     this.setData({ credentialSaved: false });
     wx.showToast({ title: '已删除', icon: 'success' });
+  },
+  async refreshTimetable() {
+    try {
+      const response = await api.refreshTimetable();
+      const fetchedAt = response.meta.fetchedAt ?? new Date().toISOString();
+      storage.saveTimetable(response.data, fetchedAt);
+      this.setData({ cacheTime: new Date(fetchedAt).toLocaleString() });
+      wx.showToast({ title: '课表已刷新', icon: 'success' });
+    } catch (error) {
+      toastRequestError(error, '刷新失败');
+    }
   },
   async clearCache() {
     const confirm = await wx.showModal({
@@ -67,6 +93,11 @@ Page({
     }
   },
   async logout() {
+    const confirm = await wx.showModal({
+      title: '退出登录',
+      content: '将退出当前账号并清除课表缓存，教务账号绑定会保留。',
+    });
+    if (!confirm.confirm) return;
     try {
       await api.logout();
       await wx.reLaunch({ url: '/pages/bootstrap/index' });

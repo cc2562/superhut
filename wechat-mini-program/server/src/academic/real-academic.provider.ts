@@ -194,7 +194,7 @@ export class RealAcademicProvider implements AcademicProvider {
       };
     });
   }
-  async refreshTimetable(token: string): Promise<Timetable> {
+  async refreshTimetable(token: string, semesterId = ''): Promise<Timetable> {
     const teaching = await this.post('/njwhd/teachingWeek', { token, auth: 'token' });
     const weeks = asArray(teaching.data)
       .map((item) => Number(asObject(item).week))
@@ -208,12 +208,14 @@ export class RealAcademicProvider implements AcademicProvider {
       throw new ApiError('ACADEMIC_UPSTREAM_CHANGED', 502, '当前教学周数据格式发生变化');
     const semesters = await this.semesters(token);
     const current = semesters.find(({ current }) => current) ?? semesters[0];
-    if (!current) throw new ApiError('ACADEMIC_UPSTREAM_CHANGED', 502, '未找到当前学期');
+    const targetId = semesterId || current?.id || '';
+    if (!targetId) throw new ApiError('ACADEMIC_UPSTREAM_CHANGED', 502, '未找到当前学期');
+    const historical = semesterId !== '';
     const coursesByDate: Record<string, Course[]> = {};
     let firstDay = '';
     for (let week = firstWeek; week <= maxWeek; week += 1) {
-      const weekPayloads = await this.fetchWeek(token, current.id, week);
-      this.mapWeek(weekPayloads, current.id, coursesByDate);
+      const weekPayloads = await this.fetchWeek(token, targetId, week, historical);
+      this.mapWeek(weekPayloads, targetId, coursesByDate);
       if (!firstDay) {
         const monday = Object.keys(coursesByDate).sort()[0];
         if (monday) {
@@ -227,14 +229,22 @@ export class RealAcademicProvider implements AcademicProvider {
     // whole term. In that case the authoritative teaching-week number still
     // provides the semester anchor without inventing course data.
     if (!firstDay) firstDay = semesterFirstDayFromCurrentWeek(currentWeek);
-    return { semesterId: current.id, firstWeek, maxWeek, firstDay, coursesByDate };
+    return { semesterId: targetId, firstWeek, maxWeek, firstDay, coursesByDate };
   }
 
-  async fetchWeek(token: string, semesterId: string, week: number): Promise<WeekPayloads> {
+  async fetchWeek(
+    token: string,
+    semesterId: string,
+    week: number,
+    historical = false,
+  ): Promise<WeekPayloads> {
     if (!Number.isInteger(week) || week < 1)
       throw new ApiError('VALIDATION_ERROR', 400, '教学周不正确');
+    const normalPath = historical
+      ? `/njwhd/student/curriculum?week=${week}&xnxq01id=${encodeURIComponent(semesterId)}`
+      : `/njwhd/student/curriculum?week=${week}`;
     const [normal, experiment] = await Promise.all([
-      this.post(`/njwhd/student/curriculum?week=${week}`, { token, auth: 'token' }),
+      this.post(normalPath, { token, auth: 'token' }),
       this.post(
         `/njwhd/teacher/courseScheduleExp?xnxq01id=${encodeURIComponent(semesterId)}&week=${week}`,
         { token, auth: 'token' },

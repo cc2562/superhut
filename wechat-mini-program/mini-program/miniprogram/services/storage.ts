@@ -12,6 +12,7 @@ export interface TimetableCache {
   value: Timetable;
   fetchedAt: string;
 }
+type TimetableCacheMap = Record<string, TimetableCache>;
 interface SavedCredential {
   schemaVersion: 1;
   studentId: string;
@@ -33,9 +34,23 @@ export const storage = {
   },
   privacyAccepted: () => wx.getStorageSync<string>(keys.privacy) || '',
   acceptPrivacy: (version: string) => wx.setStorageSync(keys.privacy, version),
-  timetable: () => wx.getStorageSync<TimetableCache>(keys.timetable) || null,
-  saveTimetable: (value: Timetable, fetchedAt: string) =>
-    wx.setStorageSync(keys.timetable, { value, fetchedAt }),
+  timetable: (semesterId: string) => {
+    const all = wx.getStorageSync<TimetableCacheMap>(keys.timetable) || {};
+    return all[semesterId] || null;
+  },
+  latestTimetable: (): TimetableCache | null => {
+    const all = wx.getStorageSync<TimetableCacheMap>(keys.timetable) || {};
+    const entries = Object.values(all);
+    if (!entries.length) return null;
+    return entries.reduce((latest, current) =>
+      Date.parse(current.fetchedAt) > Date.parse(latest.fetchedAt) ? current : latest,
+    );
+  },
+  saveTimetable: (value: Timetable, fetchedAt: string) => {
+    const all = wx.getStorageSync<TimetableCacheMap>(keys.timetable) || {};
+    all[value.semesterId] = { value, fetchedAt };
+    wx.setStorageSync(keys.timetable, all);
+  },
   clearTimetable: () => wx.removeStorageSync(keys.timetable),
   mode: (): 'week' | 'day' => (wx.getStorageSync<string>(keys.mode) === 'day' ? 'day' : 'week'),
   saveMode: (mode: 'week' | 'day') => wx.setStorageSync(keys.mode, mode),

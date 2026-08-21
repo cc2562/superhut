@@ -2,6 +2,11 @@ page {
   background: #f5fbf7;
   color: #173126;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --td-brand-color: #176b47;
+  --td-brand-color-active: #0f4a31;
+  --td-brand-color-disabled: #b6d2c4;
+  --td-brand-color-light: #e8f5ee;
+  --td-brand-color-light-active: #d5ebe0;
 }
 .page {
   min-height: 100vh;

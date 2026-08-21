@@ -94,7 +94,7 @@ export interface AcademicProvider {
   login(studentId: string, password: string): Promise<AcademicAccount>;
   validateToken(token: string): Promise<boolean>;
   semesters(token: string): Promise<SemesterDto[]>;
-  refreshTimetable(token: string): Promise<Timetable>;
+  refreshTimetable(token: string, semesterId: string): Promise<Timetable>;
   scores(token: string, semesterId: string): Promise<ScoresResultDto>;
   exams(token: string): Promise<ExamDto[]>;
   buildings(token: string): Promise<BuildingDto[]>;

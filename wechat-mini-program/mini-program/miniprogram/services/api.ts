@@ -225,8 +225,9 @@ export const api = {
   async timetable() {
     return request<Timetable>('/v1/academic/timetable', { authenticated: true });
   },
-  async refreshTimetable() {
-    return request<Timetable>('/v1/academic/timetable/refresh', {
+  async refreshTimetable(semesterId = '') {
+    const query = semesterId ? `?semesterId=${encodeURIComponent(semesterId)}` : '';
+    return request<Timetable>(`/v1/academic/timetable/refresh${query}`, {
       method: 'POST',
       authenticated: true,
     });

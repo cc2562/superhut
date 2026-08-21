@@ -1,12 +1,14 @@
 import type { Course, Timetable } from '@superhut/api-contract';
 import {
+  buildWeekSlots,
   calculateSchoolWeek,
   findNextCourses,
   parseStrictDate,
   sortCourses,
   toDateKey,
 } from '@superhut/domain-rules';
-import { api, toastRequestError } from '../../services/api';
+import type { WeekSlot } from '@superhut/domain-rules';
+import { api, ensureWechatSession, toastRequestError } from '../../services/api';
 import { storage } from '../../services/storage';
 
 interface DayView {
@@ -15,9 +17,11 @@ interface DayView {
   weekday: string;
   today: boolean;
   courses: Course[];
+  slots: WeekSlot[];
 }
 const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 const dateLabel = (date: Date) => `${date.getMonth() + 1}月${date.getDate()}日`;
+const sectionNumbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 Page({
   data: {
@@ -31,20 +35,57 @@ Page({
     nextCourses: [] as Course[],
     fetchedAt: '',
     stale: false,
+    semesters: [] as Array<{ id: string; name: string; current: boolean }>,
+    semesterNames: [] as string[],
+    semesterIndex: 0,
+    semesterId: '',
+    sectionNumbers,
   },
   timetable: null as Timetable | null,
   touchX: 0,
-  onShow() {
+  async onShow() {
     if (!storage.accessToken()) {
       this.timetable = null;
       this.setData({ hasData: false, days: [], nextCourses: [], fetchedAt: '', stale: false });
       return;
     }
-    const cache = storage.timetable();
+    await this.ensureSemesters();
+    const cache = this.data.semesterId ? storage.timetable(this.data.semesterId) : null;
     if (cache) {
       this.render(cache.value, cache.fetchedAt);
       void this.checkStatus();
-    } else void this.load();
+    } else if (this.data.semesterId) {
+      void this.refresh();
+    }
+  },
+  async ensureSemesters() {
+    if (this.data.semesters.length) return;
+    try {
+      const semesters = await api.semesters();
+      const current = semesters.find(({ current }) => current) ?? semesters[0];
+      const semesterId = this.data.semesterId || current?.id || '';
+      const index = Math.max(
+        0,
+        semesters.findIndex(({ id }) => id === semesterId),
+      );
+      this.setData({
+        semesters,
+        semesterNames: semesters.map(({ name, id }) => name || id),
+        semesterId,
+        semesterIndex: index,
+      });
+    } catch {
+      /* 未绑定教务等，semesters 拉不到，保持空态 */
+    }
+  },
+  onSemesterChange(event: WechatMiniprogram.CustomEvent<{ value: string }>) {
+    const index = Number(event.detail.value);
+    const semester = this.data.semesters[index];
+    if (!semester || semester.id === this.data.semesterId) return;
+    this.setData({ semesterId: semester.id, semesterIndex: index });
+    const cache = storage.timetable(semester.id);
+    if (cache) this.render(cache.value, cache.fetchedAt);
+    else void this.refresh();
   },
   async checkStatus() {
     try {
@@ -53,15 +94,6 @@ Page({
       if (error instanceof Error) {
         wx.showToast({ title: `${error.message}，已保留原课表`, icon: 'none' });
       }
-    }
-  },
-  async load() {
-    try {
-      const response = await api.timetable();
-      storage.saveTimetable(response.data, response.meta.fetchedAt ?? new Date().toISOString());
-      this.render(response.data, response.meta.fetchedAt ?? new Date().toISOString());
-    } catch {
-      this.setData({ hasData: false });
     }
   },
   render(value: Timetable, fetchedAt: string, selected?: Date) {
@@ -89,12 +121,14 @@ Page({
           });
     const days = dates.map((item) => {
       const key = toDateKey(item);
+      const courses = sortCourses(value.coursesByDate[key] ?? []);
       return {
         date: key,
         label: dateLabel(item),
         weekday: `周${weekdays[item.getDay()]}`,
         today: key === toDateKey(today),
-        courses: sortCourses(value.coursesByDate[key] ?? []),
+        courses,
+        slots: buildWeekSlots(courses),
       };
     });
     const nextCourses = findNextCourses(today, today, value.coursesByDate[toDateKey(today)] ?? []);
@@ -120,7 +154,7 @@ Page({
     if (this.timetable)
       this.render(
         this.timetable,
-        storage.timetable()?.fetchedAt ?? new Date().toISOString(),
+        storage.timetable(this.data.semesterId)?.fetchedAt ?? new Date().toISOString(),
         parseStrictDate(this.data.selectedDate) ?? undefined,
       );
   },
@@ -128,7 +162,7 @@ Page({
     if (this.timetable)
       this.render(
         this.timetable,
-        storage.timetable()?.fetchedAt ?? new Date().toISOString(),
+        storage.timetable(this.data.semesterId)?.fetchedAt ?? new Date().toISOString(),
         new Date(),
       );
   },
@@ -151,13 +185,17 @@ Page({
     const last = new Date(first);
     last.setDate(first.getDate() + this.timetable.maxWeek * 7 - 1);
     if (next < first || next > last) return;
-    this.render(this.timetable, storage.timetable()?.fetchedAt ?? new Date().toISOString(), next);
+    this.render(
+      this.timetable,
+      storage.timetable(this.data.semesterId)?.fetchedAt ?? new Date().toISOString(),
+      next,
+    );
   },
   async refresh() {
     if (this.data.loading) return;
     this.setData({ loading: true });
     try {
-      const response = await api.refreshTimetable();
+      const response = await api.refreshTimetable(this.data.semesterId);
       const fetchedAt = response.meta.fetchedAt ?? new Date().toISOString();
       storage.saveTimetable(response.data, fetchedAt);
       this.render(response.data, fetchedAt);
@@ -167,7 +205,19 @@ Page({
       this.setData({ loading: false });
     }
   },
-  goLogin() {
+  async goLogin() {
+    try {
+      await ensureWechatSession();
+      const status = await api.status();
+      if (status.academicBinding.status === 'active') {
+        wx.showToast({ title: '登录成功', icon: 'success' });
+        await this.ensureSemesters();
+        void this.refresh();
+        return;
+      }
+    } catch {
+      /* 恢复失败或未绑定，走登录页 */
+    }
     void wx.navigateTo({ url: '/pages/login/index' });
   },
 });

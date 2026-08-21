@@ -99,7 +99,10 @@ export class AcademicService {
       stale: Date.now() > Date.parse(snapshot.expiresAt),
     };
   }
-  async refreshTimetable(userId: string): Promise<{ value: Timetable; fetchedAt: string }> {
+  async refreshTimetable(
+    userId: string,
+    semesterId = '',
+  ): Promise<{ value: Timetable; fetchedAt: string }> {
     let owner: string | undefined;
     if (environment().APP_MODE === 'fixture') {
       if (this.fixtureRefreshLocks.has(userId))
@@ -111,7 +114,7 @@ export class AcademicService {
     }
     try {
       const value = await this.withToken(userId, (token) =>
-        this.provider().refreshTimetable(token),
+        this.provider().refreshTimetable(token, semesterId),
       );
       const snapshot = await this.state.saveSnapshot(
         userId,

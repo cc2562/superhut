@@ -11,10 +11,12 @@
       >{{loggedIn ? '重新登录' : '去登录'}}</t-button
     ></view
   >
-  <t-cell-group theme="card"
+  <t-cell-group
+    theme="card"
+    style="margin: 0 0 24rpx; box-shadow: 0 12rpx 36rpx rgba(41, 84, 62, 0.07)"
     ><t-cell
       title="本机保存的密码"
-      note="{{credentialSaved ? '已加密保存，最长 30 天' : '未保存'}}"
+      note="{{credentialSaved ? '已在本地保存' : '未保存'}}"
       arrow="{{false}}"
       ><t-button
         slot="right-icon"
@@ -24,10 +26,11 @@
         bind:tap="deleteCredential"
         >删除</t-button
       ></t-cell
-    ><t-cell title="课表缓存" note="{{cacheTime}}" arrow bind:tap="clearCache" /><t-cell
-      title="隐私政策与用户协议"
-      note="第三方、非官方声明"
+    ><t-cell title="刷新课表" note="同步最新课表数据" arrow bind:tap="refreshTimetable" /><t-cell
+      title="课表缓存"
+      note="{{cacheTime}}"
       arrow
+      bind:tap="clearCache" /><t-cell title="隐私政策与用户协议" arrow
   /></t-cell-group>
   <view class="card statement"
     ><text class="section-title">关于超级包菜</text

@@ -112,3 +112,64 @@ export function stableCourseId(
   }
   return `course_${(hash >>> 0).toString(16).padStart(8, '0')}`;
 }
+
+function hslToHex(hue: number, saturation: number, lightness: number): string {
+  const s = saturation / 100;
+  const l = lightness / 100;
+  const k = (n: number) => (n + hue / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const channel = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const toHex = (x: number) =>
+    Math.round(255 * x)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${toHex(channel(0))}${toHex(channel(8))}${toHex(channel(4))}`;
+}
+
+/**
+ * 按课程名生成固定颜色（复刻 Flutter 的 hash → HSL 配色思路），同名同色。
+ */
+export function courseColor(name: string): string {
+  let hash = 0;
+  for (let index = 0; index < name.length; index += 1) {
+    hash = (hash * 31 + name.charCodeAt(index)) | 0;
+  }
+  return hslToHex(Math.abs(hash) % 360, 55, 55);
+}
+
+export interface WeekSlot {
+  section: number;
+  kind: 'course' | 'empty';
+  course?: Course;
+  height: number;
+  color: string;
+}
+
+/**
+ * 把某天课程排成「节次块」列表（周视图网格用）：按起始节排序、空白节插占位块、
+ * 课程块高度 = 节数，填满 1~10 节（总高恒为 10）。重叠课程按独立块处理（先占先得）。
+ */
+export function buildWeekSlots(courses: readonly Course[]): WeekSlot[] {
+  const sorted = sortCourses(courses);
+  const slots: WeekSlot[] = [];
+  let current = 1;
+  for (const course of sorted) {
+    while (current < course.startSection) {
+      slots.push({ section: current, kind: 'empty', height: 1, color: '' });
+      current += 1;
+    }
+    slots.push({
+      section: course.startSection,
+      kind: 'course',
+      course,
+      height: course.duration,
+      color: courseColor(course.name),
+    });
+    current += course.duration;
+  }
+  while (current <= 10) {
+    slots.push({ section: current, kind: 'empty', height: 1, color: '' });
+    current += 1;
+  }
+  return slots;
+}
