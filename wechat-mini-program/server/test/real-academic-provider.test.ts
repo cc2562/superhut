@@ -2,7 +2,6 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError } from '../src/common/api-error.js';
 import { RealAcademicProvider } from '../src/academic/real-academic.provider.js';
 import { isValidNodeId } from '../src/academic/academic.service.js';
 
@@ -208,17 +207,37 @@ describe('real academic upstream contract', () => {
     expect(curriculumUrl?.searchParams.get('week')).toBe('1');
   });
 
-  it('rejects missing or malformed week fields instead of returning partial success', async () => {
+  it('skips malformed classTime and keeps parsing valid courses', () => {
     const provider = new RealAcademicProvider();
-    expect(() =>
-      provider.mapWeek(
-        {
-          normal: { data: [{ date: [], item: [{ classTime: 'bad' }] }] },
-          experiment: { data: [] },
+    const result = provider.mapWeek(
+      {
+        normal: {
+          data: [
+            {
+              date: [
+                { mxrq: '2026-09-07', xqid: 1 },
+                { mxrq: '2026-09-08', xqid: 2 },
+              ],
+              item: [
+                { classTime: 'bad', courseName: '坏数据' },
+                { classTime: '1', courseName: '太短' },
+                {
+                  classTime: '10102',
+                  courseName: '离散数学',
+                  teacherName: '测试教师',
+                  classWeek: '1-16',
+                  location: '测试楼 101',
+                },
+              ],
+            },
+          ],
         },
-        'fictional-semester',
-      ),
-    ).toThrowError(ApiError);
+        experiment: { data: [] },
+      },
+      'fictional-semester',
+    );
+    expect(result['2026-09-07']).toHaveLength(1);
+    expect(result['2026-09-07']?.[0]?.name).toBe('离散数学');
   });
 
   it('parses free room seat count and occupied slots from zyjc', async () => {

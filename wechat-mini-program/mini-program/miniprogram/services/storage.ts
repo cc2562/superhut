@@ -4,6 +4,7 @@ const keys = {
   access: 'session_access_v1',
   refresh: 'session_refresh_v1',
   timetable: 'timetable_snapshot_v1',
+  timetableSemester: 'timetable_semester_v1',
   privacy: 'privacy_consent_v1',
   credential: 'academic_credentials_v1',
   mode: 'timetable_mode_v1',
@@ -51,6 +52,9 @@ export const storage = {
     all[value.semesterId] = { value, fetchedAt };
     wx.setStorageSync(keys.timetable, all);
   },
+  timetableSemester: (): string => wx.getStorageSync<string>(keys.timetableSemester) || '',
+  saveTimetableSemester: (semesterId: string) =>
+    wx.setStorageSync(keys.timetableSemester, semesterId),
   clearTimetable: () => wx.removeStorageSync(keys.timetable),
   mode: (): 'week' | 'day' => (wx.getStorageSync<string>(keys.mode) === 'day' ? 'day' : 'week'),
   saveMode: (mode: 'week' | 'day') => wx.setStorageSync(keys.mode, mode),

@@ -322,12 +322,18 @@ export class RealAcademicProvider implements AcademicProvider {
       for (const rawItem of items) {
         const row = asObject(rawItem);
         const classTime = text(row.classTime);
-        if (!/^\d{5}$/.test(classTime))
-          throw new ApiError('ACADEMIC_UPSTREAM_CHANGED', 502, '课程节次格式发生变化');
-        const date = byDay.get(Number(classTime.slice(0, 1)));
-        if (!date) continue;
+        if (classTime.length < 3) continue;
+        const weekday = Number(classTime.slice(0, 1));
         const startSection = Number(classTime.slice(1, 3));
         const endSection = Number(classTime.slice(-2));
+        if (
+          !Number.isInteger(weekday) ||
+          !Number.isInteger(startSection) ||
+          !Number.isInteger(endSection)
+        )
+          continue;
+        const date = byDay.get(weekday);
+        if (!date) continue;
         const input = {
           name: text(row.courseName),
           teacherName: text(row.teacherName),

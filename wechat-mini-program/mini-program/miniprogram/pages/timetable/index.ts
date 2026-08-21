@@ -39,6 +39,7 @@ Page({
     semesterNames: [] as string[],
     semesterIndex: 0,
     semesterId: '',
+    currentSemesterId: '',
     sectionNumbers,
   },
   timetable: null as Timetable | null,
@@ -63,7 +64,10 @@ Page({
     try {
       const semesters = await api.semesters();
       const current = semesters.find(({ current }) => current) ?? semesters[0];
-      const semesterId = this.data.semesterId || current?.id || '';
+      const saved = storage.timetableSemester();
+      const semesterId =
+        this.data.semesterId ||
+        (saved && semesters.some(({ id }) => id === saved) ? saved : current?.id || '');
       const index = Math.max(
         0,
         semesters.findIndex(({ id }) => id === semesterId),
@@ -73,6 +77,7 @@ Page({
         semesterNames: semesters.map(({ name, id }) => name || id),
         semesterId,
         semesterIndex: index,
+        currentSemesterId: current?.id ?? '',
       });
     } catch {
       /* 未绑定教务等，semesters 拉不到，保持空态 */
@@ -83,6 +88,7 @@ Page({
     const semester = this.data.semesters[index];
     if (!semester || semester.id === this.data.semesterId) return;
     this.setData({ semesterId: semester.id, semesterIndex: index });
+    storage.saveTimetableSemester(semester.id);
     const cache = storage.timetable(semester.id);
     if (cache) this.render(cache.value, cache.fetchedAt);
     else void this.refresh();
@@ -101,8 +107,18 @@ Page({
     const first = parseStrictDate(value.firstDay);
     if (!first) return;
     const today = new Date();
-    const currentWeek = calculateSchoolWeek(value.firstDay, today) ?? 1;
-    const date = selected ?? (currentWeek >= 1 && currentWeek <= value.maxWeek ? today : first);
+    const isHistorical =
+      this.data.currentSemesterId !== '' && this.data.semesterId !== this.data.currentSemesterId;
+    let date: Date;
+    if (selected) {
+      date = selected;
+    } else if (isHistorical) {
+      // 历史学期（测试用）：直接锚定第一周，不参与「今天是第几周」的计算
+      date = first;
+    } else {
+      const currentWeek = calculateSchoolWeek(value.firstDay, today) ?? 1;
+      date = currentWeek >= 1 && currentWeek <= value.maxWeek ? today : first;
+    }
     const difference = Math.floor(
       (new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() - first.getTime()) /
         86_400_000,
