@@ -9,6 +9,7 @@ import {
 } from '@superhut/domain-rules';
 import type { WeekSlot } from '@superhut/domain-rules';
 import { api, ensureWechatSession, toastRequestError } from '../../services/api';
+import { verifyCaptcha } from '../../services/captcha';
 import { storage } from '../../services/storage';
 
 interface DayView {
@@ -41,6 +42,8 @@ Page({
     semesterId: '',
     currentSemesterId: '',
     sectionNumbers,
+    loadCaptcha: false,
+    pluginProps: null as WechatMiniprogram.IAnyObject | null,
   },
   timetable: null as Timetable | null,
   touchX: 0,
@@ -211,7 +214,15 @@ Page({
     if (this.data.loading) return;
     this.setData({ loading: true });
     try {
-      const response = await api.refreshTimetable(this.data.semesterId);
+      // 验证通过前阻断刷新：先完成阿里云刷新场景验证码。
+      let captchaVerifyParam: string;
+      try {
+        captchaVerifyParam = await verifyCaptcha(this, 'refresh');
+      } catch {
+        this.setData({ loading: false });
+        return; // 用户取消或验证未通过，静默返回
+      }
+      const response = await api.refreshTimetable(this.data.semesterId, captchaVerifyParam);
       const fetchedAt = response.meta.fetchedAt ?? new Date().toISOString();
       storage.saveTimetable(response.data, fetchedAt);
       this.render(response.data, fetchedAt);

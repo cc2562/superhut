@@ -32,7 +32,11 @@ describe('scores API flow', () => {
       method: 'POST',
       url: '/v1/auth/academic/login',
       headers: auth(),
-      payload: { studentId: '2300000011', password: 'fixture-only' },
+      payload: {
+        studentId: '2300000011',
+        password: 'fixture-only',
+        captchaVerifyParam: 'fixture-captcha',
+      },
     });
   });
   afterAll(async () => app.close());

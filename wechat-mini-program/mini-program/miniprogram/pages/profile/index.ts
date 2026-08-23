@@ -1,4 +1,5 @@
 import { api, ensureWechatSession, toastRequestError } from '../../services/api';
+import { verifyCaptcha } from '../../services/captcha';
 import { storage } from '../../services/storage';
 
 Page({
@@ -8,6 +9,8 @@ Page({
     credentialSaved: false,
     cacheTime: '暂无缓存',
     loggedIn: true,
+    loadCaptcha: false,
+    pluginProps: null as WechatMiniprogram.IAnyObject | null,
   },
   async onShow() {
     const cache = storage.latestTimetable();
@@ -57,7 +60,14 @@ Page({
   },
   async refreshTimetable() {
     try {
-      const response = await api.refreshTimetable();
+      // 验证通过前阻断刷新：先完成阿里云刷新场景验证码。
+      let captchaVerifyParam: string;
+      try {
+        captchaVerifyParam = await verifyCaptcha(this, 'refresh');
+      } catch {
+        return; // 用户取消或验证未通过，静默返回
+      }
+      const response = await api.refreshTimetable('', captchaVerifyParam);
       const fetchedAt = response.meta.fetchedAt ?? new Date().toISOString();
       storage.saveTimetable(response.data, fetchedAt);
       this.setData({ cacheTime: new Date(fetchedAt).toLocaleString() });

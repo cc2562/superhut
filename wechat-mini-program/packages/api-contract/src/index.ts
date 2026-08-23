@@ -8,6 +8,9 @@ export const errorCodes = [
   'ACADEMIC_UPSTREAM_UNAVAILABLE',
   'ACADEMIC_UPSTREAM_CHANGED',
   'ACADEMIC_RATE_LIMITED',
+  'CAPTCHA_REQUIRED',
+  'CAPTCHA_VERIFY_FAILED',
+  'CAPTCHA_SERVICE_UNAVAILABLE',
   'VALIDATION_ERROR',
   'PRIVACY_CONSENT_REQUIRED',
   'INTERNAL_ERROR',
@@ -36,7 +39,23 @@ export const AcademicLoginRequestSchema = z.object({
     .trim()
     .regex(/^\d{6,20}$/),
   password: z.string().min(1).max(128),
+  captchaVerifyParam: z.string().min(1).max(8192).optional(),
 });
+
+export const AcademicReloginRequestSchema = z.object({
+  studentId: z
+    .string()
+    .trim()
+    .regex(/^\d{6,20}$/),
+  password: z.string().min(1).max(128),
+});
+
+export const TimetableRefreshRequestSchema = z
+  .object({
+    captchaVerifyParam: z.string().min(1).max(8192).optional(),
+    semesterId: z.string().max(64).optional(),
+  })
+  .strict();
 
 export const AcademicBindingSchema = z.object({
   status: z.enum(['active', 'expired', 'unbound']),
@@ -65,6 +84,12 @@ export const TimetableSchema = z.object({
   coursesByDate: z.record(DateKeySchema, z.array(CourseSchema)),
 });
 export type Timetable = z.infer<typeof TimetableSchema>;
+
+export const AcademicLoginResponseSchema = z.object({
+  academicBinding: AcademicBindingSchema,
+  timetable: TimetableSchema.nullable(),
+  timetableFetchedAt: z.string().datetime({ offset: true }).nullable(),
+});
 
 export const SemesterSchema = z.object({ id: z.string(), name: z.string(), current: z.boolean() });
 export const ScoreSchema = z.object({
@@ -183,6 +208,9 @@ export const SessionSchema = z.object({
 
 export type WechatLoginRequest = z.infer<typeof WechatLoginRequestSchema>;
 export type AcademicLoginRequest = z.infer<typeof AcademicLoginRequestSchema>;
+export type AcademicReloginRequest = z.infer<typeof AcademicReloginRequestSchema>;
+export type TimetableRefreshRequest = z.infer<typeof TimetableRefreshRequestSchema>;
+export type AcademicLoginResponse = z.infer<typeof AcademicLoginResponseSchema>;
 export type EvaluationBatch = z.infer<typeof EvaluationBatchSchema>;
 export type EvaluationItem = z.infer<typeof EvaluationItemSchema>;
 export type EvaluationOption = z.infer<typeof EvaluationOptionSchema>;

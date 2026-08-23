@@ -2,7 +2,9 @@ import { Controller, Get } from '@nestjs/common';
 import { z } from 'zod';
 import {
   AcademicLoginRequestSchema,
+  AcademicReloginRequestSchema,
   ErrorResponseSchema,
+  TimetableRefreshRequestSchema,
   TimetableSchema,
   WechatLoginRequestSchema,
 } from '@superhut/api-contract';
@@ -40,6 +42,23 @@ export class OpenApiController {
             },
           },
         },
+        '/v1/auth/academic/relogin': {
+          post: {
+            summary: '静默自动重登教务账号（豁免验证码）',
+            requestBody: {
+              content: {
+                'application/json': { schema: z.toJSONSchema(AcademicReloginRequestSchema) },
+              },
+            },
+            responses: {
+              '200': { description: '重登成功' },
+              '401': {
+                description: '凭据错误',
+                content: { 'application/json': { schema: z.toJSONSchema(ErrorResponseSchema) } },
+              },
+            },
+          },
+        },
         '/v1/academic/timetable': {
           get: {
             summary: '读取最后成功课表',
@@ -52,7 +71,15 @@ export class OpenApiController {
           },
         },
         '/v1/academic/timetable/refresh': {
-          post: { summary: '原子刷新课表', responses: { '200': { description: '新课表快照' } } },
+          post: {
+            summary: '原子刷新课表',
+            requestBody: {
+              content: {
+                'application/json': { schema: z.toJSONSchema(TimetableRefreshRequestSchema) },
+              },
+            },
+            responses: { '200': { description: '新课表快照' } },
+          },
         },
       },
     };

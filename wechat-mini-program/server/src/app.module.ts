@@ -15,6 +15,7 @@ import { StateService } from './state/state.service.js';
 import { DatabaseService } from './database/database.service.js';
 import { CoordinationService } from './coordination/coordination.service.js';
 import { AuditService } from './audit/audit.service.js';
+import { CaptchaService } from './captcha/captcha.service.js';
 
 @Module({
   controllers: [
@@ -28,6 +29,7 @@ import { AuditService } from './audit/audit.service.js';
     DatabaseService,
     CoordinationService,
     AuditService,
+    CaptchaService,
     StateService,
     SessionService,
     LoginThrottleService,

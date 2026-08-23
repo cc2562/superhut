@@ -1,4 +1,5 @@
 import type {
+  AcademicLoginResponse,
   EvaluationBatch,
   EvaluationBatchRequest,
   EvaluationBatchResult,
@@ -56,6 +57,18 @@ export function toastRequestError(error: unknown, fallback: string): void {
   if (error instanceof ClientApiError && error.code === 'AUTH_ACADEMIC_EXPIRED') {
     wx.showToast({ title: '教务登录已过期，请重新登录', icon: 'none', duration: 3000 });
     setTimeout(() => void wx.navigateTo({ url: '/pages/login/index' }), 600);
+    return;
+  }
+  if (error instanceof ClientApiError && error.code === 'CAPTCHA_REQUIRED') {
+    wx.showToast({ title: '请先完成验证', icon: 'none' });
+    return;
+  }
+  if (error instanceof ClientApiError && error.code === 'CAPTCHA_VERIFY_FAILED') {
+    wx.showToast({ title: '验证未通过，请重试', icon: 'none' });
+    return;
+  }
+  if (error instanceof ClientApiError && error.code === 'CAPTCHA_SERVICE_UNAVAILABLE') {
+    wx.showToast({ title: '验证服务暂不可用，请稍后重试', icon: 'none', duration: 3000 });
     return;
   }
   wx.showToast({
@@ -168,7 +181,8 @@ async function request<T>(
       const credential = await storage.credential();
       if (credential) {
         try {
-          await request('/v1/auth/academic/login', {
+          // 静默自动重登：豁免验证码，走独立 relogin 接口（服务端校验同学号）。
+          await request('/v1/auth/academic/relogin', {
             method: 'POST',
             data: { studentId: credential.studentId, password: credential.password },
             authenticated: true,
@@ -206,12 +220,13 @@ export const api = {
       })
     ).data;
   },
-  async academicLogin(studentId: string, password: string) {
+  async academicLogin(studentId: string, password: string, captchaVerifyParam: string) {
     return (
-      await request<{ academicBinding: SessionData['academicBinding'] }>(
-        '/v1/auth/academic/login',
-        { method: 'POST', data: { studentId, password }, authenticated: true },
-      )
+      await request<AcademicLoginResponse>('/v1/auth/academic/login', {
+        method: 'POST',
+        data: { studentId, password, captchaVerifyParam },
+        authenticated: true,
+      })
     ).data;
   },
   async status() {
@@ -225,10 +240,11 @@ export const api = {
   async timetable() {
     return request<Timetable>('/v1/academic/timetable', { authenticated: true });
   },
-  async refreshTimetable(semesterId = '') {
+  async refreshTimetable(semesterId = '', captchaVerifyParam = '') {
     const query = semesterId ? `?semesterId=${encodeURIComponent(semesterId)}` : '';
     return request<Timetable>(`/v1/academic/timetable/refresh${query}`, {
       method: 'POST',
+      data: { captchaVerifyParam, ...(semesterId ? { semesterId } : {}) },
       authenticated: true,
     });
   },

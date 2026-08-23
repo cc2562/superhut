@@ -1,7 +1,13 @@
 import { Body, Controller, Delete, Get, Headers, Inject, Post, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import { successResponse } from '@superhut/api-contract';
+import {
+  AcademicLoginRequestSchema,
+  AcademicReloginRequestSchema,
+  successResponse,
+} from '@superhut/api-contract';
 import { requestId } from '../common/request-context.js';
+import { ApiError } from '../common/api-error.js';
+import { CaptchaService } from '../captcha/captcha.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { AuthService } from './auth.service.js';
 import { SessionService } from './session.service.js';
@@ -11,6 +17,7 @@ export class AuthController {
   constructor(
     @Inject(AuthService) private readonly auth: AuthService,
     @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(CaptchaService) private readonly captcha: CaptchaService,
     @Inject(AuditService) private readonly audit: AuditService,
   ) {}
   @Post('wechat/login') async wechat(@Body() body: unknown, @Req() request: FastifyRequest) {
@@ -53,11 +60,41 @@ export class AuthController {
     @Req() request: FastifyRequest,
   ) {
     const userId = await this.sessions.resolveAuthorization(authorization);
+    const { captchaVerifyParam } = AcademicLoginRequestSchema.parse(body);
+    if (!captchaVerifyParam) throw new ApiError('CAPTCHA_REQUIRED', 400, '请先完成验证');
+    // 验证通过前阻断登录：先完成阿里云验证码二次校验，再走教务登录。
+    await this.captcha.verify(captchaVerifyParam, 'login');
     try {
-      const academicBinding = await this.auth.loginAcademic(userId, body, this.clientIp(request));
+      const result = await this.auth.loginAcademic(userId, body, this.clientIp(request));
       await this.audit.record({
         userId,
         eventType: 'academic.login',
+        result: 'success',
+        requestId: requestId(request),
+      });
+      return successResponse(result, requestId(request));
+    } catch (error) {
+      await this.audit.record({
+        userId,
+        eventType: 'academic.login',
+        result: 'failure',
+        requestId: requestId(request),
+      });
+      throw error;
+    }
+  }
+  @Post('academic/relogin') async academicRelogin(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: unknown,
+    @Req() request: FastifyRequest,
+  ) {
+    const userId = await this.sessions.resolveAuthorization(authorization);
+    AcademicReloginRequestSchema.parse(body);
+    try {
+      const academicBinding = await this.auth.reloginAcademic(userId, body, this.clientIp(request));
+      await this.audit.record({
+        userId,
+        eventType: 'academic.relogin',
         result: 'success',
         requestId: requestId(request),
       });
@@ -65,7 +102,7 @@ export class AuthController {
     } catch (error) {
       await this.audit.record({
         userId,
-        eventType: 'academic.login',
+        eventType: 'academic.relogin',
         result: 'failure',
         requestId: requestId(request),
       });

@@ -31,4 +31,5 @@
   </view>
   <t-button block theme="primary" loading="{{loading}}" bind:tap="submit">登录并同步课表</t-button>
   <text class="footnote">第三方学生工具 · 非学校官方应用</text>
+  <aliyun-captcha id="captcha" wx:if="{{loadCaptcha}}" props="{{pluginProps}}" />
 </view>

@@ -205,7 +205,7 @@ describe('client api request layer', () => {
     store.set('session_access_v1', 'access-1');
     store.set('academic_credentials_v1', credentialRecord);
     respond = (call) => {
-      if (call.path === '/v1/auth/academic/login')
+      if (call.path === '/v1/auth/academic/relogin')
         return ok({ academicBinding: { status: 'active' } });
       const timetableCalls = calls.filter((item) => item.path === '/v1/academic/timetable');
       return timetableCalls.length === 1 ? apiError(401, 'AUTH_ACADEMIC_EXPIRED') : ok(timetable);
@@ -214,7 +214,7 @@ describe('client api request layer', () => {
     expect(response.data.semesterId).toBe('2025-2026-2-1');
     expect(calls.map((call) => call.path)).toEqual([
       '/v1/academic/timetable',
-      '/v1/auth/academic/login',
+      '/v1/auth/academic/relogin',
       '/v1/academic/timetable',
     ]);
     expect(calls[1]?.data).toEqual({ studentId: '2300000001', password: 'fixture-only' });
@@ -224,7 +224,7 @@ describe('client api request layer', () => {
     store.set('session_access_v1', 'access-1');
     store.set('academic_credentials_v1', credentialRecord);
     respond = (call) => {
-      if (call.path === '/v1/auth/academic/login')
+      if (call.path === '/v1/auth/academic/relogin')
         return apiError(400, 'AUTH_ACADEMIC_INVALID_CREDENTIALS');
       return apiError(401, 'AUTH_ACADEMIC_EXPIRED');
     };

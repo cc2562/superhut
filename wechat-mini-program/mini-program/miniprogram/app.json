@@ -13,6 +13,12 @@
     "pages/evaluation/list/index",
     "pages/evaluation/form/index"
   ],
+  "plugins": {
+    "AliyunCaptcha": {
+      "version": "3.0.0",
+      "provider": "wxbe275ff84246f1a4"
+    }
+  },
   "window": {
     "navigationBarTitleText": "超级包菜",
     "navigationBarBackgroundColor": "#f5fbf7",
@@ -41,6 +47,7 @@
     "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
     "t-switch": "tdesign-miniprogram/switch/switch",
     "t-loading": "tdesign-miniprogram/loading/loading",
-    "t-empty": "tdesign-miniprogram/empty/empty"
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "aliyun-captcha": "plugin://AliyunCaptcha/captcha"
   }
 }

@@ -4,6 +4,9 @@ import type { IncomingHttpHeaders } from 'node:http';
 import {
   type AcademicLoginRequest,
   AcademicLoginRequestSchema,
+  type AcademicLoginResponse,
+  AcademicReloginRequestSchema,
+  type Timetable,
   WechatLoginRequestSchema,
 } from '@superhut/api-contract';
 import { AcademicService } from '../academic/academic.service.js';
@@ -42,15 +45,54 @@ export class AuthService {
     };
   }
 
-  async loginAcademic(userId: string, input: unknown, ip: string) {
+  async loginAcademic(userId: string, input: unknown, ip: string): Promise<AcademicLoginResponse> {
     const request: AcademicLoginRequest = AcademicLoginRequestSchema.parse(input);
-    const release = await this.throttle.begin(userId, request.studentId, ip);
+    const academicBinding = await this.performLogin(
+      userId,
+      request.studentId,
+      request.password,
+      ip,
+    );
+    // 登录成功后顺带完成首次课表刷新并返回，避免前端登录后再次触发「刷新课表」验证码。
+    let timetable: Timetable | null = null;
+    let timetableFetchedAt: string | null = null;
     try {
-      const account = await this.academic.login(request.studentId, request.password);
+      const snapshot = await this.academic.refreshTimetable(userId);
+      timetable = snapshot.value;
+      timetableFetchedAt = snapshot.fetchedAt;
+    } catch {
+      // 降级：课表刷新失败不影响登录结果，前端进入课表页后展示空态/引导刷新。
+    }
+    return { academicBinding, timetable, timetableFetchedAt };
+  }
+
+  async reloginAcademic(userId: string, input: unknown, ip: string) {
+    const request = AcademicReloginRequestSchema.parse(input);
+    // 静默自动重登豁免验证码，但其安全边界是「请求学号必须与已绑定学号一致」，
+    // 否则攻击者可借 relogin 撞库新学号。不一致时按凭据错误处理，不泄露是否存在该账号。
+    const user = await this.requireUser(userId);
+    const binding = user.binding;
+    const sameStudent =
+      binding &&
+      binding.status !== 'unbound' &&
+      hmacIndex(request.studentId) === binding.studentIdHash;
+    if (!sameStudent)
+      throw new ApiError(
+        'AUTH_ACADEMIC_INVALID_CREDENTIALS',
+        401,
+        '账号、密码或学校服务状态异常，请检查后重试',
+      );
+    return this.performLogin(userId, request.studentId, request.password, ip);
+  }
+
+  private async performLogin(userId: string, studentId: string, password: string, ip: string) {
+    const release = await this.throttle.begin(userId, studentId, ip);
+    try {
+      const account = await this.academic.login(studentId, password);
       await this.requireUser(userId);
       await this.state.saveBinding(userId, {
-        studentIdCiphertext: encryptField(request.studentId),
-        studentIdHash: hmacIndex(request.studentId),
+        studentIdCiphertext: encryptField(studentId),
+        studentIdHash: hmacIndex(studentId),
         tokenCiphertext: encryptField(account.token),
         displayName: account.displayName,
         status: 'active',

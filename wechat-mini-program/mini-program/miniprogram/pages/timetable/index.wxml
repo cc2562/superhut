@@ -96,4 +96,5 @@
       ><t-button block theme="primary" bind:tap="goLogin">去登录</t-button></view
     ></view
   >
+  <aliyun-captcha id="captcha" wx:if="{{loadCaptcha}}" props="{{pluginProps}}" />
 </view>

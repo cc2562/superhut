@@ -71,7 +71,11 @@ describe('fixture API flow', () => {
       method: 'POST',
       url: '/v1/auth/academic/login',
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: { studentId: '2300000001', password: 'fixture-only' },
+      payload: {
+        studentId: '2300000001',
+        password: 'fixture-only',
+        captchaVerifyParam: 'fixture-captcha',
+      },
     });
     expect(binding.statusCode).toBe(201);
     expect(binding.body).not.toContain('fixture-only');
@@ -83,6 +87,7 @@ describe('fixture API flow', () => {
       method: 'POST',
       url: '/v1/academic/timetable/refresh',
       headers: { authorization: `Bearer ${accessToken}` },
+      payload: { captchaVerifyParam: 'fixture-captcha' },
     });
     expect(refreshed.statusCode).toBe(201);
     expect(refreshed.json().data.coursesByDate['2026-08-18']).toHaveLength(2);
@@ -111,6 +116,7 @@ describe('fixture API flow', () => {
       method: 'POST',
       url: '/v1/academic/timetable/refresh',
       headers: { authorization: `Bearer ${accessToken}` },
+      payload: { captchaVerifyParam: 'fixture-captcha' },
     });
     expect(refreshed.statusCode).toBe(503);
     expect(refreshed.json().error.code).toBe('ACADEMIC_UPSTREAM_UNAVAILABLE');
@@ -170,12 +176,17 @@ describe('fixture API flow', () => {
       method: 'POST',
       url: '/v1/auth/academic/login',
       headers: authorization,
-      payload: { studentId: '2300000003', password: 'fixture-only' },
+      payload: {
+        studentId: '2300000003',
+        password: 'fixture-only',
+        captchaVerifyParam: 'fixture-captcha',
+      },
     });
     await http.inject({
       method: 'POST',
       url: '/v1/academic/timetable/refresh',
       headers: authorization,
+      payload: { captchaVerifyParam: 'fixture-captcha' },
     });
 
     const unbound = await http.inject({
@@ -262,7 +273,11 @@ describe('fixture API flow', () => {
         method: 'POST',
         url: '/v1/auth/academic/login',
         headers: { authorization: `Bearer ${token}` },
-        payload: { studentId: '2300000002', password: 'fixture-only' },
+        payload: {
+          studentId: '2300000002',
+          password: 'fixture-only',
+          captchaVerifyParam: 'fixture-captcha',
+        },
       });
     }
     expect(response?.statusCode).toBe(429);

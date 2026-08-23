@@ -1,4 +1,5 @@
 import { api, ClientApiError, ensureWechatSession } from '../../services/api';
+import { verifyCaptcha } from '../../services/captcha';
 import { storage } from '../../services/storage';
 
 Page({
@@ -7,6 +8,8 @@ Page({
     password: '',
     remember: false,
     loading: false,
+    loadCaptcha: false,
+    pluginProps: null as WechatMiniprogram.IAnyObject | null,
   },
   onStudentId(event: WechatMiniprogram.CustomEvent<{ value: string }>) {
     this.setData({ studentId: event.detail.value });
@@ -26,11 +29,26 @@ Page({
     this.setData({ loading: true });
     try {
       await ensureWechatSession();
-      await api.academicLogin(this.data.studentId, this.data.password);
+      // 验证通过前阻断登录：先完成阿里云登录场景验证码。
+      let captchaVerifyParam: string;
+      try {
+        captchaVerifyParam = await verifyCaptcha(this, 'login');
+      } catch {
+        this.setData({ loading: false });
+        return; // 用户取消或验证未通过，静默返回
+      }
+      const result = await api.academicLogin(
+        this.data.studentId,
+        this.data.password,
+        captchaVerifyParam,
+      );
       if (this.data.remember) await storage.saveCredential(this.data.studentId, this.data.password);
       else await storage.deleteCredential();
-      const response = await api.refreshTimetable();
-      storage.saveTimetable(response.data, response.meta.fetchedAt ?? new Date().toISOString());
+      if (result.timetable)
+        storage.saveTimetable(
+          result.timetable,
+          result.timetableFetchedAt ?? new Date().toISOString(),
+        );
       await wx.switchTab({ url: '/pages/timetable/index' });
     } catch (error) {
       if (error instanceof ClientApiError && error.code === 'AUTH_ACADEMIC_INVALID_CREDENTIALS')

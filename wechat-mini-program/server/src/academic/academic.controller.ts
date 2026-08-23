@@ -5,8 +5,11 @@ import {
   EvaluationItemRequestSchema,
   EvaluationSubmitRequestSchema,
   successResponse,
+  TimetableRefreshRequestSchema,
 } from '@superhut/api-contract';
 import { requestId } from '../common/request-context.js';
+import { ApiError } from '../common/api-error.js';
+import { CaptchaService } from '../captcha/captcha.service.js';
 import { SessionService } from '../auth/session.service.js';
 import { AcademicService } from './academic.service.js';
 
@@ -15,6 +18,7 @@ export class AcademicController {
   constructor(
     @Inject(AcademicService) private readonly academic: AcademicService,
     @Inject(SessionService) private readonly sessions: SessionService,
+    @Inject(CaptchaService) private readonly captcha: CaptchaService,
   ) {}
   private user(authorization: string | undefined): Promise<string> {
     return this.sessions.resolveAuthorization(authorization);
@@ -40,9 +44,13 @@ export class AcademicController {
   }
   @Post('timetable/refresh') async refresh(
     @Headers('authorization') authorization: string | undefined,
-    @Query('semesterId') semesterId: string,
+    @Body() body: unknown,
     @Req() request: FastifyRequest,
   ) {
+    const { captchaVerifyParam, semesterId } = TimetableRefreshRequestSchema.parse(body);
+    if (!captchaVerifyParam) throw new ApiError('CAPTCHA_REQUIRED', 400, '请先完成验证');
+    // 验证通过前阻断刷新：先完成阿里云验证码二次校验，再访问学校刷新课表。
+    await this.captcha.verify(captchaVerifyParam, 'refresh');
     const snapshot = await this.academic.refreshTimetable(
       await this.user(authorization),
       semesterId ?? '',

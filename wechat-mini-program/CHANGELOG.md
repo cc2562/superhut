@@ -1,5 +1,18 @@
 # SuperHUT Mini Changelog
 
+## 2026-08-23 — 阿里云验证码 2.0（V3 架构）接入：登录与刷新课表双重保护
+
+状态：代码完成，CI 全绿；待拿到真实 SceneId/AccessKey 后真机验证
+
+- 为「登录教务系统」与「刷新课表」两个独立场景接入阿里云验证码 2.0（V3 架构，微信小程序插件 `wxbe275ff84246f1a4`），**验证通过前阻断**登录与刷新。
+- 前端：`app.json` 声明插件 + 全局组件 `aliyun-captcha`；新增 `services/captcha.ts` 封装 `verifyCaptcha(host, scene)`（Promise 化，setData 渲染回调内 `plugin.show()`）；登录页、我的页、课表页接入验证码并挂载组件。
+- 登录流程不二次验证：登录接口成功后服务端顺带完成首次课表刷新并返回课表，前端登录成功后不再单独调刷新接口。
+- 静默自动重登保留且豁免验证码：新增独立接口 `/v1/auth/academic/relogin`（服务端校验「请求学号 == 已绑定学号」+ 保留登录限流），`api.ts` 的 AUTH_ACADEMIC_EXPIRED 自动重登改走该接口。
+- 服务端新增 `CaptchaService`：**零依赖 HTTPS 原生调用 `VerifyIntelligentCaptcha`（ACS3-HMAC-SHA256 签名）**，fail-closed——验证码服务故障时拒绝登录/刷新并提示稍后重试。
+- 契约新增错误码 `CAPTCHA_REQUIRED` / `CAPTCHA_VERIFY_FAILED` / `CAPTCHA_SERVICE_UNAVAILABLE`，以及 relogin / timetable-refresh / login 响应 schema。
+- `pnpm run ci` 通过：格式、Lint、类型、MySQL 迁移一致性、77 项测试（8 项领域规则、20 项客户端、49 项 BFF 含新增 5 项验证码测试）及全部构建成功。
+- 待办：米饭从阿里云控制台获取两个 SceneId 与 RAM AccessKey（AliyunYundunAFSFullAccess），替换前端占位符 + 注入后端环境变量；微信开发者工具构建 npm 后真机验证验证码弹窗、取消与 fail-closed 路径；确认云托管可访问 `captcha.cn-shanghai.aliyuncs.com`。
+
 ## 2026-08-22 — 课表周视图网格化 + 刷新入口移至「我的」+ 学期切换（测试用）
 
 状态：已完成

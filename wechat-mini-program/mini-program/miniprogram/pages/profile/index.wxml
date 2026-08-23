@@ -45,4 +45,5 @@
       >注销 SuperHUT 账号</t-button
     ></view
   >
+  <aliyun-captcha id="captcha" wx:if="{{loadCaptcha}}" props="{{pluginProps}}" />
 </view>

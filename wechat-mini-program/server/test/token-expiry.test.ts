@@ -28,7 +28,7 @@ async function bindAccount(
     method: 'POST',
     url: '/v1/auth/academic/login',
     headers: { authorization: `Bearer ${token}` },
-    payload: { studentId, password: 'fixture-only' },
+    payload: { studentId, password: 'fixture-only', captchaVerifyParam: 'fixture-captcha' },
   });
   return token;
 }

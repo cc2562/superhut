@@ -17,6 +17,11 @@ const EnvironmentSchema = z.object({
   HUT_ACADEMIC_BASE_URL: z.string().url().default('https://jwxtsj.hut.edu.cn'),
   ACADEMIC_PASSWORD_KEY: z.string().default(''),
   ALLOWED_MINIPROGRAM_APP_ID: z.string().default('fixture-app-id'),
+  ALIYUN_CAPTCHA_ACCESS_KEY_ID: z.string().default(''),
+  ALIYUN_CAPTCHA_ACCESS_KEY_SECRET: z.string().default(''),
+  ALIYUN_CAPTCHA_ENDPOINT: z.string().default('captcha.cn-shanghai.aliyuncs.com'),
+  ALIYUN_CAPTCHA_LOGIN_SCENE_ID: z.string().default(''),
+  ALIYUN_CAPTCHA_REFRESH_SCENE_ID: z.string().default(''),
 });
 
 export type Environment = z.infer<typeof EnvironmentSchema>;
@@ -38,6 +43,10 @@ export function environment(): Environment {
       'HMAC_INDEX_KEY',
       'ACADEMIC_PASSWORD_KEY',
       'ALLOWED_MINIPROGRAM_APP_ID',
+      'ALIYUN_CAPTCHA_ACCESS_KEY_ID',
+      'ALIYUN_CAPTCHA_ACCESS_KEY_SECRET',
+      'ALIYUN_CAPTCHA_LOGIN_SCENE_ID',
+      'ALIYUN_CAPTCHA_REFRESH_SCENE_ID',
     ] as const;
     for (const key of required)
       if (!cached[key]) throw new Error(`${key} is required in real mode`);
