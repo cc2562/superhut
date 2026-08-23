@@ -1,5 +1,25 @@
 # SuperHUT Mini Changelog
 
+## 2026-08-23 — 修复「验证通过后仍提示验证未通过」的签名 bug
+
+状态：已完成，CI 全绿；待重新部署后真机复验
+
+- 现象：前端验证码交互通过（success 已拿到 captchaVerifyParam），但后端二次校验后仍提示「验证未通过」，登录与刷新都如此。
+- 根因：`CaptchaService` 自实现的 ACS3-HMAC-SHA256 签名**漏签了 `content-type` 请求头**。阿里云 V3 签名规范要求「除 Authorization 外的所有请求头只要存在就必须参与签名」，POST form 请求必带 `content-type: application/x-www-form-urlencoded`，漏签会导致签名不匹配，阿里云返回**无 `Result` 字段**的签名错误，而旧代码把「无 Result」误判为 `VerifyResult !== true`，抛了 `CAPTCHA_VERIFY_FAILED`（文案「验证未通过」）。
+- 修复：把 `content-type` 纳入 `signed` 表参与签名；同时改进错误分类——`VerifyResult === false`（真实验证失败，如 SceneId 不匹配 F012）抛 `CAPTCHA_VERIFY_FAILED`，其余（签名错误/权限不足/欠费/HTTP 非 200）抛 `CAPTCHA_SERVICE_UNAVAILABLE`，并通过 Logger 记录阿里云返回的 `code/message/verifyCode` 便于排查。
+- `pnpm run ci` 通过：77 项测试及全部构建成功。
+- 待办：重新部署云托管后，真机复验登录/刷新验证码；若仍失败，查后端日志中的 `captcha verify request failed` 行（会带阿里云 `code/message`）。
+
+## 2026-08-23 — 修复验证码首次黑屏 + 取消验证提示
+
+状态：已完成，CI 全绿
+
+- 修复「首次触发显示全屏黑色遮罩、第二次才弹出验证码」：根因是「点击时 setData 挂载组件 → 回调里立即 `plugin.show()`」，组件挂载与 show 之间无时间差，插件尚未初始化完成就弹出。改为官方推荐的**页面 onLoad 预挂载组件 + 点击时才 `show()`**；每次验证结束后（success/fail/onClose）立即重新挂载组件，为下一次验证预初始化，避免重挂后再次黑屏。
+- `services/captcha.ts` 重构：拆出 `mountCaptcha(host, scene)`（onLoad 调用）+ `verifyCaptcha()`（点击调用，无参）；新增 `onClose(isVerify)` 回调区分「验证成功关闭」与「用户主动取消」，取消时 reject 独立的 `CaptchaCancelledError`。
+- 刷新课表取消验证给提示：我的页、课表页在 `CaptchaCancelledError` 时 toast「已取消验证」；登录页取消仍静默返回。
+- 登录验证码形态保持弹出式（黑屏修复后体验正常），未改内嵌式。
+- `pnpm run ci` 通过：77 项测试及全部构建成功。
+
 ## 2026-08-23 — 阿里云验证码 2.0（V3 架构）接入：登录与刷新课表双重保护
 
 状态：代码完成，CI 全绿；待拿到真实 SceneId/AccessKey 后真机验证

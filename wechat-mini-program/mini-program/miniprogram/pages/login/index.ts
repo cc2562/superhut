@@ -1,5 +1,5 @@
 import { api, ClientApiError, ensureWechatSession } from '../../services/api';
-import { verifyCaptcha } from '../../services/captcha';
+import { mountCaptcha, verifyCaptcha } from '../../services/captcha';
 import { storage } from '../../services/storage';
 
 Page({
@@ -10,6 +10,9 @@ Page({
     loading: false,
     loadCaptcha: false,
     pluginProps: null as WechatMiniprogram.IAnyObject | null,
+  },
+  onLoad() {
+    mountCaptcha(this, 'login');
   },
   onStudentId(event: WechatMiniprogram.CustomEvent<{ value: string }>) {
     this.setData({ studentId: event.detail.value });
@@ -32,7 +35,7 @@ Page({
       // 验证通过前阻断登录：先完成阿里云登录场景验证码。
       let captchaVerifyParam: string;
       try {
-        captchaVerifyParam = await verifyCaptcha(this, 'login');
+        captchaVerifyParam = await verifyCaptcha();
       } catch {
         this.setData({ loading: false });
         return; // 用户取消或验证未通过，静默返回
