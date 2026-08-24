@@ -22,6 +22,7 @@ Page({
     await this.load();
   },
   async load() {
+    this.setData({ loading: true });
     try {
       const items = await api.evaluationList({
         batchId: this.data.batchId,

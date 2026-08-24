@@ -14,26 +14,28 @@
       ></picker
     ></view
   >
-  <view class="summary card"
-    ><view class="summary-item"
-      ><text class="summary-value">{{summary.earnedCredits}}</text
-      ><text class="summary-label">已修总学分</text></view
-    ><view class="summary-item"
-      ><text class="summary-value">{{summary.totalGradePoints}}</text
-      ><text class="summary-label">总学分绩点</text></view
-    ><view class="summary-item"
-      ><text class="summary-value">{{summary.averageGradePoint}}</text
-      ><text class="summary-label">平均学分绩点</text></view
-    ></view
-  >
-  <t-loading wx:if="{{loading}}" text="正在读取成绩" />
-  <block wx:elif="{{scores.length}}">
-    <view class="score card" wx:for="{{scores}}" wx:key="courseName"
-      ><view
-        ><text class="score-name">{{item.courseName}}</text
-        ><text class="muted">{{item.detail}}</text></view
-      ><text class="score-value">{{item.score}}</text></view
+  <loading-state wx:if="{{loading}}" text="正在读取成绩" />
+  <block wx:else>
+    <view class="summary card"
+      ><view class="summary-item"
+        ><text class="summary-value">{{summary.earnedCredits}}</text
+        ><text class="summary-label">已修总学分</text></view
+      ><view class="summary-item"
+        ><text class="summary-value">{{summary.totalGradePoints}}</text
+        ><text class="summary-label">总学分绩点</text></view
+      ><view class="summary-item"
+        ><text class="summary-value">{{summary.averageGradePoint}}</text
+        ><text class="summary-label">平均学分绩点</text></view
+      ></view
     >
+    <block wx:if="{{scores.length}}">
+      <view class="score card" wx:for="{{scores}}" wx:key="courseName"
+        ><view
+          ><text class="score-name">{{item.courseName}}</text
+          ><text class="muted">{{item.detail}}</text></view
+        ><text class="score-value">{{item.score}}</text></view
+      >
+    </block>
+    <t-empty wx:else description="暂无成绩" />
   </block>
-  <t-empty wx:else description="暂无成绩" />
 </view>

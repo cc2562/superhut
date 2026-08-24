@@ -98,6 +98,23 @@ describe('client api request layer', () => {
     expect(calls[0]?.header.Authorization).toBe('Bearer access-1');
   });
 
+  it('reads notification summaries and updates admin drafts through cloud hosting', async () => {
+    store.set('session_access_v1', 'access-1');
+    respond = (call) =>
+      call.path === '/v1/notifications/summary'
+        ? ok({ latest: null, unreadCount: 0 })
+        : ok({ id: 'notice-1' });
+    await expect(api.notificationSummary()).resolves.toEqual({ latest: null, unreadCount: 0 });
+    await api.updateAnnouncement('notice-1', { title: '更新后的标题' });
+    expect(calls[0]).toMatchObject({ path: '/v1/notifications/summary', method: 'GET' });
+    expect(calls[1]).toMatchObject({
+      path: '/v1/admin/notifications/notice-1',
+      method: 'PUT',
+      data: { title: '更新后的标题' },
+    });
+    expect(calls[1]?.header.Authorization).toBe('Bearer access-1');
+  });
+
   it('refreshes the session once and retries after AUTH_REQUIRED', async () => {
     store.set('session_access_v1', 'stale-access');
     store.set('session_refresh_v1', 'refresh-1');

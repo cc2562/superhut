@@ -13,6 +13,9 @@ page {
   box-sizing: border-box;
   padding: 32rpx;
 }
+.tab-page {
+  padding-bottom: calc(176rpx + env(safe-area-inset-bottom));
+}
 .hero {
   padding: 44rpx 8rpx 28rpx;
 }

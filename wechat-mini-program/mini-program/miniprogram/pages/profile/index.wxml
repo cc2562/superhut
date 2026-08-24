@@ -1,23 +1,22 @@
-<view class="page"
+<view class="page tab-page"
   ><view class="hero"
     ><text class="eyebrow">我的</text><text class="title">账号与隐私</text
     ><text class="subtitle">{{displayName || '超级包菜用户'}} · {{studentIdMasked}}</text></view
   >
   <view class="card status"
-    ><view
+    ><view class="status-copy"
       ><text class="status-title">教务账号</text
       ><text class="muted">{{studentIdMasked}}</text></view
-    ><t-button size="small" variant="outline" bind:tap="relogin"
-      >{{loggedIn ? '重新登录' : '去登录'}}</t-button
+    ><view class="status-action"
+      ><t-button size="small" variant="outline" bind:tap="relogin"
+        >{{loggedIn ? '重新登录' : '去登录'}}</t-button
+      ></view
     ></view
   >
   <t-cell-group
     theme="card"
     style="margin: 0 0 24rpx; box-shadow: 0 12rpx 36rpx rgba(41, 84, 62, 0.07)"
-    ><t-cell
-      title="本机保存的密码"
-      note="{{credentialSaved ? '已在本地保存' : '未保存'}}"
-      arrow="{{false}}"
+    ><t-cell title="本机保存的密码" note="{{credentialSaved ? '' : '未保存'}}" arrow="{{false}}"
       ><t-button
         slot="right-icon"
         wx:if="{{credentialSaved}}"
@@ -30,12 +29,19 @@
       title="课表缓存"
       note="{{cacheTime}}"
       arrow
-      bind:tap="clearCache" /><t-cell title="隐私政策与用户协议" arrow
+      bind:tap="clearCache" /><t-cell
+      wx:if="{{canManageNotifications}}"
+      title="通知管理"
+      note="发布和维护全体公告"
+      arrow
+      bind:tap="openNotificationAdmin" /><t-cell
+      title="服务协议与隐私保护指引"
+      arrow
+      bind:tap="openAgreement"
   /></t-cell-group>
   <view class="card statement"
     ><text class="section-title">关于超级包菜</text
-    ><text class="muted"
-      >由学生，为学生。超级包菜不是湖南工业大学官方产品，仅提供经用户授权的教务查询能力。</text
+    ><text class="muted">由学生，为学生。方便的查看课表、查询成绩</text
     ><text class="version">SuperHUT Mini 0.1.0</text></view
   >
   <view wx:if="{{loggedIn}}" class="danger-actions"
@@ -45,5 +51,4 @@
       >注销 SuperHUT 账号</t-button
     ></view
   >
-  <aliyun-captcha id="captcha" wx:if="{{loadCaptcha}}" props="{{pluginProps}}" />
 </view>

@@ -13,6 +13,8 @@ export const errorCodes = [
   'CAPTCHA_SERVICE_UNAVAILABLE',
   'VALIDATION_ERROR',
   'PRIVACY_CONSENT_REQUIRED',
+  'AUTH_FORBIDDEN',
+  'RESOURCE_NOT_FOUND',
   'INTERNAL_ERROR',
 ] as const;
 
@@ -206,6 +208,68 @@ export const SessionSchema = z.object({
   academicBinding: AcademicBindingSchema,
 });
 
+export const AnnouncementStatusSchema = z.enum(['draft', 'scheduled', 'published', 'withdrawn']);
+export const AnnouncementActionPathSchema = z.enum([
+  '/pages/timetable/index',
+  '/pages/scores/index',
+  '/pages/exams/index',
+  '/pages/rooms/index',
+  '/pages/evaluation/batches/index',
+  '/pages/agreement/index',
+]);
+export const AnnouncementSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  summary: z.string(),
+  content: z.string(),
+  actionPath: AnnouncementActionPathSchema.nullable(),
+  publishAt: z.string().datetime({ offset: true }),
+  expiresAt: z.string().datetime({ offset: true }).nullable(),
+  updatedAt: z.string().datetime({ offset: true }),
+  read: z.boolean(),
+});
+export const AnnouncementSummarySchema = z.object({
+  latest: AnnouncementSchema.nullable(),
+  unreadCount: z.number().int().nonnegative(),
+});
+export const AnnouncementPageSchema = z.object({
+  items: z.array(AnnouncementSchema),
+  nextCursor: z.string().nullable(),
+});
+export const AdminAnnouncementSchema = AnnouncementSchema.omit({ read: true }).extend({
+  status: AnnouncementStatusSchema,
+  publishAt: z.string().datetime({ offset: true }).nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+});
+export const AdminAnnouncementPageSchema = z.object({
+  items: z.array(AdminAnnouncementSchema),
+  nextCursor: z.string().nullable(),
+});
+const nullableDateTime = z.string().datetime({ offset: true }).nullable();
+export const AnnouncementCreateRequestSchema = z
+  .object({
+    title: z.string().trim().min(1).max(80),
+    summary: z.string().trim().min(1).max(160),
+    content: z.string().trim().min(1).max(10_000),
+    actionPath: AnnouncementActionPathSchema.nullable().default(null),
+    expiresAt: nullableDateTime.default(null),
+  })
+  .strict();
+export const AnnouncementUpdateRequestSchema = AnnouncementCreateRequestSchema.partial().refine(
+  (value) => Object.keys(value).length > 0,
+  'at least one field is required',
+);
+export const AnnouncementPublishRequestSchema = z
+  .object({
+    publishAt: z.string().datetime({ offset: true }),
+    expiresAt: nullableDateTime.default(null),
+  })
+  .strict()
+  .refine(
+    ({ publishAt, expiresAt }) => !expiresAt || Date.parse(expiresAt) > Date.parse(publishAt),
+    'expiresAt must be later than publishAt',
+  );
+
 export type WechatLoginRequest = z.infer<typeof WechatLoginRequestSchema>;
 export type AcademicLoginRequest = z.infer<typeof AcademicLoginRequestSchema>;
 export type AcademicReloginRequest = z.infer<typeof AcademicReloginRequestSchema>;
@@ -223,6 +287,16 @@ export type EvaluationBatchResult = z.infer<typeof EvaluationBatchResultSchema>;
 export type ScoreSummary = z.infer<typeof ScoreSummarySchema>;
 export type ScoresResponse = z.infer<typeof ScoresResponseSchema>;
 export type FreeRoom = z.infer<typeof FreeRoomSchema>;
+export type AnnouncementStatus = z.infer<typeof AnnouncementStatusSchema>;
+export type AnnouncementActionPath = z.infer<typeof AnnouncementActionPathSchema>;
+export type Announcement = z.infer<typeof AnnouncementSchema>;
+export type AnnouncementSummary = z.infer<typeof AnnouncementSummarySchema>;
+export type AnnouncementPage = z.infer<typeof AnnouncementPageSchema>;
+export type AdminAnnouncement = z.infer<typeof AdminAnnouncementSchema>;
+export type AdminAnnouncementPage = z.infer<typeof AdminAnnouncementPageSchema>;
+export type AnnouncementCreateRequest = z.infer<typeof AnnouncementCreateRequestSchema>;
+export type AnnouncementUpdateRequest = z.infer<typeof AnnouncementUpdateRequestSchema>;
+export type AnnouncementPublishRequest = z.infer<typeof AnnouncementPublishRequestSchema>;
 export interface SuccessResponse<T> {
   data: T;
   meta: z.infer<typeof MetaSchema>;

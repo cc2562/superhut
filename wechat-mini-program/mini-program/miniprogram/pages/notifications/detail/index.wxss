@@ -1,0 +1,37 @@
+.detail-page {
+  padding-bottom: calc(56rpx + env(safe-area-inset-bottom));
+}
+.detail-hero {
+  padding-top: 64rpx;
+}
+.detail-time {
+  display: block;
+  margin-top: 22rpx;
+  color: #718078;
+  font-size: 23rpx;
+}
+.content-card {
+  padding: 36rpx;
+}
+.summary,
+.content {
+  display: block;
+}
+.summary {
+  padding-bottom: 28rpx;
+  border-bottom: 1rpx solid #e2ebe5;
+  color: #315b47;
+  font-size: 29rpx;
+  font-weight: 650;
+  line-height: 1.65;
+}
+.content {
+  margin-top: 30rpx;
+  font-size: 28rpx;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+.error-card {
+  margin-top: 120rpx;
+  text-align: center;
+}

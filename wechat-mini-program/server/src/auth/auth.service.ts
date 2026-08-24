@@ -17,6 +17,7 @@ import { StateService } from '../state/state.service.js';
 import { LoginThrottleService } from './login-throttle.service.js';
 import { SessionService } from './session.service.js';
 import { WechatIdentityService } from './wechat-identity.service.js';
+import { NotificationService } from '../notifications/notification.service.js';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +28,7 @@ export class AuthService {
     @Inject(AcademicService) private readonly academic: AcademicService,
     @Inject(LoginThrottleService) private readonly throttle: LoginThrottleService,
     @Inject(CoordinationService) private readonly coordination: CoordinationService,
+    @Inject(NotificationService) private readonly notifications: NotificationService,
   ) {}
 
   async loginWechat(input: unknown, headers: IncomingHttpHeaders) {
@@ -132,6 +134,7 @@ export class AuthService {
   async deleteUser(userId: string): Promise<void> {
     await this.sessions.revokeUser(userId);
     await this.state.deleteUser(userId);
+    this.notifications.forgetFixtureUser(userId);
     await this.coordination.deleteByPrefix(`buildings:${userId}`);
     await this.coordination.deleteByPrefix(`building-allowlist:${userId}`);
     await this.coordination.deleteByPrefix(`free-rooms:${userId}:`);

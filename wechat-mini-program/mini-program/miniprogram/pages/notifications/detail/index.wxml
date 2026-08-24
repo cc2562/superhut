@@ -1,0 +1,24 @@
+<view class="page detail-page">
+  <loading-state wx:if="{{loading}}" text="正在读取通知" />
+  <view wx:elif="{{error}}" class="card error-card">
+    <text class="section-title">通知暂时无法打开</text>
+    <text class="muted">它可能已撤回、过期，或网络暂时不可用。</text>
+    <view class="actions"
+      ><t-button block variant="outline" bind:tap="retry">重新加载</t-button></view
+    >
+  </view>
+  <block wx:elif="{{item}}">
+    <view class="hero detail-hero">
+      <text class="eyebrow">通知中心</text>
+      <text class="title">{{item.title}}</text>
+      <text class="detail-time">发布于 {{publishLabel}}</text>
+    </view>
+    <view class="card content-card">
+      <text class="summary">{{item.summary}}</text>
+      <text class="content" user-select="{{true}}">{{item.content}}</text>
+    </view>
+    <t-button wx:if="{{item.actionPath}}" block theme="primary" bind:tap="openAction"
+      >查看相关页面</t-button
+    >
+  </block>
+</view>

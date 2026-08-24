@@ -1,0 +1,23 @@
+.loading-state {
+  min-height: 360rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24rpx;
+  color: #607067;
+}
+.loading-orb {
+  width: 112rpx;
+  height: 112rpx;
+  display: grid;
+  place-items: center;
+  border: 1rpx solid #dbece3;
+  border-radius: 36rpx;
+  background: linear-gradient(145deg, #ffffff, #e8f5ee);
+  box-shadow: 0 14rpx 36rpx rgba(36, 111, 76, 0.12);
+}
+.loading-text {
+  font-size: 26rpx;
+  line-height: 1.5;
+}

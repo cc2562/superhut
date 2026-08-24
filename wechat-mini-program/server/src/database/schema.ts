@@ -136,3 +136,43 @@ export const runtimeCache = mysqlTable('runtime_cache', {
   expiresAt: datetime('expires_at', { mode: 'date', fsp: 3 }).notNull(),
   updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 }).notNull(),
 });
+
+export const announcements = mysqlTable(
+  'announcements',
+  {
+    id: varchar('id', { length: 36 }).primaryKey(),
+    title: varchar('title', { length: 80 }).notNull(),
+    summary: varchar('summary', { length: 160 }).notNull(),
+    content: longtext('content').notNull(),
+    status: mysqlEnum('status', ['draft', 'scheduled', 'published', 'withdrawn'])
+      .notNull()
+      .default('draft'),
+    actionPath: varchar('action_path', { length: 255 }),
+    publishAt: datetime('publish_at', { mode: 'date', fsp: 3 }),
+    expiresAt: datetime('expires_at', { mode: 'date', fsp: 3 }),
+    createdByUserId: varchar('created_by_user_id', { length: 36 }).references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    index('announcements_visibility_idx').on(table.status, table.publishAt, table.expiresAt),
+  ],
+);
+
+export const announcementReads = mysqlTable(
+  'announcement_reads',
+  {
+    announcementId: varchar('announcement_id', { length: 36 })
+      .notNull()
+      .references(() => announcements.id, { onDelete: 'cascade' }),
+    userId: varchar('user_id', { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    readAt: datetime('read_at', { mode: 'date', fsp: 3 }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.announcementId, table.userId] }),
+    index('announcement_reads_user_idx').on(table.userId, table.readAt),
+  ],
+);

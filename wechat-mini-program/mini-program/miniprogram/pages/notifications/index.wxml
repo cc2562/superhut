@@ -1,0 +1,37 @@
+<view class="page notification-page">
+  <view class="hero compact-hero">
+    <text class="eyebrow">SUPERHUT MINI</text>
+    <text class="title">通知中心</text>
+    <text class="subtitle">服务维护、版本更新与重要说明。</text>
+  </view>
+  <loading-state wx:if="{{loading}}" text="正在读取通知" />
+  <view wx:elif="{{error && !items.length}}" class="state-card card">
+    <text class="section-title">通知暂时加载失败</text>
+    <text class="muted">请检查网络后重试。</text>
+    <view class="actions"
+      ><t-button block variant="outline" bind:tap="retry">重新加载</t-button></view
+    >
+  </view>
+  <block wx:else>
+    <view
+      class="notification card {{item.read ? 'read' : 'unread'}}"
+      wx:for="{{items}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bind:tap="open"
+    >
+      <view class="notification-head">
+        <view class="notification-title-row">
+          <view wx:if="{{!item.read}}" class="unread-dot"></view>
+          <text class="notification-title">{{item.title}}</text>
+        </view>
+        <text class="arrow">›</text>
+      </view>
+      <text class="notification-summary">{{item.summary}}</text>
+      <text class="notification-time">{{item.publishLabel}}</text>
+    </view>
+    <t-empty wx:if="{{!items.length}}" description="暂无通知" />
+    <view wx:if="{{loadingMore}}" class="more"><t-loading size="36rpx" /> 正在加载</view>
+    <text wx:elif="{{items.length && !nextCursor}}" class="end">已经到底啦</text>
+  </block>
+</view>

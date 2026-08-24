@@ -1,100 +1,158 @@
-<view class="page timetable" bind:touchstart="onTouchStart" bind:touchend="onTouchEnd">
-  <view class="topbar">
-    <view bind:tap="goToday"
-      ><text class="eyebrow">{{mode === 'week' ? '课程表' : '当天课程'}}</text
-      ><text class="page-title">{{title}}</text></view
-    >
-    <view class="modes"
-      ><view class="mode {{mode === 'week' ? 'active' : ''}}" data-mode="week" bind:tap="setMode"
-        >周</view
-      ><view class="mode {{mode === 'day' ? 'active' : ''}}" data-mode="day" bind:tap="setMode"
-        >日</view
-      ></view
-    >
-  </view>
-  <view wx:if="{{hasData}}">
-    <picker range="{{semesterNames}}" value="{{semesterIndex}}" bindchange="onSemesterChange"
-      ><view class="semester-picker"
-        ><text>{{semesterNames[semesterIndex] || '选择学期'}}</text
-        ><text class="arrow">▾</text></view
-      ></picker
-    >
-    <view wx:if="{{stale}}" class="stale">当前展示上次成功课表，可稍后刷新</view>
-    <view wx:if="{{mode === 'week'}}" class="week-grid">
-      <view class="week-header"
-        ><view class="grid-corner"></view
-        ><view class="weekday-col {{item.today ? 'today' : ''}}" wx:for="{{days}}" wx:key="date"
-          ><text class="weekday">{{item.weekday}}</text
-          ><text class="date">{{item.label}}</text></view
-        ></view
-      >
-      <view class="week-body"
-        ><view class="section-axis"
-          ><view class="section-label" wx:for="{{sectionNumbers}}" wx:key="*this"
-            >{{item}}</view
-          ></view
-        ><view class="day-col" wx:for="{{days}}" wx:for-item="day" wx:key="date">
-          <block
-            wx:for="{{day.slots}}"
-            wx:for-item="slot"
-            wx:for-index="slotIndex"
-            wx:key="slotIndex"
-          >
-            <view
-              wx:if="{{slot.kind === 'course'}}"
-              class="course-block"
-              style="height: {{slot.height * 120}}rpx; border-left-color: {{slot.color}}"
-              ><text class="course-block-name">{{slot.course.name}}</text
-              ><text class="course-block-location">{{slot.course.location}}</text
-              ><text class="course-block-teacher">{{slot.course.teacherName}}</text></view
-            >
-            <view wx:else class="slot-empty" style="height: 120rpx"></view>
-          </block>
-        </view>
-      </view>
-    </view>
-    <view wx:else>
-      <view wx:if="{{nextCourses.length}}" class="next card"
-        ><text class="eyebrow">下一节课</text
-        ><block wx:for="{{nextCourses}}" wx:key="id"
-          ><text class="next-name">{{item.name}}</text
-          ><text class="muted">第 {{item.startSection}} 节 · {{item.location}}</text></block
-        ></view
-      >
-      <view class="day" wx:for="{{days}}" wx:key="date">
-        <view class="day-head"
-          ><view
-            ><text class="weekday {{item.today ? 'today' : ''}}">{{item.weekday}}</text
-            ><text class="date">{{item.label}}</text></view
-          ><text class="today-tag" wx:if="{{item.today}}">今天</text></view
-        >
-        <view wx:if="{{!item.courses.length}}" class="empty-day">今天没有课程</view>
-        <view
-          class="course {{course.isExperiment ? 'experiment' : ''}}"
-          wx:for="{{item.courses}}"
-          wx:for-item="course"
-          wx:key="id"
-        >
-          <view class="section"
-            ><text>{{course.startSection}}</text><text class="dash">—</text
-            ><text>{{course.startSection + course.duration - 1}}</text></view
-          >
-          <view class="course-main"
-            ><text class="course-name">{{course.name}}</text
-            ><text class="course-meta">{{course.location}} · {{course.teacherName}}</text></view
-          >
-          <text wx:if="{{course.isExperiment}}" class="experiment-tag">实验</text>
-        </view>
-      </view>
-    </view>
-    <view class="footer"><text>更新于 {{fetchedAt}}</text></view>
-  </view>
-  <view wx:else class="empty card"
-    ><text class="section-title">暂无课表</text
-    ><text class="muted">登录教务系统并完成同步后，课表会缓存在本机。</text
-    ><view class="actions"
-      ><t-button block theme="primary" bind:tap="goLogin">去登录</t-button></view
-    ></view
+<view class="main-shell">
+  <scroll-view
+    class="main-panel"
+    scroll-y
+    show-scrollbar="{{false}}"
+    hidden="{{activeTab !== 'timetable'}}"
   >
+    <view class="page tab-page timetable" bind:touchstart="onTouchStart" bind:touchend="onTouchEnd">
+      <view class="topbar">
+        <view bind:tap="goToday"
+          ><text class="eyebrow">{{mode === 'week' ? '课程表' : '当天课程'}}</text
+          ><text class="page-title">{{title}}</text></view
+        >
+        <view class="modes"
+          ><view
+            class="mode {{mode === 'week' ? 'active' : ''}}"
+            data-mode="week"
+            bind:tap="setMode"
+            >周</view
+          ><view class="mode {{mode === 'day' ? 'active' : ''}}" data-mode="day" bind:tap="setMode"
+            >日</view
+          ></view
+        >
+      </view>
+      <view wx:if="{{hasData}}">
+        <picker range="{{semesterNames}}" value="{{semesterIndex}}" bindchange="onSemesterChange"
+          ><view class="semester-picker"
+            ><text>{{semesterNames[semesterIndex] || '选择学期'}}</text
+            ><text class="arrow">▾</text></view
+          ></picker
+        >
+        <view wx:if="{{mode === 'week'}}" class="week-grid">
+          <view class="week-header"
+            ><view class="grid-corner"></view
+            ><view class="weekday-col {{item.today ? 'today' : ''}}" wx:for="{{days}}" wx:key="date"
+              ><text class="weekday">{{item.weekday}}</text
+              ><text class="date">{{item.label}}</text></view
+            ></view
+          >
+          <view class="week-body"
+            ><view class="section-axis"
+              ><view class="section-label" wx:for="{{sectionNumbers}}" wx:key="*this"
+                >{{item}}</view
+              ></view
+            ><view class="day-col" wx:for="{{days}}" wx:for-item="day" wx:key="date">
+              <block
+                wx:for="{{day.slots}}"
+                wx:for-item="slot"
+                wx:for-index="slotIndex"
+                wx:key="slotIndex"
+              >
+                <view
+                  wx:if="{{slot.kind === 'course'}}"
+                  class="course-block"
+                  style="height: {{slot.height * 120}}rpx; border-left-color: {{slot.color}}"
+                  ><text class="course-block-name">{{slot.course.name}}</text
+                  ><text class="course-block-location">{{slot.course.location}}</text
+                  ><text class="course-block-teacher">{{slot.course.teacherName}}</text></view
+                >
+                <view wx:else class="slot-empty" style="height: 120rpx"></view>
+              </block>
+            </view>
+          </view>
+        </view>
+        <view wx:else>
+          <view wx:if="{{nextCourses.length}}" class="next card"
+            ><text class="eyebrow">下一节课</text
+            ><block wx:for="{{nextCourses}}" wx:key="id"
+              ><text class="next-name">{{item.name}}</text
+              ><text class="muted">第 {{item.startSection}} 节 · {{item.location}}</text></block
+            ></view
+          >
+          <view class="day" wx:for="{{days}}" wx:key="date">
+            <view class="day-head"
+              ><view
+                ><text class="weekday {{item.today ? 'today' : ''}}">{{item.weekday}}</text
+                ><text class="date">{{item.label}}</text></view
+              ><text class="today-tag" wx:if="{{item.today}}">今天</text></view
+            >
+            <view wx:if="{{!item.courses.length}}" class="empty-day">今天没有课程</view>
+            <view
+              class="course {{course.isExperiment ? 'experiment' : ''}}"
+              wx:for="{{item.courses}}"
+              wx:for-item="course"
+              wx:key="id"
+            >
+              <view class="section"
+                ><text>{{course.startSection}}</text><text class="dash">—</text
+                ><text>{{course.startSection + course.duration - 1}}</text></view
+              >
+              <view class="course-main"
+                ><text class="course-name">{{course.name}}</text
+                ><text class="course-meta">{{course.location}} · {{course.teacherName}}</text></view
+              >
+              <text wx:if="{{course.isExperiment}}" class="experiment-tag">实验</text>
+            </view>
+          </view>
+        </view>
+        <view class="footer"><text>更新于 {{fetchedAt}}</text></view>
+      </view>
+      <view wx:else class="empty card"
+        ><text class="section-title">暂无课表</text
+        ><text class="muted">登录教务系统并完成同步后，课表会缓存在本机。</text
+        ><view class="actions"
+          ><t-button block theme="primary" bind:tap="goLogin">去登录</t-button></view
+        ></view
+      >
+    </view>
+  </scroll-view>
+  <scroll-view
+    class="main-panel"
+    scroll-y
+    show-scrollbar="{{false}}"
+    hidden="{{activeTab !== 'services'}}"
+  >
+    <services-panel id="services-panel" bind:notificationchange="onNotificationChange" />
+  </scroll-view>
+  <scroll-view
+    class="main-panel"
+    scroll-y
+    show-scrollbar="{{false}}"
+    hidden="{{activeTab !== 'profile'}}"
+  >
+    <profile-panel id="profile-panel" bind:refreshstatechange="onRefreshStateChange" />
+  </scroll-view>
+  <t-tab-bar
+    value="{{activeTab}}"
+    bind:change="onMainTabChange"
+    fixed
+    style="bottom: env(safe-area-inset-bottom)"
+    shape="round"
+    theme="tag"
+    split="{{false}}"
+    bordered="{{false}}"
+    z-index="1000"
+  >
+    <t-tab-bar-item value="timetable" icon="calendar">课表</t-tab-bar-item>
+    <t-tab-bar-item value="services" icon="app" badge-props="{{serviceBadgeProps}}"
+      >服务</t-tab-bar-item
+    >
+    <t-tab-bar-item value="profile" icon="user">我的</t-tab-bar-item>
+  </t-tab-bar>
+  <t-popup
+    visible="{{refreshing}}"
+    placement="center"
+    close-on-overlay-click="{{false}}"
+    prevent-scroll-through
+    show-overlay
+    z-index="12000"
+    bind:leaved="onRefreshPopupLeaved"
+  >
+    <view class="refresh-popup" aria-role="status">
+      <text class="refresh-popup-title">正在刷新课表</text>
+      <loading-state text="正在从教务系统同步最新数据，请稍候…" />
+    </view>
+  </t-popup>
   <aliyun-captcha id="captcha" wx:if="{{loadCaptcha}}" props="{{pluginProps}}" />
 </view>

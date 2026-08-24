@@ -20,14 +20,21 @@ interface DayView {
   courses: Course[];
   slots: WeekSlot[];
 }
+type MainTab = 'timetable' | 'services' | 'profile';
+interface ActivatablePanel {
+  activate(force?: boolean): void | Promise<void>;
+}
 const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 const dateLabel = (date: Date) => `${date.getMonth() + 1}月${date.getDate()}日`;
 const sectionNumbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 Page({
   data: {
+    activeTab: 'timetable' as MainTab,
+    serviceBadgeProps: { dot: false },
     mode: 'week' as 'week' | 'day',
     loading: false,
+    refreshing: false,
     hasData: false,
     title: '课表',
     week: 1,
@@ -35,7 +42,6 @@ Page({
     days: [] as DayView[],
     nextCourses: [] as Course[],
     fetchedAt: '',
-    stale: false,
     semesters: [] as Array<{ id: string; name: string; current: boolean }>,
     semesterNames: [] as string[],
     semesterIndex: 0,
@@ -47,13 +53,64 @@ Page({
   },
   timetable: null as Timetable | null,
   touchX: 0,
+  refreshResult: null as { error?: unknown } | null,
   onLoad() {
     mountCaptcha(this, 'refresh');
   },
   async onShow() {
+    await this.activateTab(this.data.activeTab, true);
+    if (this.data.activeTab !== 'services') {
+      const services = this.selectComponent(
+        '#services-panel',
+      ) as unknown as ActivatablePanel | null;
+      await services?.activate();
+    }
+  },
+  onMainTabChange(event: WechatMiniprogram.CustomEvent<{ value: string }>) {
+    if (this.data.refreshing) return;
+    const value = event.detail.value;
+    if (!['timetable', 'services', 'profile'].includes(value)) return;
+    const activeTab = value as MainTab;
+    if (activeTab === this.data.activeTab) return;
+    this.setData({ activeTab }, () => void this.activateTab(activeTab));
+  },
+  onRefreshStateChange(
+    event: WechatMiniprogram.CustomEvent<{ refreshing: boolean; error?: unknown }>,
+  ) {
+    const refreshing = Boolean(event.detail.refreshing);
+    this.refreshResult = refreshing ? null : { error: event.detail.error };
+    this.setData({ refreshing });
+  },
+  onNotificationChange(event: WechatMiniprogram.CustomEvent<{ unreadCount: number }>) {
+    this.setData({ serviceBadgeProps: { dot: event.detail.unreadCount > 0 } });
+  },
+  onRefreshPopupLeaved() {
+    const result = this.refreshResult;
+    if (!result) return;
+    this.refreshResult = null;
+    if (result.error) {
+      toastRequestError(result.error, '刷新失败，已保留原课表');
+      return;
+    }
+    wx.showToast({ title: '课表已刷新', icon: 'success' });
+  },
+  async activateTab(tab: MainTab, force = false) {
+    if (tab === 'profile') {
+      const panel = this.selectComponent('#profile-panel') as unknown as ActivatablePanel | null;
+      await panel?.activate(force);
+      return;
+    }
+    if (tab === 'services') {
+      const panel = this.selectComponent('#services-panel') as unknown as ActivatablePanel | null;
+      await panel?.activate();
+      return;
+    }
+    await this.activateTimetable();
+  },
+  async activateTimetable() {
     if (!storage.accessToken()) {
       this.timetable = null;
-      this.setData({ hasData: false, days: [], nextCourses: [], fetchedAt: '', stale: false });
+      this.setData({ hasData: false, days: [], nextCourses: [], fetchedAt: '' });
       return;
     }
     await this.ensureSemesters();
@@ -163,7 +220,6 @@ Page({
       days,
       nextCourses,
       fetchedAt: this.formatFetchedAt(fetchedAt),
-      stale: Date.now() - Date.parse(fetchedAt) > 24 * 60 * 60 * 1000,
     });
   },
   formatFetchedAt(value: string) {
@@ -214,29 +270,34 @@ Page({
     );
   },
   async refresh() {
-    if (this.data.loading) return;
+    if (this.data.loading || this.data.refreshing) return;
     this.setData({ loading: true });
+    let captchaVerifyParam: string;
     try {
       // 验证通过前阻断刷新：先完成阿里云刷新场景验证码。
-      let captchaVerifyParam: string;
-      try {
-        captchaVerifyParam = await verifyCaptcha();
-      } catch (error) {
-        if (error instanceof CaptchaCancelledError) {
-          wx.showToast({ title: '已取消验证', icon: 'none' });
-        } else {
-          toastRequestError(error, '刷新失败，已保留原课表');
-        }
-        return;
+      captchaVerifyParam = await verifyCaptcha();
+    } catch (error) {
+      this.setData({ loading: false });
+      if (error instanceof CaptchaCancelledError) {
+        wx.showToast({ title: '已取消验证', icon: 'none' });
+      } else {
+        toastRequestError(error, '刷新失败，已保留原课表');
       }
+      return;
+    }
+
+    this.setData({ refreshing: true });
+    let requestError: unknown;
+    try {
       const response = await api.refreshTimetable(this.data.semesterId, captchaVerifyParam);
       const fetchedAt = response.meta.fetchedAt ?? new Date().toISOString();
       storage.saveTimetable(response.data, fetchedAt);
       this.render(response.data, fetchedAt);
     } catch (error) {
-      toastRequestError(error, '刷新失败，已保留原课表');
+      requestError = error;
     } finally {
-      this.setData({ loading: false });
+      this.refreshResult = { error: requestError };
+      this.setData({ loading: false, refreshing: false });
     }
   },
   async goLogin() {

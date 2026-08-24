@@ -5,12 +5,12 @@
       >{{pending.length ? '还有 ' + pending.length + ' 门课程待评' : '本批次已全部评完'}}</text
     ></view
   >
-  <view wx:if="{{pending.length}}" class="card"
+  <view wx:if="{{!loading && pending.length}}" class="card"
     ><t-button block theme="primary" loading="{{autoLoading}}" bind:tap="autoAll"
       >一键评完所有未评课程</t-button
     ></view
   >
-  <t-loading wx:if="{{loading}}" text="正在读取评教列表" />
+  <loading-state wx:if="{{loading}}" text="正在读取评教列表" />
   <block wx:elif="{{pending.length || done.length}}">
     <view wx:if="{{pending.length}}">
       <text class="group-title">待评教</text>

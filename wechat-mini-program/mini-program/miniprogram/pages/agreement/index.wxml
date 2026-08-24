@@ -1,0 +1,76 @@
+<view class="page agreement-page">
+  <view class="hero agreement-hero">
+    <text class="eyebrow">SUPERHUT MINI</text>
+    <text class="title">超级包菜服务协议</text>
+    <text class="subtitle">发布与生效日期：2026 年 8 月 24 日</text>
+  </view>
+
+  <view class="agreement-card">
+    <text class="agreement-title">特别提示</text>
+    <text class="agreement-copy"
+      >在使用超级包菜微信小程序前，请仔细阅读本协议。超级包菜由“超级包菜开发者”提供和维护，是提供课表查询等功能的第三方工具。</text
+    >
+  </view>
+
+  <view class="agreement-card">
+    <text class="agreement-title">一、服务内容</text>
+    <text class="agreement-copy"
+      >经你授权后，本小程序连接学校教务系统，提供课表、成绩、考试安排、空闲教室和教学评价等查询与辅助操作。具体可用能力取决于学校系统、网络环境和小程序当前版本。</text
+    >
+  </view>
+
+  <view class="agreement-card">
+    <text class="agreement-title">二、账号授权与安全</text>
+    <text class="agreement-copy"
+      >你应使用本人有权使用的教务账号，并妥善保管账号和密码。你主动登录时，学号和原始密码会通过加密连接传送至超级包菜服务，仅用于完成当次教务认证；原始密码不在服务器保存。</text
+    >
+  </view>
+
+  <view class="agreement-card">
+    <text class="agreement-title">三、数据处理与本机保存</text>
+    <text class="agreement-copy"
+      >为建立会话和提供教务服务，服务端会加密保存必要的微信标识、教务账号标识、教务 Token
+      和必要的查询快照。学校密码默认不保存；仅当你主动选择“本机记住密码”时，才会在当前设备加密保存
+      30
+      天，且可随时删除。通知中心会保存你对公告的已读时间，仅用于同步未读状态，不用于广告、用户画像或向第三方推送；注销账号时会一并删除对应已读记录。更多信息请查看微信平台展示的《用户隐私保护指引》。</text
+    >
+    <text class="privacy-link" bind:tap="openPrivacyContract">查看《用户隐私保护指引》</text>
+  </view>
+
+  <view class="agreement-card">
+    <text class="agreement-title">四、使用规范</text>
+    <text class="agreement-copy"
+      >你不得使用本服务侵害他人账号、隐私或其他合法权益，不得批量抓取、恶意请求、干扰服务运行，也不得利用本服务从事违反法律法规或学校管理规定的活动。</text
+    >
+  </view>
+
+  <view class="agreement-card">
+    <text class="agreement-title">五、数据准确性与服务可用性</text>
+    <text class="agreement-copy"
+      >课表、成绩、考试和其他教务信息以学校官方系统为准。由于学校系统维护、网络中断、接口变更或不可抗力，服务可能出现延迟、中断或结果暂未更新。遇到重要教务事项时，请同时核对学校官方渠道。</text
+    >
+  </view>
+
+  <view class="agreement-card">
+    <text class="agreement-title">六、退出、解绑与注销</text>
+    <text class="agreement-copy"
+      >你可在“我的”页面退出登录、删除本机凭据、解绑教务账号或注销超级包菜账号。注销后，服务端将删除账号、教务绑定、查询快照和公告已读记录，并撤销全部会话。</text
+    >
+  </view>
+
+  <view class="agreement-card">
+    <text class="agreement-title">七、协议更新</text>
+    <text class="agreement-copy"
+      >当服务范围、数据处理方式或相关规则发生实质变化时，我们会更新协议版本并再次征求你的同意。你不同意新版本时，可暂停使用相关服务。</text
+    >
+  </view>
+
+  <view class="agreement-card contact-card">
+    <text class="agreement-title">八、联系我们</text>
+    <text class="agreement-copy">服务提供方：超级包菜开发者</text>
+    <text class="agreement-copy" user-select="{{true}}">联系邮箱：syywqs@foxmail.com</text>
+    <text class="agreement-copy" user-select="{{true}}"
+      >项目主页：https://github.com/cc2562/superhut</text
+    >
+  </view>
+</view>

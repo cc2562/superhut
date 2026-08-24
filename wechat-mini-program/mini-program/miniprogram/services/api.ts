@@ -1,5 +1,13 @@
 import type {
   AcademicLoginResponse,
+  AdminAnnouncement,
+  AdminAnnouncementPage,
+  Announcement,
+  AnnouncementCreateRequest,
+  AnnouncementPage,
+  AnnouncementPublishRequest,
+  AnnouncementSummary,
+  AnnouncementUpdateRequest,
   EvaluationBatch,
   EvaluationBatchRequest,
   EvaluationBatchResult,
@@ -234,6 +242,91 @@ export const api = {
       await request<{ academicBinding: SessionData['academicBinding'] }>(
         '/v1/auth/academic/status',
         { authenticated: true },
+      )
+    ).data;
+  },
+  async notificationSummary(): Promise<AnnouncementSummary> {
+    return (
+      await request<AnnouncementSummary>('/v1/notifications/summary', { authenticated: true })
+    ).data;
+  },
+  async notifications(cursor = ''): Promise<AnnouncementPage> {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    return (await request<AnnouncementPage>(`/v1/notifications${query}`, { authenticated: true }))
+      .data;
+  },
+  async notification(id: string): Promise<Announcement> {
+    return (
+      await request<Announcement>(`/v1/notifications/${encodeURIComponent(id)}`, {
+        authenticated: true,
+      })
+    ).data;
+  },
+  async markNotificationRead(id: string): Promise<void> {
+    await request(`/v1/notifications/${encodeURIComponent(id)}/read`, {
+      method: 'POST',
+      authenticated: true,
+    });
+  },
+  async notificationAdminCapabilities(): Promise<{ canManage: boolean }> {
+    return (
+      await request<{ canManage: boolean }>('/v1/admin/notifications/capabilities', {
+        authenticated: true,
+      })
+    ).data;
+  },
+  async adminNotifications(cursor = ''): Promise<AdminAnnouncementPage> {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    return (
+      await request<AdminAnnouncementPage>(`/v1/admin/notifications${query}`, {
+        authenticated: true,
+      })
+    ).data;
+  },
+  async adminNotification(id: string): Promise<AdminAnnouncement> {
+    return (
+      await request<AdminAnnouncement>(`/v1/admin/notifications/${encodeURIComponent(id)}`, {
+        authenticated: true,
+      })
+    ).data;
+  },
+  async createAnnouncement(input: AnnouncementCreateRequest): Promise<AdminAnnouncement> {
+    return (
+      await request<AdminAnnouncement>('/v1/admin/notifications', {
+        method: 'POST',
+        data: input,
+        authenticated: true,
+      })
+    ).data;
+  },
+  async updateAnnouncement(
+    id: string,
+    input: AnnouncementUpdateRequest,
+  ): Promise<AdminAnnouncement> {
+    return (
+      await request<AdminAnnouncement>(`/v1/admin/notifications/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        data: input,
+        authenticated: true,
+      })
+    ).data;
+  },
+  async publishAnnouncement(
+    id: string,
+    input: AnnouncementPublishRequest,
+  ): Promise<AdminAnnouncement> {
+    return (
+      await request<AdminAnnouncement>(
+        `/v1/admin/notifications/${encodeURIComponent(id)}/publish`,
+        { method: 'POST', data: input, authenticated: true },
+      )
+    ).data;
+  },
+  async withdrawAnnouncement(id: string): Promise<AdminAnnouncement> {
+    return (
+      await request<AdminAnnouncement>(
+        `/v1/admin/notifications/${encodeURIComponent(id)}/withdraw`,
+        { method: 'POST', authenticated: true },
       )
     ).data;
   },

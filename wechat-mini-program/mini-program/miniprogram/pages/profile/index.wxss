@@ -3,10 +3,17 @@
   align-items: center;
   justify-content: space-between;
 }
-.status view {
+.status-copy {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8rpx;
+}
+.status-action {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 24rpx;
 }
 .status-title {
   font-size: 31rpx;

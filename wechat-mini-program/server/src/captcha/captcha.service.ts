@@ -109,16 +109,22 @@ export class CaptchaService {
       }
 
       // 其余情况：签名错误、AccessKey 权限不足、欠费、HTTP 非 200 等，属于服务端配置/调用问题。
+      // 把阿里云返回的 code 附加到提示里，便于定位配置问题（code 不含敏感信息）。
+      const upstreamCode = json.Code ?? '';
       this.logger.error(
         `captcha verify request failed: scene=${scene} requestId=${requestId} http=${statusCode} ` +
-          `success=${String(json.Success)} code=${json.Code ?? ''} message=${json.Message ?? ''}`,
+          `success=${String(json.Success)} code=${upstreamCode} message=${json.Message ?? ''}`,
       );
       await this.audit.record({
         eventType: `captcha.${scene}.unavailable`,
         result: 'failure',
         requestId,
       });
-      throw new ApiError('CAPTCHA_SERVICE_UNAVAILABLE', 503, '验证服务暂不可用，请稍后重试');
+      throw new ApiError(
+        'CAPTCHA_SERVICE_UNAVAILABLE',
+        503,
+        upstreamCode ? `验证服务暂不可用（${upstreamCode}）` : '验证服务暂不可用，请稍后重试',
+      );
     } catch (error) {
       if (error instanceof ApiError) throw error;
       // fail-closed：验证码服务故障（网络异常/超时等）时拒绝放行。

@@ -16,6 +16,9 @@ import { DatabaseService } from './database/database.service.js';
 import { CoordinationService } from './coordination/coordination.service.js';
 import { AuditService } from './audit/audit.service.js';
 import { CaptchaService } from './captcha/captcha.service.js';
+import { NotificationController } from './notifications/notification.controller.js';
+import { AdminNotificationController } from './notifications/admin-notification.controller.js';
+import { NotificationService } from './notifications/notification.service.js';
 
 @Module({
   controllers: [
@@ -24,6 +27,8 @@ import { CaptchaService } from './captcha/captcha.service.js';
     AuthController,
     MeController,
     AcademicController,
+    NotificationController,
+    AdminNotificationController,
   ],
   providers: [
     DatabaseService,
@@ -38,6 +43,7 @@ import { CaptchaService } from './captcha/captcha.service.js';
     RealAcademicProvider,
     AcademicService,
     AuthService,
+    NotificationService,
   ],
 })
 export class AppModule {}

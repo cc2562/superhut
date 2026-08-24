@@ -1,0 +1,66 @@
+.compact-hero {
+  padding-bottom: 36rpx;
+}
+.state-card {
+  text-align: center;
+}
+.notification {
+  padding: 30rpx;
+}
+.notification.read {
+  box-shadow: none;
+}
+.notification-head,
+.notification-title-row {
+  display: flex;
+  align-items: center;
+}
+.notification-head {
+  justify-content: space-between;
+  gap: 20rpx;
+}
+.notification-title-row {
+  min-width: 0;
+  gap: 14rpx;
+}
+.unread-dot {
+  flex: 0 0 auto;
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #dc4c3f;
+}
+.notification-title {
+  overflow: hidden;
+  font-size: 32rpx;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notification-summary,
+.notification-time,
+.end {
+  display: block;
+}
+.notification-summary {
+  margin-top: 16rpx;
+  color: #607067;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+.notification-time {
+  margin-top: 18rpx;
+  color: #8a9890;
+  font-size: 22rpx;
+}
+.arrow {
+  color: #8ba097;
+  font-size: 42rpx;
+}
+.more,
+.end {
+  padding: 24rpx 0 40rpx;
+  color: #718078;
+  font-size: 24rpx;
+  text-align: center;
+}

@@ -1,5 +1,15 @@
-Page({
+import type { Announcement } from '@superhut/api-contract';
+import { api } from '../../services/api';
+
+Component({
+  options: {
+    styleIsolation: 'apply-shared',
+  },
   data: {
+    notificationLoading: false,
+    notificationError: false,
+    latestAnnouncement: null as Announcement | null,
+    unreadCount: 0,
     services: [
       {
         title: '成绩',
@@ -31,7 +41,42 @@ Page({
       },
     ],
   },
-  open(event: WechatMiniprogram.BaseEvent) {
-    void wx.navigateTo({ url: event.currentTarget.dataset.route as string });
+  methods: {
+    async activate() {
+      await this.loadNotificationSummary();
+    },
+    async loadNotificationSummary() {
+      if (this.data.notificationLoading) return;
+      this.setData({ notificationLoading: true, notificationError: false });
+      try {
+        const summary = await api.notificationSummary();
+        this.setData({
+          latestAnnouncement: summary.latest,
+          unreadCount: summary.unreadCount,
+        });
+        this.triggerEvent('notificationchange', { unreadCount: summary.unreadCount });
+      } catch {
+        this.setData({ notificationError: true });
+      } finally {
+        this.setData({ notificationLoading: false });
+      }
+    },
+    retryNotifications() {
+      void this.loadNotificationSummary();
+    },
+    openLatest() {
+      const latest = this.data.latestAnnouncement;
+      if (!latest) {
+        this.openNotifications();
+        return;
+      }
+      void wx.navigateTo({ url: `/pages/notifications/detail/index?id=${latest.id}` });
+    },
+    openNotifications() {
+      void wx.navigateTo({ url: '/pages/notifications/index' });
+    },
+    open(event: WechatMiniprogram.BaseEvent) {
+      void wx.navigateTo({ url: event.currentTarget.dataset.route as string });
+    },
   },
 });

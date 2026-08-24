@@ -1,0 +1,41 @@
+<view class="page admin-page">
+  <view class="hero admin-hero">
+    <text class="eyebrow">仅管理员可见</text>
+    <text class="title">通知管理</text>
+    <text class="subtitle">创建、定时发布或撤回全体公告。</text>
+  </view>
+  <t-button block theme="primary" bind:tap="create">新建公告</t-button>
+  <loading-state wx:if="{{loading}}" text="正在读取公告" />
+  <view wx:elif="{{error && !items.length}}" class="card state-card">
+    <text class="section-title">管理列表加载失败</text>
+    <view class="actions"
+      ><t-button block variant="outline" bind:tap="retry">重新加载</t-button></view
+    >
+  </view>
+  <block wx:else>
+    <view class="admin-item card" wx:for="{{items}}" wx:key="id">
+      <view class="admin-head">
+        <text class="admin-title">{{item.title}}</text>
+        <text class="status {{item.status}}">{{item.statusLabel}}</text>
+      </view>
+      <text class="muted admin-summary">{{item.summary}}</text>
+      <text class="admin-time">{{item.timeLabel}}</text>
+      <view class="admin-actions">
+        <t-button size="small" variant="outline" data-id="{{item.id}}" bind:tap="edit"
+          >编辑</t-button
+        >
+        <t-button
+          wx:if="{{item.status !== 'withdrawn'}}"
+          size="small"
+          theme="danger"
+          variant="text"
+          data-id="{{item.id}}"
+          bind:tap="withdraw"
+          >撤回</t-button
+        >
+      </view>
+    </view>
+    <t-empty wx:if="{{!items.length}}" description="还没有公告" />
+    <view wx:if="{{loadingMore}}" class="more"><t-loading size="36rpx" /> 正在加载</view>
+  </block>
+</view>

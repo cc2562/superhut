@@ -1,6 +1,47 @@
-<view class="page center">
-  <view class="mark">菜</view>
+<view class="page center launch">
+  <image class="mark" src="/assets/logo.png" mode="aspectFill" />
   <text class="title">超级包菜</text>
-  <text class="muted">{{message}}</text>
-  <t-loading theme="circular" size="48rpx" />
+  <text class="muted launch-message">{{message}}</text>
+  <t-loading wx:if="{{preparing}}" theme="circular" size="48rpx" />
+  <t-button wx:else theme="primary" variant="outline" bind:tap="showConsent">查看并同意</t-button>
 </view>
+<t-popup
+  visible="{{consentVisible}}"
+  placement="bottom"
+  close-on-overlay-click="{{false}}"
+  prevent-scroll-through
+  show-overlay
+>
+  <view class="consent-sheet">
+    <view class="consent-handle"></view>
+    <text class="consent-eyebrow">SUPERHUT MINI</text>
+    <text class="consent-title">欢迎使用超级包菜</text>
+    <text class="consent-description"
+      >超级包菜是由提供课表查询、成绩查询等功能的第三方工具。我们使用微信 OpenID
+      建立会话，并仅在你主动登录时处理教务账号信息，用于提供课表、成绩、考试、空教室和评教服务。学校密码默认不保存。</text
+    >
+    <view class="agreement-line">
+      <text>继续即表示你已阅读并同意</text>
+      <text class="agreement-link" bind:tap="openServiceAgreement">《服务协议》</text>
+      <text>与</text>
+      <text class="agreement-link" bind:tap="openPrivacyContract">《用户隐私保护指引》</text>
+    </view>
+    <view class="consent-actions">
+      <t-button
+        wx:if="{{privacyAuthorizationRequired}}"
+        block
+        theme="primary"
+        loading="{{loading}}"
+        open-type="agreePrivacyAuthorization"
+        bind:agreeprivacyauthorization="agreePrivacyAuthorization"
+        >同意并继续</t-button
+      >
+      <t-button wx:else block theme="primary" loading="{{loading}}" bind:tap="acceptConsent"
+        >同意并继续</t-button
+      >
+      <t-button block variant="text" disabled="{{loading}}" bind:tap="declineConsent"
+        >暂不同意</t-button
+      >
+    </view>
+  </view>
+</t-popup>

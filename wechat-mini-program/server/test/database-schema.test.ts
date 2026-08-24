@@ -9,6 +9,8 @@ import {
   runtimeCache,
   sessions,
   users,
+  announcements,
+  announcementReads,
 } from '../src/database/schema.js';
 
 describe('MySQL schema safety', () => {
@@ -21,6 +23,8 @@ describe('MySQL schema safety', () => {
     auditEvents,
     rateLimits,
     runtimeCache,
+    announcements,
+    announcementReads,
   ];
 
   it('uses lowercase identifiers for case-sensitive MySQL 8.0', () => {

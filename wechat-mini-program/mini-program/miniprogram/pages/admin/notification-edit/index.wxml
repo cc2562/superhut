@@ -1,0 +1,111 @@
+<view class="page edit-page">
+  <loading-state wx:if="{{loadingItem}}" text="正在读取公告" />
+  <block wx:else>
+    <view class="hero edit-hero">
+      <text class="eyebrow">通知管理</text>
+      <text class="title">{{id ? '编辑公告' : '新建公告'}}</text>
+      <text class="subtitle">保存为草稿后，可立即发布或安排未来时间发布。</text>
+    </view>
+    <view wx:if="{{status === 'withdrawn'}}" class="withdrawn-tip"
+      >该公告已撤回，不能继续编辑。</view
+    >
+    <view class="card form-card">
+      <t-input
+        label="标题"
+        value="{{title}}"
+        maxlength="80"
+        placeholder="请输入公告标题"
+        bind:change="onTitle"
+      />
+      <view class="field">
+        <text class="field-label">摘要</text>
+        <textarea
+          class="textarea summary-input"
+          value="{{summary}}"
+          maxlength="160"
+          placeholder="用于服务页卡片和列表展示"
+          bindinput="onSummary"
+        />
+      </view>
+      <view class="field">
+        <text class="field-label">正文</text>
+        <textarea
+          class="textarea content-input"
+          value="{{content}}"
+          maxlength="10000"
+          placeholder="请输入完整通知内容"
+          bindinput="onContent"
+        />
+      </view>
+      <picker range="{{actionLabels}}" value="{{actionIndex}}" bindchange="onAction">
+        <view class="picker-row"
+          ><text>相关页面</text><text>{{actionLabels[actionIndex]}} ›</text></view
+        >
+      </picker>
+    </view>
+    <view class="card schedule-card">
+      <view class="switch-row"
+        ><view
+          ><text class="row-title">立即发布</text
+          ><text class="row-note">关闭后可安排发布时间</text></view
+        ><t-switch value="{{publishNow}}" bind:change="onPublishNow"
+      /></view>
+      <view wx:if="{{!publishNow}}" class="date-row">
+        <picker mode="date" value="{{publishDate}}" bindchange="onPublishDate"
+          ><view class="date-field"
+            ><text>发布日期</text><text>{{publishDate}} ›</text></view
+          ></picker
+        >
+        <picker mode="time" value="{{publishTime}}" bindchange="onPublishTime"
+          ><view class="date-field"
+            ><text>发布时间</text><text>{{publishTime}} ›</text></view
+          ></picker
+        >
+      </view>
+      <view class="switch-row expiration"
+        ><view
+          ><text class="row-title">设置过期时间</text
+          ><text class="row-note">过期后普通用户不再看到</text></view
+        ><t-switch value="{{hasExpiration}}" bind:change="onExpiration"
+      /></view>
+      <view wx:if="{{hasExpiration}}" class="date-row">
+        <picker mode="date" value="{{expiresDate}}" bindchange="onExpiresDate"
+          ><view class="date-field"
+            ><text>过期日期</text><text>{{expiresDate}} ›</text></view
+          ></picker
+        >
+        <picker mode="time" value="{{expiresTime}}" bindchange="onExpiresTime"
+          ><view class="date-field"
+            ><text>过期时间</text><text>{{expiresTime}} ›</text></view
+          ></picker
+        >
+      </view>
+    </view>
+    <t-button block variant="outline" bind:tap="togglePreview"
+      >{{previewVisible ? '收起预览' : '预览公告'}}</t-button
+    >
+    <view wx:if="{{previewVisible}}" class="card preview-card">
+      <text class="preview-title">{{title || '公告标题'}}</text>
+      <text class="preview-summary">{{summary || '公告摘要'}}</text>
+      <text class="preview-content">{{content || '公告正文将在这里显示。'}}</text>
+    </view>
+    <view class="bottom-actions">
+      <t-button
+        block
+        variant="outline"
+        loading="{{loading}}"
+        disabled="{{status === 'withdrawn'}}"
+        bind:tap="saveDraft"
+        >{{status === 'draft' ? '保存草稿' : '保存修改'}}</t-button
+      >
+      <t-button
+        block
+        theme="primary"
+        loading="{{loading}}"
+        disabled="{{status === 'withdrawn'}}"
+        bind:tap="publish"
+        >{{publishNow ? '立即发布' : '安排发布'}}</t-button
+      >
+    </view>
+  </block>
+</view>

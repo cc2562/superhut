@@ -1,0 +1,37 @@
+.agreement-page {
+  padding-top: 12rpx;
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+.agreement-hero {
+  padding-top: 32rpx;
+}
+.agreement-card {
+  margin-bottom: 22rpx;
+  padding: 28rpx;
+  border: 1rpx solid #dce8e1;
+  border-radius: 26rpx;
+  background: #fff;
+}
+.agreement-title {
+  display: block;
+  margin-bottom: 14rpx;
+  color: #21382c;
+  font-size: 30rpx;
+  font-weight: 720;
+}
+.agreement-copy {
+  display: block;
+  color: #607067;
+  font-size: 26rpx;
+  line-height: 1.75;
+}
+.privacy-link {
+  display: block;
+  margin-top: 20rpx;
+  color: #176b47;
+  font-size: 26rpx;
+  font-weight: 650;
+}
+.contact-card .agreement-copy + .agreement-copy {
+  margin-top: 8rpx;
+}

@@ -52,7 +52,7 @@ Page({
           result.timetable,
           result.timetableFetchedAt ?? new Date().toISOString(),
         );
-      await wx.switchTab({ url: '/pages/timetable/index' });
+      await wx.reLaunch({ url: '/pages/timetable/index' });
     } catch (error) {
       if (error instanceof ClientApiError && error.code === 'AUTH_ACADEMIC_INVALID_CREDENTIALS')
         await storage.deleteCredential();

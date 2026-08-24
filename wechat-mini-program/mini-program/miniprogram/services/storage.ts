@@ -29,12 +29,32 @@ export const storage = {
     wx.setStorageSync(keys.access, accessToken);
     wx.setStorageSync(keys.refresh, refreshToken);
   },
+  saveConsentedSession: (version: string, accessToken: string, refreshToken: string) => {
+    const previous = {
+      access: wx.getStorageSync<string>(keys.access) || '',
+      refresh: wx.getStorageSync<string>(keys.refresh) || '',
+      privacy: wx.getStorageSync<string>(keys.privacy) || '',
+    };
+    try {
+      wx.setStorageSync(keys.access, accessToken);
+      wx.setStorageSync(keys.refresh, refreshToken);
+      wx.setStorageSync(keys.privacy, version);
+    } catch (error) {
+      const restore = (key: string, value: string) => {
+        if (value) wx.setStorageSync(key, value);
+        else wx.removeStorageSync(key);
+      };
+      restore(keys.access, previous.access);
+      restore(keys.refresh, previous.refresh);
+      restore(keys.privacy, previous.privacy);
+      throw error;
+    }
+  },
   clearSession: () => {
     wx.removeStorageSync(keys.access);
     wx.removeStorageSync(keys.refresh);
   },
   privacyAccepted: () => wx.getStorageSync<string>(keys.privacy) || '',
-  acceptPrivacy: (version: string) => wx.setStorageSync(keys.privacy, version),
   timetable: (semesterId: string) => {
     const all = wx.getStorageSync<TimetableCacheMap>(keys.timetable) || {};
     return all[semesterId] || null;

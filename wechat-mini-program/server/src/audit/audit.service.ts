@@ -15,6 +15,7 @@ export class AuditService {
     result: 'success' | 'failure';
     requestId: string;
     upstreamStatusClass?: string;
+    metadata?: Record<string, string>;
   }): Promise<void> {
     if (environment().APP_MODE === 'fixture') return;
     try {
@@ -28,6 +29,7 @@ export class AuditService {
           result: input.result,
           requestId: input.requestId,
           upstreamStatusClass: input.upstreamStatusClass,
+          metadata: input.metadata,
           createdAt: new Date(),
         });
     } catch {

@@ -22,6 +22,7 @@ const EnvironmentSchema = z.object({
   ALIYUN_CAPTCHA_ENDPOINT: z.string().default('captcha.cn-shanghai.aliyuncs.com'),
   ALIYUN_CAPTCHA_LOGIN_SCENE_ID: z.string().default(''),
   ALIYUN_CAPTCHA_REFRESH_SCENE_ID: z.string().default(''),
+  ADMIN_USER_IDS: z.string().default(''),
 });
 
 export type Environment = z.infer<typeof EnvironmentSchema>;
@@ -33,6 +34,9 @@ export function environment(): Environment {
     throw new Error('production requires APP_MODE=real');
   }
   if (cached.APP_MODE === 'real') {
+    if (cached.ADMIN_USER_IDS.split(',').some((value) => value.trim() === '*')) {
+      throw new Error('ADMIN_USER_IDS wildcard is forbidden in real mode');
+    }
     const required = [
       'WECHAT_CLOUD_ENV_ID',
       'MYSQL_HOST',

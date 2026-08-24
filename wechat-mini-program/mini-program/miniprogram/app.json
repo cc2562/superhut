@@ -1,11 +1,13 @@
 {
   "pages": [
     "pages/bootstrap/index",
-    "pages/privacy/index",
+    "pages/agreement/index",
     "pages/login/index",
     "pages/timetable/index",
-    "pages/services/index",
-    "pages/profile/index",
+    "pages/notifications/index",
+    "pages/notifications/detail/index",
+    "pages/admin/notifications/index",
+    "pages/admin/notification-edit/index",
     "pages/scores/index",
     "pages/exams/index",
     "pages/rooms/index",
@@ -13,6 +15,7 @@
     "pages/evaluation/list/index",
     "pages/evaluation/form/index"
   ],
+  "__usePrivacyCheck__": true,
   "plugins": {
     "AliyunCaptcha": {
       "version": "3.0.0",
@@ -26,17 +29,6 @@
     "backgroundColor": "#f5fbf7",
     "backgroundTextStyle": "dark"
   },
-  "tabBar": {
-    "color": "#66736b",
-    "selectedColor": "#176b47",
-    "backgroundColor": "#ffffff",
-    "borderStyle": "white",
-    "list": [
-      { "pagePath": "pages/timetable/index", "text": "课表" },
-      { "pagePath": "pages/services/index", "text": "服务" },
-      { "pagePath": "pages/profile/index", "text": "我的" }
-    ]
-  },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",
@@ -47,7 +39,10 @@
     "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
     "t-switch": "tdesign-miniprogram/switch/switch",
     "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-popup": "tdesign-miniprogram/popup/popup",
+    "t-calendar": "tdesign-miniprogram/calendar/calendar",
     "t-empty": "tdesign-miniprogram/empty/empty",
+    "loading-state": "/components/loading-state/index",
     "aliyun-captcha": "plugin://AliyunCaptcha/captcha"
   }
 }

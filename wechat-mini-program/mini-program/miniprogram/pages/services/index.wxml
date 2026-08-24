@@ -1,8 +1,37 @@
-<view class="page"
+<view class="page tab-page"
   ><view class="hero"
     ><text class="eyebrow">教务服务</text><text class="title">常用查询</text
     ><text class="subtitle">成绩、考试、空教室与一键评教。</text></view
   >
+  <view class="notice-card card" bind:tap="openLatest">
+    <view class="notice-head">
+      <view class="notice-heading">
+        <view class="notice-icon">知</view>
+        <view>
+          <text class="notice-label">通知中心</text>
+          <text wx:if="{{unreadCount > 0}}" class="notice-count">{{unreadCount}} 条未读</text>
+        </view>
+      </view>
+      <text class="notice-all" catch:tap="openNotifications">全部通知 ›</text>
+    </view>
+    <view wx:if="{{notificationLoading}}" class="notice-state">
+      <t-loading size="36rpx" theme="circular" />
+      <text class="muted">正在读取通知…</text>
+    </view>
+    <view wx:elif="{{notificationError}}" class="notice-state" catch:tap="retryNotifications">
+      <text class="muted">通知暂时加载失败，点此重试</text>
+    </view>
+    <view wx:elif="{{latestAnnouncement}}" class="notice-copy">
+      <view class="notice-title-row">
+        <view wx:if="{{!latestAnnouncement.read}}" class="unread-dot"></view>
+        <text class="notice-title">{{latestAnnouncement.title}}</text>
+      </view>
+      <text class="notice-summary">{{latestAnnouncement.summary}}</text>
+    </view>
+    <view wx:else class="notice-state">
+      <text class="muted">暂无新通知</text>
+    </view>
+  </view>
   <view
     class="service card {{item.tone}}"
     wx:for="{{services}}"

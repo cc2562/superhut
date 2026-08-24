@@ -18,9 +18,18 @@ function buildSlots(occupied: string[]): SlotView[] {
   });
 }
 
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const calendarMaxDate = new Date(today);
+calendarMaxDate.setFullYear(calendarMaxDate.getFullYear() + 1);
+
 Page({
   data: {
-    date: String(toDateKey(new Date())),
+    date: String(toDateKey(today)),
+    calendarValue: today.getTime(),
+    calendarMinDate: today.getTime(),
+    calendarMaxDate: calendarMaxDate.getTime(),
+    calendarVisible: false,
     startLesson: 1,
     endLesson: 2,
     lessonRange: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
@@ -28,7 +37,8 @@ Page({
     buildingId: '',
     buildingName: '',
     rooms: [] as RoomView[],
-    loading: false,
+    loading: true,
+    loadingText: '正在加载教学楼',
   },
   async onLoad() {
     try {
@@ -40,10 +50,24 @@ Page({
       });
     } catch (error) {
       toastRequestError(error, '加载失败');
+    } finally {
+      this.setData({ loading: false });
     }
   },
-  onDate(event: WechatMiniprogram.CustomEvent<{ value: string }>) {
-    this.setData({ date: event.detail.value });
+  openCalendar() {
+    this.setData({ calendarVisible: true });
+  },
+  onCalendarConfirm(event: WechatMiniprogram.CustomEvent<{ value: number | number[] }>) {
+    const value = Array.isArray(event.detail.value) ? event.detail.value[0] : event.detail.value;
+    if (typeof value !== 'number') return;
+    this.setData({
+      date: String(toDateKey(new Date(value))),
+      calendarValue: value,
+      calendarVisible: false,
+    });
+  },
+  onCalendarClose() {
+    this.setData({ calendarVisible: false });
   },
   onBuilding(event: WechatMiniprogram.CustomEvent<{ value: string }>) {
     const building = this.data.buildings[Number(event.detail.value)];
@@ -62,7 +86,7 @@ Page({
   },
   async search() {
     if (!this.data.buildingId) return;
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadingText: '正在查询空教室' });
     try {
       const rooms = await api.rooms(this.data.date, this.nodeId(), this.data.buildingId);
       this.setData({

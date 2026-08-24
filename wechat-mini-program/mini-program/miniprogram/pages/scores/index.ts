@@ -40,8 +40,6 @@ Page({
       });
     } catch (error) {
       toastRequestError(error, '加载失败');
-    } finally {
-      this.setData({ loading: false });
     }
     await this.loadScores();
   },

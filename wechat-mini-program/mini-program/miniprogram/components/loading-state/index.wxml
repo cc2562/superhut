@@ -1,0 +1,4 @@
+<view class="loading-state" aria-role="status">
+  <view class="loading-orb"><t-loading theme="circular" size="52rpx" /></view>
+  <text class="loading-text">{{text}}</text>
+</view>

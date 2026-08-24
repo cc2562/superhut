@@ -1,3 +1,85 @@
+.notice-card {
+  padding: 30rpx;
+}
+.notice-head,
+.notice-heading,
+.notice-title-row,
+.notice-state {
+  display: flex;
+  align-items: center;
+}
+.notice-head {
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+.notice-heading {
+  gap: 18rpx;
+}
+.notice-icon {
+  display: grid;
+  place-items: center;
+  width: 62rpx;
+  height: 62rpx;
+  border-radius: 20rpx;
+  color: #176b47;
+  background: #e0f3e7;
+  font-size: 26rpx;
+  font-weight: 750;
+}
+.notice-label,
+.notice-count,
+.notice-title,
+.notice-summary {
+  display: block;
+}
+.notice-label {
+  font-size: 30rpx;
+  font-weight: 720;
+}
+.notice-count {
+  margin-top: 4rpx;
+  color: #287b57;
+  font-size: 22rpx;
+}
+.notice-all {
+  color: #287b57;
+  font-size: 24rpx;
+}
+.notice-copy {
+  min-height: 88rpx;
+}
+.notice-title-row {
+  gap: 12rpx;
+}
+.unread-dot {
+  flex: 0 0 auto;
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #dc4c3f;
+}
+.notice-title {
+  overflow: hidden;
+  font-size: 30rpx;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notice-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 12rpx;
+  color: #718078;
+  font-size: 25rpx;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.notice-state {
+  min-height: 88rpx;
+  justify-content: center;
+  gap: 16rpx;
+}
 .service {
   display: flex;
   align-items: center;

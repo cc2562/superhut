@@ -1,0 +1,68 @@
+.admin-page {
+  padding-bottom: calc(56rpx + env(safe-area-inset-bottom));
+}
+.admin-hero {
+  padding-top: 56rpx;
+}
+.admin-item:first-of-type {
+  margin-top: 28rpx;
+}
+.admin-head,
+.admin-actions,
+.more {
+  display: flex;
+  align-items: center;
+}
+.admin-head {
+  justify-content: space-between;
+  gap: 20rpx;
+}
+.admin-title {
+  font-size: 31rpx;
+  font-weight: 720;
+}
+.status {
+  flex: 0 0 auto;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  color: #66736b;
+  background: #edf2ef;
+  font-size: 21rpx;
+}
+.status.published {
+  color: #176b47;
+  background: #e0f3e7;
+}
+.status.scheduled {
+  color: #38658c;
+  background: #e3eff9;
+}
+.status.withdrawn {
+  color: #8e4b44;
+  background: #f8e7e4;
+}
+.admin-summary,
+.admin-time {
+  display: block;
+  margin-top: 14rpx;
+}
+.admin-time {
+  color: #8a9890;
+  font-size: 22rpx;
+}
+.admin-actions {
+  justify-content: flex-end;
+  gap: 14rpx;
+  margin-top: 24rpx;
+}
+.state-card {
+  margin-top: 28rpx;
+  text-align: center;
+}
+.more {
+  justify-content: center;
+  gap: 12rpx;
+  padding: 28rpx;
+  color: #718078;
+  font-size: 24rpx;
+}
