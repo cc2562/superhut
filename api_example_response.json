@@ -1,0 +1,21 @@
+{
+  "is_latest": false,
+  "latest_version": "1.3.0",
+  "description": "1.3.0发布啦\r\n1.支持短信验证码登录 2.全新UI设计  3.课程表新增日视图 4.支持安卓手机灵动岛（OPPO手机原生支持 小米手机需要自己解除白名单限制）5.优化课程表刷新流程 6.优化登录认证流程",
+  "is_forced": false,
+  "downloadSources": [
+    {
+      "name": "夸克网盘",
+      "url": "https://pan.quark.cn/s/b412107eeaa6",
+      "priority": 1,
+      "description": "国内下载"
+    },
+    {
+      "name": "GitHub Release",
+      "url": "https://github.com/cc2562/superhut/releases/latest",
+      "priority": 2,
+      "description": "官方仓库"
+    }
+  ],
+  "download_url": "https://pan.quark.cn/s/b412107eeaa6"
+}

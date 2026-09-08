@@ -30,6 +30,7 @@ class _HomeviewPageState extends State<HomeviewPage>
   String _updateDescription = '';
   bool _isForcedUpdate = false;
   String _downloadUrl = '';
+  List<Map<String, dynamic>> _downloadSources = [];
   String _currentVersion = '0.0.1'; // 默认版本号
 
   @override
@@ -116,7 +117,27 @@ class _HomeviewPageState extends State<HomeviewPage>
         _latestVersion = data['latest_version'];
         _updateDescription = data['description'];
         _isForcedUpdate = data['is_forced'];
-        _downloadUrl = data['download_url'];
+
+        // Support the new format downloadSources, while remaining compatible with the old format download_url.
+        if (data.containsKey('downloadSources') &&
+            data['downloadSources'] is List &&
+            (data['downloadSources'] as List).isNotEmpty) {
+          _downloadSources = List<Map<String, dynamic>>.from(
+            data['downloadSources'].map((source) => Map<String, dynamic>.from(source))
+          );
+          // Sort by priority.
+          _downloadSources.sort((a, b) => (a['priority'] ?? 999).compareTo(b['priority'] ?? 999));
+        } else if (data.containsKey('download_url')) {
+          // 兼容旧格式：将单个 download_url 转换为 downloadSources 格式
+          _downloadUrl = data['download_url'];
+          _downloadSources = [
+            {
+              'name': '夸克网盘',
+              'url': _downloadUrl,
+              'priority': 1,
+            }
+          ];
+        }
       });
 
       if (_isUpdateAvailable) {
@@ -134,7 +155,26 @@ class _HomeviewPageState extends State<HomeviewPage>
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('新版本可用: $_latestVersion'),
-          content: Text(_updateDescription),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_updateDescription),
+                if (_downloadSources.length > 1) ...[
+                  SizedBox(height: 16),
+                  Text(
+                    '选择下载源：',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                ],
+              ],
+            ),
+          ),
           actions: <Widget>[
             if (!_isForcedUpdate)
               TextButton(
@@ -143,15 +183,66 @@ class _HomeviewPageState extends State<HomeviewPage>
                   Navigator.of(context).pop();
                 },
               ),
-            TextButton(
-              child: Text('立即更新'),
-              onPressed: () {
-                launchUrl(Uri.parse(_downloadUrl));
-                if (_isForcedUpdate) {
-                  SystemNavigator.pop();
-                }
-              },
-            ),
+            // 如果只有一个下载源，显示"立即更新"按钮
+            if (_downloadSources.length == 1)
+              TextButton(
+                child: Text('立即更新'),
+                onPressed: () {
+                  launchUrl(Uri.parse(_downloadSources[0]['url']));
+                  if (_isForcedUpdate) {
+                    SystemNavigator.pop();
+                  }
+                },
+              ),
+            // 如果有多个下载源，显示"选择下载源"按钮
+            if (_downloadSources.length > 1)
+              TextButton(
+                child: Text('选择下载源'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _showDownloadSourceDialog();
+                },
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDownloadSourceDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: !_isForcedUpdate,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('选择下载源'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _downloadSources.map((source) {
+              return ListTile(
+                leading: Icon(Ionicons.download_outline),
+                title: Text(source['name'] ?? '未知来源'),
+                subtitle: source['description'] != null
+                    ? Text(source['description'])
+                    : null,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  launchUrl(Uri.parse(source['url']));
+                  if (_isForcedUpdate) {
+                    SystemNavigator.pop();
+                  }
+                },
+              );
+            }).toList(),
+          ),
+          actions: <Widget>[
+            if (!_isForcedUpdate)
+              TextButton(
+                child: Text('取消'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
           ],
         );
       },
