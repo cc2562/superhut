@@ -36,7 +36,7 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -158,8 +158,11 @@ jobs:
         run: |
           set -e
 
-          # Navigate to iOS project
-          cd "$IOS_PATH"
+          ROOT="$GITHUB_WORKSPACE"
+          IOS_DIR="$ROOT/${IOS_PATH:-.}"
+
+          # Navigate to iOS project (Flutter 项目的 ios_path 可以是仓库根目录)
+          cd "$IOS_DIR"
 
           # Find workspace or project
           WORKSPACE=$(find . -maxdepth 1 -name "*.xcworkspace" | head -1)
@@ -189,7 +192,8 @@ jobs:
           DERIVED_DATA_PATH="${GITHUB_WORKSPACE}/DerivedData"
 
           if [ "$PROJECT_TYPE" = "flutter" ]; then
-            cd ..
+            # Flutter 必须在仓库根目录执行构建，不能基于 ios_path 做 cd ..
+            cd "$ROOT"
             if [ "$CONFIGURATION" = "Debug" ]; then
               echo "Building Flutter iOS Debug..."
               flutter build ios --debug --no-codesign
@@ -197,7 +201,6 @@ jobs:
               echo "Building Flutter iOS Release..."
               flutter build ios --release --no-codesign
             fi
-            cd "$IOS_PATH"
           elif [ "$PROJECT_TYPE" = "reactnative" ] || [ "$PROJECT_TYPE" = "expo" ]; then
             # Use xcodebuild directly for React Native/Expo
             echo "Building React Native iOS ($CONFIGURATION)..."
@@ -250,7 +253,7 @@ jobs:
 
             if [ "$USE_SIGNING" = "true" ]; then
               # For signed builds, use archive
-              BUILD_CMD="$BUILD_CMD -archivePath ../build/App.xcarchive archive"
+              BUILD_CMD="$BUILD_CMD -archivePath $ROOT/build/App.xcarchive archive"
             else
               # For unsigned builds, use faster 'build' action
               BUILD_CMD="$BUILD_CMD CODE_SIGNING_ALLOWED=NO build"
@@ -263,7 +266,7 @@ jobs:
           # Create IPA
           if [ "$USE_SIGNING" = "true" ]; then
             # For signed builds, use xcodebuild -exportArchive
-            cd ..
+            cd "$ROOT"
             printf '%s\n' \
               '<?xml version="1.0" encoding="UTF-8"?>' \
               '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
@@ -287,7 +290,7 @@ jobs:
             # For unsigned builds, find .app and create IPA
             if [ "$PROJECT_TYPE" = "flutter" ]; then
               # Flutter outputs to build/ios/iphoneos/
-              APP_PATH=$(find "${GITHUB_WORKSPACE}/build/ios/iphoneos" -name "*.app" -type d | head -1)
+              APP_PATH=$(find "${ROOT}/build/ios/iphoneos" -name "*.app" -type d | head -1)
             else
               # Native and React Native/Expo use DerivedData
               APP_PATH=$(find "$DERIVED_DATA_PATH/Build/Products/${CONFIGURATION}-iphoneos" -name "*.app" -type d | head -1)
@@ -298,12 +301,14 @@ jobs:
               exit 1
             fi
             echo "Found app at: $APP_PATH"
-            cd ..
+
+            # 始终在仓库根目录的 build/ 下打包，产物与上传路径保持一致
+            cd "$ROOT"
+            rm -rf build/Payload
             mkdir -p build/Payload
             cp -R "$APP_PATH" build/Payload/
-            cd build
-            zip -rq "$BUILD_ID.ipa" Payload
-            rm -rf Payload
+            (cd build && zip -rq "$BUILD_ID.ipa" Payload)
+            rm -rf build/Payload
             echo "Created unsigned IPA: build/$BUILD_ID.ipa"
           fi
 
