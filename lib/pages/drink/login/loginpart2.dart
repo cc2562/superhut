@@ -7,17 +7,8 @@ import '../api/drink_api.dart';
 
 class DrinkLoginPage2 extends StatefulWidget {
   final String phoneNumber;
-  final String doubleRandom;
-  final String timestamp;
-  final String imageCode;
 
-  const DrinkLoginPage2({
-    super.key,
-    required this.phoneNumber,
-    required this.doubleRandom,
-    required this.timestamp,
-    required this.imageCode,
-  });
+  const DrinkLoginPage2({super.key, required this.phoneNumber});
 
   @override
   _DrinkLoginPage2State createState() => _DrinkLoginPage2State();

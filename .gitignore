@@ -46,3 +46,4 @@ app.*.map.json
 /key/
 /android/app/key/
 /.vscode/
+/.codebuddy/

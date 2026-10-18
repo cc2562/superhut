@@ -611,7 +611,6 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
                                                           .deviceList[i]["id"]
                                                           .toString(),
                                                       true,
-                                                      context,
                                                     );
                                                     logic.removeDeviceByName(
                                                       logic
@@ -783,10 +782,10 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
       if (result != null) {
         try {
           String enc = (result as Barcode).code!;
-          enc = enc.split("/").last;
 
-          // 添加设备
-          bool isFavo = await logic.favoDevice(enc, false, context);
+          // 添加设备：先解析二维码拿到设备 ID 再收藏
+          bool isFavo = await logic.addDeviceByQr(enc);
+          if (!context.mounted) return true;
 
           // 使用GetX显示结果提示
           Get.snackbar(
@@ -818,6 +817,7 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
             await logic.getDeviceList();
           }
         } catch (e) {
+          if (!context.mounted) return true;
           // 使用GetX显示错误提示
           Get.snackbar(
             '错误',
@@ -836,6 +836,7 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
         }
       }
     } catch (e) {
+      if (!context.mounted) return true;
       // 使用GetX显示错误提示
       Get.snackbar(
         '错误',
