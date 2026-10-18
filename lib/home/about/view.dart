@@ -760,7 +760,7 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                   ),
                 ),
                 Text(
-                  "版本: 1.4.0",
+                  "版本: 1.4.1",
                   style: TextStyle(
                     fontSize: 14,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
