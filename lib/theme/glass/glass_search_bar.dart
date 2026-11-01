@@ -109,6 +109,8 @@ class GlassSearchBar extends StatelessWidget {
         // 搜索栏长期停在内容之上，用弹层级的厚底色 + 更强模糊保证文字
         // 在任何背景上都读得清；边光是介于圆钮与底部栏之间的中间档。
         style: glass.searchBarStyle(radius: height / 2),
+        // 长条只做横轴拉伸：竖向拉伸会把胶囊拉薄、露出底色。
+        touch: glass.touchField,
         child: Center(child: field),
       ),
     );

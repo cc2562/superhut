@@ -204,6 +204,9 @@ class GlassControlButton extends StatelessWidget {
         ),
         child: LiquidGlassLens(
           style: glass.controlStyle(radius: size / 2),
+          // 按下时被指尖压出一点点形变，松手回弹；手势在 child 内部，
+          // 水波纹仍画在玻璃之上。玻璃关闭时不申请，省掉 listener 与 ticker。
+          touch: glass.enabled ? glass.touchButton : null,
           child: Material(
             type: MaterialType.transparency,
             child: InkResponse(
@@ -286,6 +289,8 @@ class GlassActionGroup extends StatelessWidget {
         ),
         child: LiquidGlassLens(
           style: glass.controlStyle(radius: size / 2),
+          // 与返回键同一档手感：按哪半边就只有那半边动。
+          touch: glass.enabled ? glass.touchButton : null,
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal:

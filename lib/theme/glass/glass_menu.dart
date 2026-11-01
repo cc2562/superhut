@@ -109,6 +109,8 @@ Future<T?> showGlassMenu<T>({
                   constraints: BoxConstraints(maxHeight: panelHeight),
                   child: LiquidGlassLens(
                     style: glass.menuStyle,
+                    // 菜单点完就关，只留按下时的轻微鼓包。
+                    touch: glass.touchPanel,
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       child: Column(

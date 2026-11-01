@@ -236,6 +236,58 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
     ),
   );
 
+  // ── 触摸手感（touch）─────────────────────────────────────────────
+  //
+  // 与灯光、底色同级：集中在主题里给三档，组件只引用不写字面值。
+  // 基调是「克制」——手感靠小幅形变传达，不靠夸张拉伸抢内容。
+
+  /// 44pt 圆钮与右侧操作组。
+  ///
+  /// `grip: 0.9` 让形变只发生在被按到的那半边（像指尖压了一下），
+  /// `stretch: 6` 远低于默认 13——圆钮本身才 44pt，拉伸一大就把图标顶出形状。
+  LiquidGlassTouch get touchButton => const LiquidGlassTouch.flexing(
+    LiquidGlassFlex(
+      stretch: 6,
+      grip: 0.9,
+      holdScale: 0.02,
+      tapScale: 0.018,
+      advanced: LiquidGlassFlexAdvanced(releaseDamping: 16),
+    ),
+  );
+
+  /// 横向长条（悬浮搜索栏）。
+  ///
+  /// 锁横轴：竖直方向的拉伸会把这根细长胶囊「拉薄」到露底。
+  /// `childFollow: 0.7` 让输入框里的文字只跟一半，避免读字时晃眼。
+  LiquidGlassTouch get touchField => const LiquidGlassTouch.flexing(
+    LiquidGlassFlex(
+      stretch: 9,
+      squeeze: 0.6,
+      grip: 0.8,
+      lockAxis: Axis.horizontal,
+      holdScale: 0.012,
+      tapScale: 0.012,
+      maxPull: 40,
+      advanced: LiquidGlassFlexAdvanced(childFollow: 0.7, releaseDamping: 15),
+    ),
+  );
+
+  /// 弹出菜单面板。
+  ///
+  /// 点一下菜单就关了，只留按下时的一点点反馈；`compressInward: false`
+  /// 免得边缘被推向体内、在面板内侧露出暗角。
+  LiquidGlassTouch get touchPanel => const LiquidGlassTouch.flexing(
+    LiquidGlassFlex(
+      stretch: 5,
+      grip: 0.6,
+      compressInward: false,
+      holdScale: 0.01,
+      tapScale: 0.01,
+      maxPull: 24,
+      advanced: LiquidGlassFlexAdvanced(childFollow: 0.5, releaseDamping: 18),
+    ),
+  );
+
   /// 底部标签栏胶囊：形状交给组件按高度派生全胶囊。
   ///
   /// 不投影——与 iOS 原生底部栏一致，只用一层发丝描边勾出轮廓（描边由
