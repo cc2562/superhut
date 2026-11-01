@@ -80,20 +80,101 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
   Color get selectionTint =>
       isDark ? const Color(0x33FFFFFF) : const Color(0x14000000);
 
-  LiquidGlassLight get _specular => LiquidGlassLight.specular(
-    thickness: 1.4,
-    sharpness: 0.35,
-    angle: 39,
-    spread: 0.92,
-    intensity: isDark ? 0.95 : 1,
+  /// 高光（锐利亮带）。
+  ///
+  /// 苹果官方稿里不同部件的边光强度差得很远：44pt 圆钮几乎只剩一条发丝
+  /// 描边，底部栏只有顶边微微一亮，搜索框介于两者之间。参数收在这里按部件
+  /// 给值，不在各组件里散着写，免得又调成一条「霓虹描边」。
+  LiquidGlassLight _specularLight({
+    required double thickness,
+    required double intensity,
+    double sharpness = 0.4,
+    double angle = 39,
+    double spread = 0.85,
+    double opposite = 0.2,
+  }) => LiquidGlassLight.specular(
+    thickness: thickness,
+    sharpness: sharpness,
+    angle: angle,
+    spread: spread,
+    intensity: intensity,
+    oppositeIntensity: opposite,
   );
 
-  LiquidGlassLight get _glow => LiquidGlassLight.glow(
-    thickness: 7,
-    angle: 129,
-    spread: 0.6,
-    intensity: isDark ? 0.45 : 0.6,
+  /// 辉光（宽软侧带）。显式给低 alpha 白色：不给色的话这盏灯只拾取背景色
+  /// 再提亮，纯白页面上拾取到的还是白，等于没开灯。
+  LiquidGlassLight _glowLight({
+    required double thickness,
+    required double intensity,
+    double angle = 129,
+    double spread = 0.95,
+    double opposite = 0.3,
+    double alpha = 0.10,
+  }) => LiquidGlassLight.glow(
+    thickness: thickness,
+    angle: angle,
+    spread: spread,
+    intensity: intensity,
+    oppositeIntensity: opposite,
+    color: Colors.white.withValues(alpha: alpha),
   );
+
+  /// 44pt 圆钮 / 分段控件 / 课程卡：苹果在浅色页面上几乎只画描边，
+  /// 灯压到最低，只求「有一点点边」而不是「发光」。
+  LiquidGlassLight get _buttonSpecular => _specularLight(
+    thickness: 1,
+    intensity: isDark ? 0.5 : 0.55,
+    spread: 0.8,
+    opposite: 0.15,
+  );
+
+  LiquidGlassLight get _buttonGlow =>
+      _glowLight(thickness: 5, intensity: isDark ? 0.18 : 0.2, alpha: 0.07);
+
+  /// 底部栏：面积大且贴地，苹果只让**顶边**微亮、两侧几乎平掉，
+  /// 所以轴走 `90°`（上下），对侧（底边）只留 22%。
+  LiquidGlassLight get _barSpecular => _specularLight(
+    thickness: 1.6,
+    sharpness: 0.45,
+    angle: 90,
+    spread: 0.72,
+    intensity: isDark ? 0.5 : 0.68,
+    opposite: 0.22,
+  );
+
+  LiquidGlassLight get _barGlow => _glowLight(
+    thickness: 9,
+    angle: 0,
+    intensity: isDark ? 0.2 : 0.24,
+    alpha: 0.08,
+  );
+
+  /// 搜索框：比圆钮亮一档，但不做整圈——仍只有顶边有光。
+  LiquidGlassLight get _fieldSpecular => _specularLight(
+    thickness: 1.2,
+    angle: 90,
+    spread: 0.78,
+    intensity: isDark ? 0.5 : 0.62,
+    opposite: 0.18,
+  );
+
+  LiquidGlassLight get _fieldGlow => _glowLight(
+    thickness: 6,
+    angle: 0,
+    intensity: isDark ? 0.2 : 0.22,
+    alpha: 0.07,
+  );
+
+  /// 弹层大面板：靠灯自己勾边（没有页面侧描边），可以比圆钮略强一点。
+  LiquidGlassLight get _panelSpecular => _specularLight(
+    thickness: 1.4,
+    spread: 0.9,
+    intensity: isDark ? 0.6 : 0.7,
+    opposite: 0.3,
+  );
+
+  LiquidGlassLight get _panelGlow =>
+      _glowLight(thickness: 8, intensity: isDark ? 0.26 : 0.28, alpha: 0.09);
 
   /// 顶部栏控件用的玻璃：44×44 圆形（[radius] 22）或同高的椭圆胶囊。
   ///
@@ -104,8 +185,8 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
         shape: LiquidGlassShape.continuousRoundedRectangle(
           cornerRadius: radius,
         ),
-        specular: _specular,
-        glow: _glow,
+        specular: _buttonSpecular,
+        glow: _buttonGlow,
         refractionIndex: 1.03,
         refractionWidth: 12,
         blur: blurFor(4),
@@ -120,13 +201,29 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
                 : null,
       );
 
+  /// 悬浮搜索栏：底色比圆钮厚（长期压着内容），模糊也更强，边光取中间档。
+  LiquidGlassStyle searchBarStyle({double radius = 26}) => LiquidGlassStyle(
+    shape: LiquidGlassShape.continuousRoundedRectangle(cornerRadius: radius),
+    specular: _fieldSpecular,
+    glow: _fieldGlow,
+    refractionIndex: 1.03,
+    refractionWidth: 12,
+    blur: blurFor(9),
+    color: elevatedTint,
+    shadow: LiquidGlassShadow(
+      blur: 16,
+      opacity: isDark ? 0.36 : 0.16,
+      inset: 2,
+    ),
+  );
+
   /// 底部标签栏胶囊：形状交给组件按高度派生全胶囊。
   ///
   /// 不投影——与 iOS 原生底部栏一致，只用一层发丝描边勾出轮廓（描边由
   /// 页面侧叠加，见 `homeview` 的标签栏描边层）。
   LiquidGlassStyle get tabBarStyle => LiquidGlassStyle(
-    specular: _specular,
-    glow: _glow,
+    specular: _barSpecular,
+    glow: _barGlow,
     refractionIndex: 1.04,
     refractionWidth: 14,
     blur: blurFor(5),
@@ -172,8 +269,8 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
   /// 对话框面板。
   LiquidGlassStyle get dialogStyle => LiquidGlassStyle(
     shape: LiquidGlassShape.continuousRoundedRectangle(cornerRadius: 28),
-    specular: _specular,
-    glow: _glow,
+    specular: _panelSpecular,
+    glow: _panelGlow,
     refractionIndex: 1.03,
     refractionWidth: 14,
     blur: blurFor(6),
@@ -184,8 +281,8 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
   /// 锚定菜单面板：比对话框更小的圆角与更轻的投影。
   LiquidGlassStyle get menuStyle => LiquidGlassStyle(
     shape: LiquidGlassShape.continuousRoundedRectangle(cornerRadius: 18),
-    specular: _specular,
-    glow: _glow,
+    specular: _panelSpecular,
+    glow: _panelGlow,
     refractionIndex: 1.03,
     refractionWidth: 10,
     blur: blurFor(5),
@@ -200,8 +297,8 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
   /// 底部弹层面板。
   LiquidGlassStyle get sheetStyle => LiquidGlassStyle(
     shape: LiquidGlassShape.continuousRoundedRectangle(cornerRadius: 28),
-    specular: _specular,
-    glow: _glow,
+    specular: _panelSpecular,
+    glow: _panelGlow,
     refractionIndex: 1.03,
     refractionWidth: 14,
     blur: blurFor(6),

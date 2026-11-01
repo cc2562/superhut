@@ -107,10 +107,8 @@ class GlassSearchBar extends StatelessWidget {
       height: height,
       child: LiquidGlassLens(
         // 搜索栏长期停在内容之上，用弹层级的厚底色 + 更强模糊保证文字
-        // 在任何背景上都读得清。
-        style: glass
-            .controlStyle(radius: height / 2)
-            .copyWith(color: glass.elevatedTint, blur: glass.blurFor(9)),
+        // 在任何背景上都读得清；边光是介于圆钮与底部栏之间的中间档。
+        style: glass.searchBarStyle(radius: height / 2),
         child: Center(child: field),
       ),
     );
