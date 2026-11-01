@@ -895,6 +895,9 @@ class _QRCodeScannerPageState extends State<QRCodeScannerPage> {
       // 压在相机预览上，前景固定白色。
       foregroundColor: Colors.white,
       backgroundColor: Colors.black,
+      // 相机预览是实拍画面：色带在原生视图上采样不到，硬叠一层
+      // 黑底也会把取景画面压暗，直接关掉。
+      showScrollEdge: false,
       body: Stack(
         children: [
           QRView(

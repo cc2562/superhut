@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import 'glass_theme.dart';
 import 'glass_top_bar.dart';
@@ -35,6 +36,9 @@ class GlassScaffold extends StatefulWidget {
     this.actionsReservedWidth,
     this.showBackButton,
     this.insetBody = false,
+    this.showScrollEdge = true,
+    this.scrollEdgeColor,
+    this.scrollEdgeFade = 24,
   });
 
   final String title;
@@ -73,6 +77,24 @@ class GlassScaffold extends StatefulWidget {
   /// 让内容穿过玻璃形成 scroll edge 效果。
   final bool insetBody;
 
+  /// 顶栏背后是否叠一层滚动边缘色带（iOS 26 的 scroll edge 变体）。
+  ///
+  /// 色带夹在内容与顶栏之间：与顶边相接处完全不透明，向内容方向溶解，
+  /// 给「滚到玻璃下方」的内容补上可读性。需要关闭的两种情况：
+  /// * WebView 等原生视图——玻璃与色带都采样不到原生画面；
+  /// * 相机预览等深色实拍画面——浅色带压上去会脏。
+  ///
+  /// [insetBody] 为真时自动跳过：内容本来就不从顶栏下方穿过，
+  /// 叠一层只剩 backdrop 开销而没有收益。
+  final bool showScrollEdge;
+
+  /// 色带的峰值颜色；默认跟随页面底色（[backgroundColor] ?? `surface`）。
+  final Color? scrollEdgeColor;
+
+  /// 顶栏下沿之外多留的羽化尾巴，让过渡落在按钮下沿之外，
+  /// 不会在圆钮正下方切出一条线。
+  final double scrollEdgeFade;
+
   @override
   State<GlassScaffold> createState() => _GlassScaffoldState();
 }
@@ -96,6 +118,53 @@ class _GlassScaffoldState extends State<GlassScaffold> {
       _revealed.value = false;
     }
     return false;
+  }
+
+  /// 顶栏背后的滚动边缘色带。
+  ///
+  /// 高度 = 状态栏 + 顶栏 + 羽化尾巴：前两段让顶栏区域足够实（内容滚过去时
+  /// 不会和标题/按钮抢注意力），尾巴把过渡推到按钮下沿之外，避免在圆钮正
+  /// 下方切出一条线。
+  Widget? _buildScrollEdge(
+    BuildContext context,
+    ColorScheme scheme,
+    AppGlassTheme glass,
+  ) {
+    if (!widget.showScrollEdge || widget.insetBody) {
+      return null;
+    }
+
+    final double height =
+        MediaQuery.paddingOf(context).top +
+        widget.topBarHeight +
+        widget.scrollEdgeFade;
+    final Color tint = glass.scrollEdgeTint(
+      widget.scrollEdgeColor ?? widget.backgroundColor ?? scheme.surface,
+    );
+
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      // 包内 height 为 null 时会撑满父级约束，这里用 SizedBox 明确给高度。
+      child: SizedBox(
+        height: height,
+        child: LiquidGlassScrollEdge(
+          edge: LiquidGlassEdge.top,
+          height: height,
+          color: tint,
+          // 模糊随通透度联动；算出太小就直接传 0，包会把 BackdropFilter
+          // 整层摘掉，不为看不见的模糊付一次整屏读取。
+          blur: glass.scrollEdgeBlurOrNull ?? 0,
+          // soft：模糊羽化收边，与下方的锐利内容之间没有接缝。
+          style: LiquidGlassScrollEdgeStyle.soft,
+          curve: Curves.easeInOut,
+          // 默认的 easeInQuart 会把模糊保留到色带末端，顶栏下方一大片发灰；
+          // 顶栏场景要的是「离开顶栏就尽快清晰」。
+          blurCurve: Curves.easeInOut,
+        ),
+      ),
+    );
   }
 
   @override
@@ -149,6 +218,9 @@ class _GlassScaffoldState extends State<GlassScaffold> {
             )
             : widget.body;
 
+    final scheme = Theme.of(context).colorScheme;
+    final Widget? scrollEdge = _buildScrollEdge(context, scheme, glass);
+
     return Scaffold(
       backgroundColor: widget.backgroundColor,
       resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
@@ -160,6 +232,8 @@ class _GlassScaffoldState extends State<GlassScaffold> {
           fit: StackFit.expand,
           children: [
             body,
+            // 色带必须压在内容之上、顶栏之下：它只该改变玻璃「下面」的东西。
+            if (scrollEdge != null) scrollEdge,
             Positioned(
               top: 0,
               left: 0,

@@ -46,6 +46,9 @@ class _Type1WebviewState extends State<Type1Webview> {
       // 网页全屏铺底，只留一枚悬浮返回键：网页自带头部，再叠一层标题会
       // 变成双层，也会在浅色网页上失去对比。
       title: '',
+      // 滚动边缘色带同样采样不到 WebView 的原生画面，关了它，
+      // 免得顶栏下方横一条与网页内容无关的底色带。
+      showScrollEdge: false,
       // WebView 是原生视图，玻璃镜片采样不到它的画面，这里改用半透明
       // 实底的悬浮按钮，避免出现一块没有折射的死灰圆片。
       leading:

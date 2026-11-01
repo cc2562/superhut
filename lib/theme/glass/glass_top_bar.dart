@@ -90,7 +90,7 @@ class GlassTopBar extends StatelessWidget {
               child: IgnorePointer(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: titleInset),
-                  child: Center(child: _buildTitle(scheme, foreground)),
+                  child: Center(child: _buildTitle(foreground)),
                 ),
               ),
             ),
@@ -120,7 +120,7 @@ class GlassTopBar extends StatelessWidget {
   }
 
   /// 标题本体：常驻时直接渲染，浏览型页面才挂上淡入动画子树。
-  Widget _buildTitle(ColorScheme scheme, Color foreground) {
+  Widget _buildTitle(Color foreground) {
     final text = Semantics(
       header: true,
       child: Text(
@@ -133,15 +133,8 @@ class GlassTopBar extends StatelessWidget {
           fontWeight: FontWeight.w600,
           letterSpacing: 0.2,
           color: foreground,
-          // 标题没有玻璃托底，压在滚动内容上时用两层同色光晕（halo）
-          // 保证可读性——不额外增加任何底板，符合「标题背后无玻璃」。
-          shadows: [
-            Shadow(
-              color: scheme.surface.withValues(alpha: 0.98),
-              blurRadius: 14,
-            ),
-            Shadow(color: scheme.surface.withValues(alpha: 0.9), blurRadius: 4),
-          ],
+          // 不再用同色光晕模拟底板：宿主页面的滚动边缘色带（scroll edge）
+          // 已经把标题下方的内容淡回底色，光晕只会让字看起来发糊。
         ),
       ),
     );
