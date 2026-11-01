@@ -336,6 +336,56 @@ class _HomeviewPageState extends State<HomeviewPage>
     );
   }
 
+  /// 顶栏背后的滚动边缘色带。
+  ///
+  /// 与 `GlassScaffold` 里的那份同款：内容滚到顶栏下方时淡回页面底色。
+  /// 课表标签页可能换了自定义背景（纯色或图片），取色要跟着它走，
+  /// 否则图片上会横一条白带。只订阅背景设置，不包住 `PageView`。
+  Widget _buildTopScrollEdge(ColorScheme backgroundScheme) {
+    final glass = context.glassTheme;
+    final double height = MediaQuery.paddingOf(context).top + 56 + 24;
+
+    return Obx(() {
+      // 先读可观察变量：切标签时这里会换页，不订阅会触发 GetX 的 improper use。
+      final style = CourseTableStyleController.instance.style.value;
+      final Color pageColor =
+          _selectedIndex == 0 && style.hasCustomBackground
+              ? style.estimatedPageColor(backgroundScheme)
+              : backgroundScheme.surface;
+
+      return Positioned(
+        top: 0,
+        left: 0,
+        right: 0,
+        // 首页的顶栏标题是「下滚才淡入」的，色带跟着一起出现：
+        // 回顶时那圈日历表头不该被一层底色雾罩住。
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _revealed,
+          builder: (context, revealed, child) {
+            return AnimatedOpacity(
+              opacity: revealed ? 1 : 0,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              child: child,
+            );
+          },
+          child: SizedBox(
+            height: height,
+            child: LiquidGlassScrollEdge(
+              edge: LiquidGlassEdge.top,
+              height: height,
+              color: glass.scrollEdgeTint(pageColor),
+              blur: glass.scrollEdgeBlurOrNull ?? 0,
+              style: LiquidGlassScrollEdgeStyle.soft,
+              curve: Curves.easeInOut,
+              blurCurve: Curves.easeInOut,
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
   /// 课表页的整页背景层。
   ///
   /// 铺在 `PageView` 之下，因此会自然延伸到状态栏区域与悬浮底栏下方；
@@ -420,6 +470,8 @@ class _HomeviewPageState extends State<HomeviewPage>
                 _KeepAlivePage(child: UserPage()),
               ],
             ),
+            // 色带压在 PageView 之上、顶栏之下：只改变玻璃下面的内容。
+            _buildTopScrollEdge(backgroundScheme),
             Positioned(
               top: 0,
               left: 0,

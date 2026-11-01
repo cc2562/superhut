@@ -80,6 +80,25 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
   Color get selectionTint =>
       isDark ? const Color(0x33FFFFFF) : const Color(0x14000000);
 
+  /// 滚动边缘色带的峰值颜色：直接取页面底色，只把 alpha 提到接近不透明。
+  ///
+  /// 不用文档默认的 `0x8A000000`（固定深色压暗）——那是给深色内容的，浅色
+  /// 页面上会压出一条灰黑带。跟底色等价于「内容滚到顶栏下方时淡回背景」，
+  /// 也就是 iOS 26 scroll edge 在浅色界面里的观感。
+  Color scrollEdgeTint(Color pageColor) =>
+      pageColor.withValues(alpha: isDark ? 0.92 : 0.98);
+
+  /// 滚动边缘色带的背景模糊，跟随通透度滑杆同向变化。
+  ///
+  /// `tintStrength = 0` 时算出约 0.36——这种量级的模糊肉眼看不出，却要为它
+  /// 付一次整屏 backdrop 读取，所以宿主页面会按 [scrollEdgeBlurOrNull] 归零。
+  double get scrollEdgeBlur => blurFor(6);
+
+  /// 给 `LiquidGlassScrollEdge.blur` 用的值：太小就返回 `null`，
+  /// 让调用方传 0，包会把整层 `BackdropFilter` 从树里摘掉。
+  double? get scrollEdgeBlurOrNull =>
+      scrollEdgeBlur < 0.5 ? null : scrollEdgeBlur;
+
   /// 高光（锐利亮带）。
   ///
   /// 苹果官方稿里不同部件的边光强度差得很远：44pt 圆钮几乎只剩一条发丝

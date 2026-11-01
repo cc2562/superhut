@@ -429,6 +429,8 @@ class _Type2WebviewState extends State<Type2Webview> {
       child: GlassScaffold(
         // 网页自带标题栏，这里不再重复显示标题，只留一枚悬浮返回键。
         title: '',
+        // 滚动边缘色带采样不到 WebView 的原生画面，关掉避免横一条底色带。
+        showScrollEdge: false,
         // WebView 是原生视图，玻璃采样不到网页画面，用半透明实底按钮
         // 代替，避免渲染成一块没有折射的死灰圆片。
         leading:
