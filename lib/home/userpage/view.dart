@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../bridge/getCoursePage.dart';
 import '../../pages/score/scorepage.dart';
+import '../../pages/settings/course_table_style_page.dart';
 import '../../pages/settings/theme_settings_page.dart';
 import '../../utils/hut_user_api.dart';
 import '../../utils/token.dart';
@@ -290,6 +291,17 @@ class _UserPageState extends State<UserPage> {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => Getcoursepage(renew: true),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildFunctionItem(
+                      icon: Icons.dashboard_customize_outlined,
+                      title: '课表外观',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const CourseTableStylePage(),
                           ),
                         );
                       },

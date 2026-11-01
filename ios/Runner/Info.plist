@@ -41,6 +41,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- 课表外观：从相册选择课表页背景图片（image_picker）。
+	     缺少 NSPhotoLibraryUsageDescription 时 iOS 会直接终止进程，
+	     因此文案必须写明用途且与实际行为一致。 -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>用于从相册选取图片，作为课程表页面的背景。</string>
+	<key>NSCameraUsageDescription</key>
+	<string>用于拍摄照片，作为课程表页面的背景。</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

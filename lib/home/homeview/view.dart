@@ -19,6 +19,10 @@ import '../../pages/Electricitybill/electricityPage.dart';
 import '../../theme/glass/glass_overlays.dart';
 import '../../theme/glass/glass_theme.dart';
 import '../../theme/glass/glass_top_bar.dart';
+import '../../theme/theme_controller.dart';
+import '../coursetable/style/course_table_background.dart';
+import '../coursetable/style/course_table_style.dart';
+import '../coursetable/style/course_table_style_controller.dart';
 import 'logic.dart';
 
 class HomeviewPage extends StatefulWidget {
@@ -177,120 +181,174 @@ class _HomeviewPageState extends State<HomeviewPage>
   Widget build(BuildContext context) {
     super.build(context);
     final HomeviewLogic logic = Get.put(HomeviewLogic());
-    if (context.glassEnabled) {
-      return _buildGlassShell(context, logic);
-    }
-    return _buildMaterialShell(context, logic);
+    final ThemeData baseTheme = Theme.of(context);
+    final ColorScheme backgroundScheme = baseTheme.colorScheme;
+
+    // 深色自定义背景：整页（含顶栏、底部标签栏）改用深色配色，否则页面上的
+    // 标题、节次与栏内图标会黑压压一片。背景层仍按原配色绘制。
+    //
+    // 注意这里始终保留同一层 `Theme`，只切换 data——如果按条件增删这层，
+    // 整棵子树（含 PageView 与三个标签页）会被重建，切标签时会丢状态。
+    final ThemeData effectiveTheme =
+        _selectedIndex == 0 &&
+                _needsDarkCourseChrome(backgroundScheme) &&
+                Get.isRegistered<ThemeController>()
+            ? Get.find<ThemeController>().darkTheme
+            : baseTheme;
+
+    return Theme(
+      data: effectiveTheme,
+      child: Builder(
+        builder:
+            (inner) =>
+                inner.glassEnabled
+                    ? _buildGlassShell(inner, logic, backgroundScheme)
+                    : _buildMaterialShell(inner, logic, backgroundScheme),
+      ),
+    );
+  }
+
+  /// 课表标签页当前的自定义背景是否深到需要换成浅色前景。
+  bool _needsDarkCourseChrome(ColorScheme scheme) {
+    final CourseTableStyle style =
+        CourseTableStyleController.instance.style.value;
+    if (!style.hasCustomBackground) return false;
+    return style.estimatedPageColor(scheme).computeLuminance() < 0.45;
   }
 
   /// 液态玻璃关闭或平台不支持时，完整保留原有 Material 3 外观。
-  Widget _buildMaterialShell(BuildContext context, HomeviewLogic logic) {
+  Widget _buildMaterialShell(
+    BuildContext context,
+    HomeviewLogic logic,
+    ColorScheme backgroundScheme,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: BottomBar(
-        layout: const BottomBarLayout.adaptive(
-          maxWidth: 420,
-          offset: 16,
-          borderRadius: BorderRadius.all(Radius.circular(30)),
-        ),
-        motion: const BottomBarMotion.cupertino(
-          preset: BottomBarCupertinoMotion.snappy,
-          duration: Duration(milliseconds: 420),
-          slideStart: Offset(0, 2),
-        ),
-        scrollBehavior: const BottomBarScrollBehavior(
-          hideOnScroll: true,
-          showAtStart: true,
-          deltaThreshold: 10,
-        ),
-        showIcon: false,
-        theme: BottomBarThemeData(
-          barDecoration: BoxDecoration(
-            color: colorScheme.surfaceContainer.withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildCourseTableBackground(backgroundScheme),
+          BottomBar(
+            layout: const BottomBarLayout.adaptive(
+              maxWidth: 420,
+              offset: 16,
+              borderRadius: BorderRadius.all(Radius.circular(30)),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.shadow.withValues(alpha: 0.16),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-        ),
-        body: PageView(
-          physics: const NeverScrollableScrollPhysics(),
-          controller: logic.homePageController,
-          onPageChanged: (index) {
-            if (_selectedIndex != index) {
-              setState(() => _selectedIndex = index);
-            }
-          },
-          children: const [
-            _KeepAlivePage(child: CourseTableView()),
-            _KeepAlivePage(child: FunctionPage()),
-            _KeepAlivePage(child: UserPage()),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final itemWidth = constraints.maxWidth / 3;
-
-              return Stack(
-                children: [
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 280),
-                    curve: Curves.easeOutCubic,
-                    left: itemWidth * _selectedIndex,
-                    top: 0,
-                    bottom: 0,
-                    width: itemWidth,
-                    child: IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      _FloatingNavigationItem(
-                        icon: Ionicons.calendar_outline,
-                        selectedIcon: Ionicons.calendar,
-                        label: '课表',
-                        selected: _selectedIndex == 0,
-                        onTap: () => _selectPage(logic, 0),
-                      ),
-                      _FloatingNavigationItem(
-                        icon: Ionicons.apps_outline,
-                        selectedIcon: Ionicons.apps,
-                        label: '功能',
-                        selected: _selectedIndex == 1,
-                        onTap: () => _selectPage(logic, 1),
-                      ),
-                      _FloatingNavigationItem(
-                        icon: Ionicons.person_outline,
-                        selectedIcon: Ionicons.person,
-                        label: '我',
-                        selected: _selectedIndex == 2,
-                        onTap: () => _selectPage(logic, 2),
-                      ),
-                    ],
+            motion: const BottomBarMotion.cupertino(
+              preset: BottomBarCupertinoMotion.snappy,
+              duration: Duration(milliseconds: 420),
+              slideStart: Offset(0, 2),
+            ),
+            scrollBehavior: const BottomBarScrollBehavior(
+              hideOnScroll: true,
+              showAtStart: true,
+              deltaThreshold: 10,
+            ),
+            showIcon: false,
+            theme: BottomBarThemeData(
+              barDecoration: BoxDecoration(
+                color: colorScheme.surfaceContainer.withValues(alpha: 0.96),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.shadow.withValues(alpha: 0.16),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
                   ),
                 ],
-              );
-            },
+              ),
+            ),
+            body: PageView(
+              physics: const NeverScrollableScrollPhysics(),
+              controller: logic.homePageController,
+              onPageChanged: (index) {
+                if (_selectedIndex != index) {
+                  setState(() => _selectedIndex = index);
+                }
+              },
+              children: const [
+                _KeepAlivePage(child: CourseTableView()),
+                _KeepAlivePage(child: FunctionPage()),
+                _KeepAlivePage(child: UserPage()),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final itemWidth = constraints.maxWidth / 3;
+
+                  return Stack(
+                    children: [
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOutCubic,
+                        left: itemWidth * _selectedIndex,
+                        top: 0,
+                        bottom: 0,
+                        width: itemWidth,
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          _FloatingNavigationItem(
+                            icon: Ionicons.calendar_outline,
+                            selectedIcon: Ionicons.calendar,
+                            label: '课表',
+                            selected: _selectedIndex == 0,
+                            onTap: () => _selectPage(logic, 0),
+                          ),
+                          _FloatingNavigationItem(
+                            icon: Ionicons.apps_outline,
+                            selectedIcon: Ionicons.apps,
+                            label: '功能',
+                            selected: _selectedIndex == 1,
+                            onTap: () => _selectPage(logic, 1),
+                          ),
+                          _FloatingNavigationItem(
+                            icon: Ionicons.person_outline,
+                            selectedIcon: Ionicons.person,
+                            label: '我',
+                            selected: _selectedIndex == 2,
+                            onTap: () => _selectPage(logic, 2),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
+  }
+
+  /// 课表页的整页背景层。
+  ///
+  /// 铺在 `PageView` 之下，因此会自然延伸到状态栏区域与悬浮底栏下方；
+  /// 只订阅背景设置，拖动滑杆时不会重建三个标签页。
+  Widget _buildCourseTableBackground(ColorScheme backgroundScheme) {
+    return Obx(() {
+      // 必须先读取：切到别的标签时本层会整体消失，若不订阅，新创建的 Obx
+      // 会因为「没有读到任何可观察变量」而报 GetX 的 improper use。
+      final style = CourseTableStyleController.instance.style.value;
+      if (_selectedIndex != 0) return const SizedBox.shrink();
+      if (!style.hasCustomBackground) return const SizedBox.shrink();
+      return CourseTableBackground(style: style, scheme: backgroundScheme);
+    });
   }
 
   /// 底部标签栏的发丝描边。
@@ -331,7 +389,11 @@ class _HomeviewPageState extends State<HomeviewPage>
   }
 
   /// 液态玻璃首页：内容层保持原样，只叠加悬浮的功能层。
-  Widget _buildGlassShell(BuildContext context, HomeviewLogic logic) {
+  Widget _buildGlassShell(
+    BuildContext context,
+    HomeviewLogic logic,
+    ColorScheme backgroundScheme,
+  ) {
     final theme = Theme.of(context);
     final glass = context.glassTheme;
     final tabBarWidth = math.min(MediaQuery.sizeOf(context).width - 48, 320.0);
@@ -342,6 +404,7 @@ class _HomeviewPageState extends State<HomeviewPage>
         onNotification: _handleScroll,
         child: Stack(
           children: [
+            _buildCourseTableBackground(backgroundScheme),
             PageView(
               physics: const NeverScrollableScrollPhysics(),
               controller: logic.homePageController,
