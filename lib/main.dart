@@ -10,6 +10,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/pages/score/jumpToScorePage.dart';
 import 'package:superhut/welcomepage/view.dart';
+import 'home/coursetable/style/course_table_style_controller.dart';
 import 'home/homeview/view.dart';
 import 'pages/drink/view/view.dart';
 import 'pages/water/view.dart';
@@ -70,6 +71,11 @@ class _MyAppState extends State<MyApp> {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   final ThemeController themeController = Get.put(ThemeController());
 
+  /// 课表外观（背景 / 课程块材质）与主题并列注册，供课表页与设置页共享。
+  final CourseTableStyleController courseStyleController = Get.put(
+    CourseTableStyleController(),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -120,6 +126,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> _checkFirstOpen() async {
     final prefs = await SharedPreferences.getInstance();
     await themeController.load();
+    await courseStyleController.load();
     // await prefs.setBool('isFirstOpen', true);
     _isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
     if (_isFirstOpen) {
