@@ -39,6 +39,10 @@ void main() {
     for (final preset in AppThemePreset.values) {
       expect(find.text(preset.label), findsWidgets);
     }
+
+    // 液态玻璃行：测试环境不支持玻璃，应说明原因并给出普通开关。
+    expect(find.text('液态玻璃外观'), findsOneWidget);
+    expect(find.text('当前平台不支持液态玻璃'), findsOneWidget);
   });
 
   testWidgets('selecting a preset updates controller immediately', (

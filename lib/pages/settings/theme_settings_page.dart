@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
 import '../../theme/app_theme.dart';
+import '../../theme/glass/glass_scaffold.dart';
+import '../../theme/glass/glass_theme.dart';
 import '../../theme/theme_controller.dart';
 
 class ThemeSettingsPage extends StatelessWidget {
@@ -10,13 +13,20 @@ class ThemeSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ThemeController>();
-    return Scaffold(
-      appBar: AppBar(title: const Text('外观与主题')),
+    final glass = context.glassTheme;
+    return GlassScaffold(
+      title: '外观与主题',
       body: Obx(() {
         final scheme = Theme.of(context).colorScheme;
         final dynamicAvailable = controller.dynamicColorAvailable;
+        final glassSupported = controller.liquidGlassSupported;
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8 + glassTopInset(context),
+            16,
+            32,
+          ),
           children: [
             Card.filled(
               color: scheme.primaryContainer,
@@ -55,6 +65,33 @@ class ThemeSettingsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+            Text('液态玻璃', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Card.outlined(
+              child: ListTile(
+                leading: const Icon(Icons.blur_on_outlined),
+                title: const Text('液态玻璃外观'),
+                subtitle: Text(
+                  !glassSupported
+                      ? '当前平台不支持液态玻璃'
+                      : controller.useLiquidGlass.value
+                      ? '导航栏、标题栏与弹层使用悬浮玻璃'
+                      : '已回退到 Material 3 外观',
+                ),
+                trailing: _GlassToggle(
+                  enabled: glass.enabled,
+                  value: controller.useLiquidGlass.value,
+                  onChanged: glassSupported ? controller.setLiquidGlass : null,
+                ),
+                onTap:
+                    glassSupported
+                        ? () => controller.setLiquidGlass(
+                          !controller.useLiquidGlass.value,
+                        )
+                        : null,
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(
               'Material You',
               style: Theme.of(context).textTheme.titleMedium,
@@ -76,6 +113,8 @@ class ThemeSettingsPage extends StatelessWidget {
             const SizedBox(height: 24),
             Text('明暗模式', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
+            // 内容层表单控件：这里跟随 Material 3，不用玻璃分段；
+            // 玻璃分段只服务悬浮功能层（如课表日/周切换）。
             SegmentedButton<ThemeMode>(
               showSelectedIcon: false,
               segments: const [
@@ -188,6 +227,34 @@ class _ColorDot extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+/// 「液态玻璃外观」的开关：玻璃开启时是玻璃旋钮，回退后是普通 M3 开关。
+class _GlassToggle extends StatelessWidget {
+  const _GlassToggle({
+    required this.enabled,
+    required this.value,
+    this.onChanged,
+  });
+
+  final bool enabled;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled || onChanged == null) {
+      return Switch(value: value, onChanged: onChanged);
+    }
+    return LiquidGlassSwitch(
+      value: value,
+      onChanged: onChanged!,
+      activeColor: Theme.of(context).colorScheme.primary,
+      // 布局足迹就是轨道本身（默认 63×28），右缘与 M3 开关对齐；
+      // 旋钮膨胀约 10px 仍在 Card 的 16px 内边距内，不会被裁，
+      // 因此不需要 reserveSwellRoom（它会让轨道整体偏左）。
     );
   }
 }

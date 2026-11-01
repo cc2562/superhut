@@ -2,6 +2,7 @@ import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/freeroom/room.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 
 import 'buildingBridge.dart';
 
@@ -22,15 +23,15 @@ class _BuildingPageState extends State<BuildingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
+      title: '选择教学楼',
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(title: const Text('选择教学楼')),
       body: EnhancedFutureBuilder(
         future: GetBuilding(),
         rememberFutureResult: true,
         whenDone: (data) {
           return Container(
-            margin: EdgeInsets.only(left: 10, right: 10),
+            margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
             child: ListView.builder(
               itemCount: data.length,
               itemBuilder: (context, index) {

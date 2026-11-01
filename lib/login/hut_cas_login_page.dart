@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 import 'package:superhut/utils/token.dart';
 
@@ -131,8 +132,10 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('HUT统一认证'), leading: SizedBox()),
+      return GlassScaffold(
+        title: 'HUT统一认证',
+        showBackButton: false,
+        insetBody: true,
         body: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -147,8 +150,10 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
     }
 
     if (_errorMessage != null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('HUT统一认证'), leading: SizedBox()),
+      return GlassScaffold(
+        title: 'HUT统一认证',
+        showBackButton: false,
+        insetBody: true,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

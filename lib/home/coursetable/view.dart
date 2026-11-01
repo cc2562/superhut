@@ -8,6 +8,9 @@ import 'package:intl/intl.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../theme/glass/glass_menu.dart';
+import '../../theme/glass/glass_overlays.dart';
+import '../../theme/glass/glass_segmented.dart';
 import '../../utils/course/coursemain.dart';
 import '../../utils/course/class_time_table.dart';
 import '../../widget_refresh_service.dart';
@@ -62,6 +65,9 @@ class _CourseTableViewState extends State<CourseTableView> {
   DateTime _now = DateTime.now();
   Timer? _clockTimer;
   late final Future<void> _initializationFuture;
+
+  /// 左上角「第 X 周」区域的锚点，用于定位玻璃菜单。
+  final GlobalKey _weekSelectorKey = GlobalKey();
 
   /*
    * 课程数据存储器
@@ -122,6 +128,26 @@ class _CourseTableViewState extends State<CourseTableView> {
    */
   DateTime _getStartOfWeek(DateTime date) {
     return date.subtract(Duration(days: date.weekday - 1));
+  }
+
+  /// 打开「回到当前周 / 回到今天」玻璃菜单，锚定在左上角周数区域下方。
+  Future<void> _showDateMenu(BuildContext context) async {
+    final box = _weekSelectorKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    final anchor = box.localToGlobal(Offset.zero) & box.size;
+    final selected = await showGlassMenu<String>(
+      context: context,
+      anchor: anchor,
+      items: [
+        GlassMenuItem(
+          value: 'current',
+          label:
+              _viewMode == CourseTableViewMode.day ? '回到今天' : '回到当前周',
+          icon: Ionicons.locate_outline,
+        ),
+      ],
+    );
+    if (selected == 'current' && mounted) _backToRealWeek();
   }
 
   void _backToRealWeek() {
@@ -248,9 +274,24 @@ class _CourseTableViewState extends State<CourseTableView> {
    */
   Color _getCourseColor(String seed) {
     final hue = seed.hashCode.abs() % 360;
-    final base = HSLColor.fromAHSL(1, hue.toDouble(), 0.55, 0.55).toColor();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = HSLColor.fromAHSL(
+      1,
+      hue.toDouble(),
+      0.62,
+      // 深色主题里把亮度抬高一点，避免色块在深背景上发闷。
+      isDark ? 0.58 : 0.52,
+    ).toColor();
     return base.harmonizeWith(Theme.of(context).colorScheme.primary);
   }
+
+  /*
+   * 课程块整块铺满课程色后，按背景亮度选择深字或白字，保证对比度。
+   */
+  Color _onCourse(Color background) =>
+      background.computeLuminance() > 0.45
+          ? const Color(0xFF1B1B1F)
+          : Colors.white;
 
   /*
    * 构建单日课程时间表布局
@@ -317,15 +358,15 @@ class _CourseTableViewState extends State<CourseTableView> {
       marginT = 0;
     }
 
-    final scheme = Theme.of(context).colorScheme;
     final accent = _getCourseColor(courses.first.name);
+    final onAccent = _onCourse(accent);
+    final onAccentMuted = onAccent.withValues(alpha: 0.82);
     return Container(
       alignment: Alignment.topLeft,
       height: 60 * courses[0].duration.toDouble() + marginTB,
       decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: accent, width: 3)),
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(6),
+        color: accent,
+        borderRadius: BorderRadius.circular(8),
       ),
       margin: EdgeInsets.fromLTRB(1, marginT, 1, 1),
       padding: const EdgeInsets.all(2),
@@ -335,6 +376,7 @@ class _CourseTableViewState extends State<CourseTableView> {
             courses.map((course) {
               return Expanded(
                 child: InkWell(
+                  borderRadius: BorderRadius.circular(6),
                   onTap: () => _showCourseDetails(course),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,7 +384,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                       Text(
                         course.name,
                         style: TextStyle(
-                          color: scheme.onSurface,
+                          color: onAccent,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -353,7 +395,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                       Text(
                         course.location,
                         style: TextStyle(
-                          color: scheme.onSurfaceVariant,
+                          color: onAccentMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.normal,
                         ),
@@ -364,7 +406,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                       Text(
                         course.teacherName,
                         style: TextStyle(
-                          color: scheme.onSurfaceVariant,
+                          color: onAccentMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.normal,
                         ),
@@ -394,20 +436,21 @@ class _CourseTableViewState extends State<CourseTableView> {
     if (course.startSection == 1) {
       marginT = 0;
     }
-    final scheme = Theme.of(context).colorScheme;
     final accent = _getCourseColor(course.name);
+    final onAccent = _onCourse(accent);
+    final onAccentMuted = onAccent.withValues(alpha: 0.82);
 
     return Container(
       alignment: Alignment.topLeft,
       height: 60 * course.duration.toDouble() + marginTB,
       decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: accent, width: 3)),
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(6),
+        color: accent,
+        borderRadius: BorderRadius.circular(8),
       ),
       margin: EdgeInsets.fromLTRB(1, marginT, 1, 1),
       padding: const EdgeInsets.all(2),
       child: InkWell(
+        borderRadius: BorderRadius.circular(6),
         onTap: () => _showCourseDetails(course),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,7 +459,7 @@ class _CourseTableViewState extends State<CourseTableView> {
               child: Text(
                 course.name,
                 style: TextStyle(
-                  color: scheme.onSurface,
+                  color: onAccent,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -428,7 +471,7 @@ class _CourseTableViewState extends State<CourseTableView> {
             Text(
               course.location,
               style: TextStyle(
-                color: scheme.onSurfaceVariant,
+                color: onAccentMuted,
                 fontSize: 10,
                 fontWeight: FontWeight.normal,
               ),
@@ -437,7 +480,7 @@ class _CourseTableViewState extends State<CourseTableView> {
             Text(
               course.teacherName,
               style: TextStyle(
-                color: scheme.onSurfaceVariant,
+                color: onAccentMuted,
                 fontSize: 10,
                 fontWeight: FontWeight.normal,
               ),
@@ -489,19 +532,13 @@ class _CourseTableViewState extends State<CourseTableView> {
   }
 
   void _showCourseDetails(Course course) {
-    showModalBottomSheet<void>(
+    showGlassDraggableSheet(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder:
-          (context) => SafeArea(
-            child: DraggableScrollableSheet(
-              expand: false,
-              initialChildSize: course.isExp ? 0.62 : 0.52,
-              minChildSize: 0.35,
-              maxChildSize: 0.85,
-              builder:
-                  (context, controller) => ListView(
+      initialChildSize: course.isExp ? 0.62 : 0.52,
+      minChildSize: 0.35,
+      maxChildSize: 0.85,
+      bodyBuilder:
+          (context, controller) => ListView(
                     controller: controller,
                     padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
                     children: [
@@ -552,8 +589,6 @@ class _CourseTableViewState extends State<CourseTableView> {
                         ),
                     ],
                   ),
-            ),
-          ),
     );
   }
 
@@ -650,8 +685,9 @@ class _CourseTableViewState extends State<CourseTableView> {
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final course = courses[index];
-        final scheme = Theme.of(context).colorScheme;
         final courseColor = _getCourseColor(course.name);
+        final onCourse = _onCourse(courseColor);
+        final onCourseMuted = onCourse.withValues(alpha: 0.82);
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -683,50 +719,38 @@ class _CourseTableViewState extends State<CourseTableView> {
             Expanded(
               child: Card.filled(
                 margin: EdgeInsets.zero,
-                color: scheme.surfaceContainerHigh,
+                color: courseColor,
                 child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
                   onTap: () => _showCourseDetails(course),
-                  child: IntrinsicHeight(
-                    child: Row(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(width: 4, color: courseColor),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  course.name,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium?.copyWith(
-                                    color: scheme.onSurface,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  course.location.isEmpty
-                                      ? '地点待定'
-                                      : course.location,
-                                  style: TextStyle(
-                                    color: scheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                if (course.teacherName.isNotEmpty) ...[
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    course.teacherName,
-                                    style: TextStyle(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
+                        Text(
+                          course.name,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
+                            color: onCourse,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          course.location.isEmpty
+                              ? '地点待定'
+                              : course.location,
+                          style: TextStyle(color: onCourseMuted),
+                        ),
+                        if (course.teacherName.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            course.teacherName,
+                            style: TextStyle(color: onCourseMuted),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -867,62 +891,65 @@ class _CourseTableViewState extends State<CourseTableView> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: PopupMenuButton<String>(
-                            tooltip: '日期选项',
-                            position: PopupMenuPosition.under,
-                            onSelected: (_) => _backToRealWeek(),
-                            itemBuilder:
-                                (_) => [
-                                  PopupMenuItem(
-                                    value: 'current',
-                                    child: Text(
-                                      _viewMode == CourseTableViewMode.day
-                                          ? '回到今天'
-                                          : '回到当前周',
-                                    ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: InkWell(
+                                key: _weekSelectorKey,
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => _showDateMenu(context),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
                                   ),
-                                ],
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '第$_currentWeek周',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  headerDateText,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodySmall?.copyWith(
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '第$_currentWeek周',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        headerDateText,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                        SegmentedButton<CourseTableViewMode>(
-                          showSelectedIcon: false,
+                        GlassSegmented<CourseTableViewMode>(
                           segments: const [
-                            ButtonSegment(
+                            GlassSegment(
                               value: CourseTableViewMode.week,
-                              label: Text('周'),
+                              label: '周',
                             ),
-                            ButtonSegment(
+                            GlassSegment(
                               value: CourseTableViewMode.day,
-                              label: Text('日'),
+                              label: '日',
                             ),
                           ],
-                          selected: {_viewMode},
-                          onSelectionChanged:
-                              (selection) => _setViewMode(selection.first),
+                          selected: _viewMode,
+                          onChanged: _setViewMode,
                         ),
                       ],
                     ),
@@ -978,10 +1005,10 @@ class _CourseTableViewState extends State<CourseTableView> {
     List stu = data['studentList'] ?? [];
 
     if (!mounted) return;
-    showModalBottomSheet<void>(
+    showGlassSheet<void>(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
+      padding: EdgeInsets.zero,
       builder:
           (context) => SafeArea(
             child: SizedBox(

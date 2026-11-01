@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:dio/dio.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/home/Functionpage/view.dart';
@@ -13,6 +16,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../pages/Electricitybill/electricityApi.dart';
 import '../../pages/Electricitybill/electricityPage.dart';
+import '../../theme/glass/glass_overlays.dart';
+import '../../theme/glass/glass_theme.dart';
+import '../../theme/glass/glass_top_bar.dart';
 import 'logic.dart';
 
 class HomeviewPage extends StatefulWidget {
@@ -31,6 +37,22 @@ class _HomeviewPageState extends State<HomeviewPage>
   bool _isForcedUpdate = false;
   String _downloadUrl = '';
   String _currentVersion = '0.0.1'; // 默认版本号
+
+  /// 顶部标题栏在滚动后显示的文字。
+  static const List<String> _tabTitles = ['课表', '功能', '我'];
+
+  /// 顶栏标题是否浮现（仅在布尔翻转时更新，避免滚动时重建整页）。
+  final ValueNotifier<bool> _revealed = ValueNotifier<bool>(false);
+
+  /// 底部标签栏是否随下滚收起。
+  final ValueNotifier<bool> _tabBarHidden = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _revealed.dispose();
+    _tabBarHidden.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -73,32 +95,29 @@ class _HomeviewPageState extends State<HomeviewPage>
   }
 
   void _showAlert(String showDescription) {
-    showDialog(
+    showGlassDialog(
       context: context,
       barrierDismissible: true,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('电费达到预警值'),
-          content: Text(showDescription),
-          actions: <Widget>[
-            TextButton(
-              child: Text('我知道了'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('立即充值'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ElectricityPage()),
-                );
-              },
-            ),
-          ],
-        );
-      },
+      title: const Text('电费达到预警值'),
+      content: Text(showDescription),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('我知道了'),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        TextButton(
+          child: const Text('立即充值'),
+          onPressed: () {
+            Navigator.of(context).pop();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => ElectricityPage()),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -128,33 +147,29 @@ class _HomeviewPageState extends State<HomeviewPage>
   }
 
   void _showUpdateDialog() {
-    showDialog(
+    showGlassDialog(
       context: context,
       barrierDismissible: !_isForcedUpdate,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('新版本可用: $_latestVersion'),
-          content: Text(_updateDescription),
-          actions: <Widget>[
-            if (!_isForcedUpdate)
-              TextButton(
-                child: Text('稍后更新'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            TextButton(
-              child: Text('立即更新'),
-              onPressed: () {
-                launchUrl(Uri.parse(_downloadUrl));
-                if (_isForcedUpdate) {
-                  SystemNavigator.pop();
-                }
-              },
-            ),
-          ],
-        );
-      },
+      title: Text('新版本可用: $_latestVersion'),
+      content: Text(_updateDescription),
+      actions: <Widget>[
+        if (!_isForcedUpdate)
+          TextButton(
+            child: const Text('稍后更新'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        TextButton(
+          child: const Text('立即更新'),
+          onPressed: () {
+            launchUrl(Uri.parse(_downloadUrl));
+            if (_isForcedUpdate) {
+              SystemNavigator.pop();
+            }
+          },
+        ),
+      ],
     );
   }
 
@@ -162,6 +177,14 @@ class _HomeviewPageState extends State<HomeviewPage>
   Widget build(BuildContext context) {
     super.build(context);
     final HomeviewLogic logic = Get.put(HomeviewLogic());
+    if (context.glassEnabled) {
+      return _buildGlassShell(context, logic);
+    }
+    return _buildMaterialShell(context, logic);
+  }
+
+  /// 液态玻璃关闭或平台不支持时，完整保留原有 Material 3 外观。
+  Widget _buildMaterialShell(BuildContext context, HomeviewLogic logic) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -270,12 +293,125 @@ class _HomeviewPageState extends State<HomeviewPage>
     );
   }
 
+  /// 液态玻璃首页：内容层保持原样，只叠加悬浮的功能层。
+  Widget _buildGlassShell(BuildContext context, HomeviewLogic logic) {
+    final theme = Theme.of(context);
+    final glass = context.glassTheme;
+    final tabBarWidth = math.min(MediaQuery.sizeOf(context).width - 48, 320.0);
+
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _handleScroll,
+        child: Stack(
+          children: [
+            PageView(
+              physics: const NeverScrollableScrollPhysics(),
+              controller: logic.homePageController,
+              onPageChanged: (index) {
+                if (_selectedIndex != index) {
+                  setState(() => _selectedIndex = index);
+                  _resetOverlayState();
+                }
+              },
+              children: const [
+                _KeepAlivePage(child: CourseTableView()),
+                _KeepAlivePage(child: FunctionPage()),
+                _KeepAlivePage(child: UserPage()),
+              ],
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: GlassTopBar(
+                title: _tabTitles[_selectedIndex],
+                revealed: _revealed,
+              ),
+            ),
+            ValueListenableBuilder<bool>(
+              valueListenable: _tabBarHidden,
+              builder: (context, hidden, child) {
+                return IgnorePointer(
+                  ignoring: hidden,
+                  child: AnimatedSlide(
+                    offset: hidden ? const Offset(0, 0.2) : Offset.zero,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                    child: AnimatedOpacity(
+                      opacity: hidden ? 0 : 1,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      child: child,
+                    ),
+                  ),
+                );
+              },
+              child: LiquidGlassTabBar(
+                items: const [
+                  LiquidGlassTabBarItem(
+                    icon: Ionicons.calendar_outline,
+                    selectedIcon: Ionicons.calendar,
+                  ),
+                  LiquidGlassTabBarItem(
+                    icon: Ionicons.apps_outline,
+                    selectedIcon: Ionicons.apps,
+                  ),
+                  LiquidGlassTabBarItem(
+                    icon: Ionicons.person_outline,
+                    selectedIcon: Ionicons.person,
+                  ),
+                ],
+                selectedIndex: _selectedIndex,
+                onChanged: (index) => _selectPage(logic, index),
+                style: glass.tabBarStyle,
+                itemStyle: glass.tabItemStyleOf(theme.colorScheme),
+                pillStyle: glass.tabPillStyle,
+                width: tabBarWidth,
+                height: 64,
+                margin: const EdgeInsets.only(bottom: 24),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 纵向滚动驱动：标题在离开顶部后浮现；底部标签栏下滚收起、上滚浮现。
+  bool _handleScroll(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical) return false;
+    final pixels = notification.metrics.pixels;
+
+    if (!_revealed.value && pixels > 12) {
+      _revealed.value = true;
+    } else if (_revealed.value && pixels < 6) {
+      _revealed.value = false;
+    }
+
+    if (notification is ScrollUpdateNotification) {
+      final delta = notification.scrollDelta ?? 0;
+      if (delta > 2 && pixels > 48 && !_tabBarHidden.value) {
+        _tabBarHidden.value = true;
+      } else if (delta < -2 && _tabBarHidden.value) {
+        _tabBarHidden.value = false;
+      }
+    }
+    return false;
+  }
+
+  void _resetOverlayState() {
+    _revealed.value = false;
+    _tabBarHidden.value = false;
+  }
+
   void _selectPage(HomeviewLogic logic, int index) {
     if (_selectedIndex == index) {
       return;
     }
 
     setState(() => _selectedIndex = index);
+    _resetOverlayState();
     logic.homePageController.jumpToPage(index);
   }
 

@@ -47,3 +47,5 @@ app.*.map.json
 /android/app/key/
 /.vscode/
 /.codebuddy/
+# Widget Preview related
+.widget_preview/

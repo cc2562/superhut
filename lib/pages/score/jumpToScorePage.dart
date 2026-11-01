@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/score/scorepage.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 
 import '../../utils/token.dart';
 
@@ -28,8 +29,8 @@ class _JumpToScorePageState extends State<JumpToScorePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("正在跳转")),
+    return GlassScaffold(
+      title: '正在跳转',
       body: Center(
         child: LoadingAnimationWidget.inkDrop(
           color: Theme.of(context).primaryColor,

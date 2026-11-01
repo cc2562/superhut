@@ -4,6 +4,7 @@ import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/Commentary/CommentaryApi.dart';
 import 'package:superhut/pages/Commentary/CommentaryPage2.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 
 class commentaryPage1 extends StatefulWidget {
   const commentaryPage1({super.key});
@@ -23,19 +24,15 @@ class _commentaryPage1State extends State<commentaryPage1> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
+      title: '学生教评',
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text('学生教评'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
       body: EnhancedFutureBuilder(
         future: getBatches(),
         rememberFutureResult: false,
         whenDone: (List batchesList) {
           return Container(
-            margin: EdgeInsets.only(left: 10, right: 10),
+            margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
             child: ListView.builder(
               itemCount: batchesList.length,
               itemBuilder: (BuildContext context, int index) {
