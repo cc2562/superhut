@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../bridge/getCoursePage.dart';
+import '../theme/glass/glass_scaffold.dart';
 import '../utils/token.dart';
 
 class TokenDisplayPage extends StatefulWidget {
@@ -32,8 +33,9 @@ class _TokenDisplayPageState extends State<TokenDisplayPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Token信息')),
+    return GlassScaffold(
+      title: 'Token信息',
+      insetBody: true,
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(

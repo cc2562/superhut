@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
+import '../theme/glass/glass_scaffold.dart';
+
 bool isHutCasAuthenticationPage(String url) {
   final uri = Uri.tryParse(url);
   if (uri == null ||
@@ -152,22 +154,12 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('HUT统一认证'),
-        leading: SizedBox(),
-        //  leading: IconButton(
-        //    icon: const Icon(Icons.arrow_back),
-        //    onPressed: () => Navigator.of(context).pop(),
-        //  ),
-        //  actions: [
-        //    if (_webViewController != null)
-        //      IconButton(
-        //        icon: const Icon(Icons.refresh),
-        //        onPressed: () => _webViewController!.reload(),
-        //      ),
-        //  ],
-      ),
+    return GlassScaffold(
+      title: 'HUT统一认证',
+      // 认证流程内不允许返回，避免中断登录。
+      showBackButton: false,
+      // 网页内容不能滚到玻璃下方，整体下移。
+      insetBody: true,
       body: Stack(
         children: [
           InAppWebView(

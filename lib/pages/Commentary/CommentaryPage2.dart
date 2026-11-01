@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:superhut/theme/app_theme.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/Commentary/CommentaryPage3.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 
 import 'CommentaryApi.dart';
 
@@ -37,19 +38,15 @@ class _commentaryPage2State extends State<commentaryPage2> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
+      title: '学生教评',
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text('学生教评'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
       body: EnhancedFutureBuilder(
         future: getList(),
         rememberFutureResult: false,
         whenDone: (List theCommentaryList) {
           return Container(
-            margin: EdgeInsets.only(left: 10, right: 10),
+            margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
             child: ListView.builder(
               itemCount: theCommentaryList.length,
               itemBuilder: (BuildContext context, int index) {

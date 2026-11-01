@@ -8,6 +8,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:ionicons_plus/ionicons_plus.dart'; // 导入服务包，用于震动
 import 'package:sensors_plus/sensors_plus.dart'; // 导入传感器包，用于重力感应
 
+import '../../theme/glass/glass_scaffold.dart';
+
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
 
@@ -353,20 +355,21 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
+      title: '关于',
+      // 本页内容不滚动，标题需要常驻，否则永远看不到标题。
+      alwaysShowTitle: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text("关于"),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
       body: Stack(
         children: [
           SingleChildScrollView(
             physics: NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.all(16.0),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16 + glassTopInset(context),
+              16,
+              16,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [

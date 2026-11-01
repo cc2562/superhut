@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/score/logic.dart';
+import 'package:superhut/theme/glass/glass_menu.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
+import 'package:superhut/theme/glass/glass_top_bar.dart';
 
 class ScorePage extends StatefulWidget {
   const ScorePage({super.key});
@@ -18,6 +21,41 @@ class _ScorePageState extends State<ScorePage> {
   late String zxf, zxfjd, pjjd;
   String selectedId = "all";
   bool first = true;
+
+  /// 学期选择按钮的锚点，用于定位玻璃菜单。
+  final GlobalKey _semesterMenuKey = GlobalKey();
+
+  /// 切换学期并刷新成绩（原 DropdownButton.onChanged 的逻辑）。
+  Future<void> _loadScores(String id) async {
+    setState(() => selectedId = id);
+    ShowLoadingDialog();
+    final Map scoreMap = await getScore(id == 'all' ? '' : id);
+    if (!mounted) return;
+    Navigator.of(context).pop(true);
+    setState(() {
+      scoreList = scoreMap['achievement'];
+      zxf = scoreMap['yxzxf'];
+      zxfjd = scoreMap['zxfjd'];
+      pjjd = scoreMap['pjxfjd'];
+    });
+  }
+
+  /// 顶部右上角的学期选择玻璃菜单。
+  Future<void> _showSemesterMenu(BuildContext context) async {
+    final box = _semesterMenuKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    final anchor = box.localToGlobal(Offset.zero) & box.size;
+    final selected = await showGlassMenu<String>(
+      context: context,
+      anchor: anchor,
+      items: [
+        const GlassMenuItem(value: 'all', label: '全部'),
+        for (final id in semesterId)
+          GlassMenuItem<String>(value: id.toString(), label: id.toString()),
+      ],
+    );
+    if (selected != null) await _loadScores(selected);
+  }
 
   void ShowLoadingDialog() {
     showDialog(
@@ -71,55 +109,22 @@ class _ScorePageState extends State<ScorePage> {
       future: getTimeList(),
       rememberFutureResult: true,
       whenDone: (da) {
-        return Scaffold(
+        return GlassScaffold(
+          title: '成绩查询',
           backgroundColor: Theme.of(context).colorScheme.surface,
-          appBar: AppBar(
-            title: Text("成绩查询"),
-            actions: [
-              DropdownButton(
-                onChanged: (v) async {
-                  setState(() {
-                    selectedId = v.toString();
-                  });
-                  ShowLoadingDialog();
-                  if (selectedId == "all") {
-                    Map scoreMap = await getScore("");
-                    Navigator.of(context).pop(true);
-                    setState(() {
-                      scoreList = scoreMap['achievement'];
-                      zxf = scoreMap['yxzxf'];
-                      zxfjd = scoreMap['zxfjd'];
-                      pjjd = scoreMap['pjxfjd'];
-                    });
-                  } else {
-                    Map scoreMap = await getScore(selectedId);
-                    Navigator.of(context).pop(true);
-                    setState(() {
-                      scoreList = scoreMap['achievement'];
-                      zxf = scoreMap['yxzxf'];
-                      zxfjd = scoreMap['zxfjd'];
-                      pjjd = scoreMap['pjxfjd'];
-                    });
-                  }
-                },
-                borderRadius: BorderRadius.circular(10),
-                menuWidth: 150,
-                alignment: Alignment.centerRight,
-                enableFeedback: true,
-                isExpanded: false,
-                value: selectedId,
-                underline: Container(height: 0),
-                items: [
-                  DropdownMenuItem(value: "all", child: Text("全部")),
-                  ...semesterId.map(
-                    (e) => DropdownMenuItem(value: e, child: Text(e)),
-                  ),
-                ],
+          actions: [
+            SizedBox(
+              key: _semesterMenuKey,
+              child: GlassActionButton(
+                icon: Ionicons.funnel_outline,
+                tooltip: '选择学期',
+                semanticLabel: '选择学期',
+                onPressed: () => _showSemesterMenu(context),
               ),
-            ],
-          ),
+            ),
+          ],
           body: Container(
-            margin: EdgeInsets.only(left: 10, right: 10),
+            margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
             child: ListView.builder(
               itemCount: scoreList.length + 1,
               itemBuilder: (context, index) {
@@ -247,8 +252,8 @@ class _ScorePageState extends State<ScorePage> {
           ),
         );
       },
-      whenNotDone: Scaffold(
-        appBar: AppBar(title: Text("成绩查询")),
+      whenNotDone: GlassScaffold(
+        title: '成绩查询',
         body: Center(
           child: LoadingAnimationWidget.inkDrop(
             color: Theme.of(context).primaryColor,

@@ -6,6 +6,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../theme/glass/glass_scaffold.dart';
 import '../../utils/hut_user_api.dart';
 import 'electricityApi.dart';
 
@@ -138,15 +139,11 @@ class _ElectricityPageState extends State<ElectricityPage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
+    return GlassScaffold(
+      title: '电费充值',
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text('电费充值'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
       body: Container(
-        padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
+        padding: EdgeInsets.fromLTRB(12, glassTopInset(context), 12, 0),
         child: ListView(
           children: [
             Container(

@@ -2,6 +2,7 @@ import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 
 class Type1Webview extends StatefulWidget {
@@ -39,8 +40,10 @@ class _Type1WebviewState extends State<Type1Webview> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("智慧工大")),
+    return GlassScaffold(
+      title: '智慧工大',
+      // 网页内容不能滚到玻璃下方，整体下移避免遮挡。
+      insetBody: true,
       body: EnhancedFutureBuilder(
         future: getDetail(),
         rememberFutureResult: true,

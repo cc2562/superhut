@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/pages/score/jumpToScorePage.dart';
@@ -35,6 +36,19 @@ Future<void> main() async {
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
     await InAppWebViewController.setWebContentsDebuggingEnabled(kDebugMode);
   }
+
+  // 预编译液态玻璃着色器：首帧即为玻璃，而不是先显示磨砂再切换。
+  // 失败时包内会自动退化为磨砂，不阻塞启动。
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS)) {
+    try {
+      await LiquidGlassShaders.ensureLoaded();
+    } catch (_) {
+      // 忽略：无 shader 支持的环境让玻璃自行降级。
+    }
+  }
+
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   runApp(const MyApp());
 }

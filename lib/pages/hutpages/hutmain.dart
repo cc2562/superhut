@@ -5,6 +5,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/hutpages/hutmainLogic.dart';
 import 'package:superhut/pages/hutpages/type1/type1webview.dart';
 import 'package:superhut/pages/hutpages/type2/type2webview.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 
 class HutMainPage extends StatefulWidget {
@@ -83,9 +84,10 @@ class _HutMainPageState extends State<HutMainPage> with WidgetsBindingObserver {
       _unfocusSearchField();
     });
 
-    return Scaffold(
+    return GlassScaffold(
+      title: '智慧工大',
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(title: Text("智慧工大"), elevation: 0),
+      insetBody: true,
       body: GestureDetector(
         // Unfocus when tapping outside of the text field
         onTap: _unfocusSearchField,
