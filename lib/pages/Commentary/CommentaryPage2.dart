@@ -46,8 +46,10 @@ class _commentaryPage2State extends State<commentaryPage2> {
         rememberFutureResult: false,
         whenDone: (List theCommentaryList) {
           return Container(
-            margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
+            margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
             child: ListView.builder(
+              // 顶部避让放进列表 padding，内容可滚到玻璃下方。
+              padding: EdgeInsets.only(top: glassTopInset(context)),
               itemCount: theCommentaryList.length,
               itemBuilder: (BuildContext context, int index) {
                 Map theCommentary = theCommentaryList[index];

@@ -17,7 +17,7 @@ class GlassTopBar extends StatelessWidget {
     required this.revealed,
     this.leading,
     this.actions = const [],
-    this.alwaysShowTitle = false,
+    this.alwaysShowTitle = true,
     this.height = 56,
     this.controlSize = 44,
     this.horizontalPadding = 12,
@@ -36,7 +36,11 @@ class GlassTopBar extends StatelessWidget {
   /// 右侧操作按钮；为 `null` 或空时不渲染玻璃组。
   final List<Widget> actions;
 
-  /// 页面不可滚动时让标题常驻。
+  /// 标题是否常驻。
+  ///
+  /// 默认 `true`——绝大多数页面（电费、成绩、设置等）的标题始终可见，用户
+  /// 随时知道自己在哪。只有聚合多功能的浏览型页面（如智慧工大）才传
+  /// `false`，改用 [revealed] 做「下滚淡入、回顶淡出」。
   final bool alwaysShowTitle;
 
   final double height;
@@ -68,11 +72,12 @@ class GlassTopBar extends StatelessWidget {
         !hasActions
             ? 0
             : actionsReservedWidth ??
-                  GlassActionGroup.widthFor(actions.length, controlSize);
+                GlassActionGroup.widthFor(actions.length, controlSize);
     final double reserveLeft = hasLeading ? controlSize + 8 : 0;
     final double reserveRight = hasActions ? actionGroupWidth + 8 : 0;
     final double titleInset =
-        horizontalPadding + (reserveLeft > reserveRight ? reserveLeft : reserveRight);
+        horizontalPadding +
+        (reserveLeft > reserveRight ? reserveLeft : reserveRight);
 
     return Padding(
       padding: EdgeInsets.only(top: topInset),
@@ -85,53 +90,7 @@ class GlassTopBar extends StatelessWidget {
               child: IgnorePointer(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: titleInset),
-                  child: Center(
-                    child: ValueListenableBuilder<bool>(
-                      valueListenable: revealed,
-                      builder: (context, isRevealed, child) {
-                        final show = alwaysShowTitle || isRevealed;
-                        return AnimatedOpacity(
-                          opacity: show ? 1 : 0,
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.easeOut,
-                          child: AnimatedSlide(
-                            offset: show ? Offset.zero : const Offset(0, 0.24),
-                            duration: const Duration(milliseconds: 220),
-                            curve: Curves.easeOut,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Semantics(
-                        header: true,
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                            color: foreground,
-                            // 标题没有玻璃托底，压在滚动内容上时用两层
-                            // 同色光晕（halo）保证可读性——不额外增加任何
-                            // 底板，符合「标题背后无玻璃」的要求。
-                            shadows: [
-                              Shadow(
-                                color: scheme.surface.withValues(alpha: 0.98),
-                                blurRadius: 14,
-                              ),
-                              Shadow(
-                                color: scheme.surface.withValues(alpha: 0.9),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: Center(child: _buildTitle(scheme, foreground)),
                 ),
               ),
             ),
@@ -157,6 +116,54 @@ class GlassTopBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  /// 标题本体：常驻时直接渲染，浏览型页面才挂上淡入动画子树。
+  Widget _buildTitle(ColorScheme scheme, Color foreground) {
+    final text = Semantics(
+      header: true,
+      child: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+          color: foreground,
+          // 标题没有玻璃托底，压在滚动内容上时用两层同色光晕（halo）
+          // 保证可读性——不额外增加任何底板，符合「标题背后无玻璃」。
+          shadows: [
+            Shadow(
+              color: scheme.surface.withValues(alpha: 0.98),
+              blurRadius: 14,
+            ),
+            Shadow(color: scheme.surface.withValues(alpha: 0.9), blurRadius: 4),
+          ],
+        ),
+      ),
+    );
+
+    if (alwaysShowTitle) return text;
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: revealed,
+      builder: (context, isRevealed, child) {
+        return AnimatedOpacity(
+          opacity: isRevealed ? 1 : 0,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          child: AnimatedSlide(
+            offset: isRevealed ? Offset.zero : const Offset(0, 0.24),
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            child: child,
+          ),
+        );
+      },
+      child: text,
     );
   }
 }
@@ -191,20 +198,32 @@ class GlassControlButton extends StatelessWidget {
     final button = SizedBox(
       width: size,
       height: size,
-      child: LiquidGlassLens(
-        style: glass.controlStyle(radius: size / 2),
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkResponse(
-            onTap: onTap,
-            radius: size / 2,
-            highlightShape: BoxShape.circle,
-            child: Center(
-              child: Icon(
-                icon,
-                size: iconSize,
-                color: color ?? scheme.onSurface,
-                semanticLabel: semanticLabel,
+      child: Container(
+        // 白色玻璃压在白底页面上时几乎看不见，补一圈发丝描边把轮廓勾出来。
+        // 只是控件自身的边界，不是内容层材质。
+        foregroundDecoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: scheme.onSurface.withValues(
+              alpha: glass.isDark ? 0.16 : 0.10,
+            ),
+          ),
+        ),
+        child: LiquidGlassLens(
+          style: glass.controlStyle(radius: size / 2),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkResponse(
+              onTap: onTap,
+              radius: size / 2,
+              highlightShape: BoxShape.circle,
+              child: Center(
+                child: Icon(
+                  icon,
+                  size: iconSize,
+                  color: color ?? scheme.onSurface,
+                  semanticLabel: semanticLabel,
+                ),
               ),
             ),
           ),
@@ -249,9 +268,7 @@ class GlassActionGroup extends StatelessWidget {
     if (count <= 1) return size;
     const spacing = 8.0;
     const horizontalPadding = 6.0;
-    return count * size +
-        (count - 1) * spacing +
-        horizontalPadding * 2;
+    return count * size + (count - 1) * spacing + horizontalPadding * 2;
   }
 
   @override
@@ -264,30 +281,39 @@ class GlassActionGroup extends StatelessWidget {
     return SizedBox(
       width: width,
       height: size,
-      child: LiquidGlassLens(
-        style: glass.controlStyle(radius: size / 2),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal:
-                flexible
-                    ? 10
-                    : (actions.length <= 1 ? 0 : horizontalPadding),
+      child: Container(
+        // 与返回键同一条发丝描边，白色玻璃压在浅色页面上才有轮廓。
+        foregroundDecoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(size / 2),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.onSurface.withValues(
+              alpha: glass.isDark ? 0.16 : 0.10,
+            ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var i = 0; i < actions.length; i++) ...[
-                if (i > 0) SizedBox(width: spacing),
-                if (flexible)
-                  Flexible(child: Center(child: actions[i]))
-                else
-                  SizedBox(
-                    width: size,
-                    height: size,
-                    child: Center(child: actions[i]),
-                  ),
+        ),
+        child: LiquidGlassLens(
+          style: glass.controlStyle(radius: size / 2),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal:
+                  flexible ? 10 : (actions.length <= 1 ? 0 : horizontalPadding),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 0; i < actions.length; i++) ...[
+                  if (i > 0) SizedBox(width: spacing),
+                  if (flexible)
+                    Flexible(child: Center(child: actions[i]))
+                  else
+                    SizedBox(
+                      width: size,
+                      height: size,
+                      child: Center(child: actions[i]),
+                    ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

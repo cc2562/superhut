@@ -357,8 +357,6 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return GlassScaffold(
       title: '关于',
-      // 本页内容不滚动，标题需要常驻，否则永远看不到标题。
-      alwaysShowTitle: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: [

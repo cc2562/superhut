@@ -59,22 +59,28 @@ Future<T?> showGlassMenu<T>({
   const gap = 6.0;
   const margin = 8.0;
   final double width = math.max(minWidth, anchor.width).toDouble();
-  final double left = anchor.left
-      .clamp(margin, math.max(margin, screen.width - width - margin))
-      .toDouble();
+  final double left =
+      anchor.left
+          .clamp(margin, math.max(margin, screen.width - width - margin))
+          .toDouble();
   // 条目数量不设上限：面板高度收敛到 maxPanelHeight 与可用空间，超出部分滚动。
   final double contentHeight = items.length * itemHeight + 12;
   final double spaceBelow = screen.height - margin - (anchor.bottom + gap);
   final double spaceAbove = anchor.top - gap - margin;
-  final bool openBelow = spaceBelow >= math.min(contentHeight, maxPanelHeight) ||
+  final bool openBelow =
+      spaceBelow >= math.min(contentHeight, maxPanelHeight) ||
       spaceBelow >= spaceAbove;
   final double panelHeight = math.min(
     contentHeight,
-    math.min(maxPanelHeight, math.max(openBelow ? spaceBelow : spaceAbove, 96.0)),
+    math.min(
+      maxPanelHeight,
+      math.max(openBelow ? spaceBelow : spaceAbove, 96.0),
+    ),
   );
-  final double top = openBelow
-      ? anchor.bottom + gap
-      : math.max(margin, anchor.top - gap - panelHeight).toDouble();
+  final double top =
+      openBelow
+          ? anchor.bottom + gap
+          : math.max(margin, anchor.top - gap - panelHeight).toDouble();
 
   return showGeneralDialog<T>(
     context: context,
@@ -115,8 +121,9 @@ Future<T?> showGlassMenu<T>({
                               icon: item.icon,
                               height: itemHeight,
                               onTap:
-                                  () =>
-                                      Navigator.of(dialogContext).pop(item.value),
+                                  () => Navigator.of(
+                                    dialogContext,
+                                  ).pop(item.value),
                             ),
                         ],
                       ),

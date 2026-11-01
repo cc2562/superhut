@@ -143,8 +143,10 @@ class _ElectricityPageState extends State<ElectricityPage> {
       title: '电费充值',
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Container(
-        padding: EdgeInsets.fromLTRB(12, glassTopInset(context), 12, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: ListView(
+          // 顶部避让放进列表 padding，内容可滚到玻璃下方。
+          padding: EdgeInsets.only(top: glassTopInset(context)),
           children: [
             Container(
               padding: EdgeInsets.all(16),

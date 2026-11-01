@@ -50,6 +50,33 @@ void main() {
     expect(selected, 'day');
   });
 
+  testWidgets('expand 版分段控件在玻璃关闭时同样回落 Material', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.fromScheme(
+          AppTheme.presetScheme(AppThemePreset.indigo, Brightness.light),
+        ),
+        home: Scaffold(
+          body: GlassSegmented<String>(
+            expand: true,
+            height: 40,
+            pillHighlight: true,
+            segments: const [
+              GlassSegment(value: 'a', label: '系统', icon: Icons.brightness_auto),
+              GlassSegment(value: 'b', label: '浅色', icon: Icons.light_mode),
+              GlassSegment(value: 'c', label: '深色', icon: Icons.dark_mode),
+            ],
+            selected: 'a',
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(SegmentedButton<String>), findsOneWidget);
+    expect(find.text('浅色'), findsOneWidget);
+  });
+
   testWidgets('玻璃关闭时 showGlassMenu 回落 Material 菜单', (tester) async {
     String? picked;
 

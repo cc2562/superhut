@@ -31,8 +31,10 @@ class _BuildingPageState extends State<BuildingPage> {
         rememberFutureResult: true,
         whenDone: (data) {
           return Container(
-            margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
+            margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
             child: ListView.builder(
+              // 顶部避让放进列表 padding，内容可滚到玻璃下方。
+              padding: EdgeInsets.only(top: glassTopInset(context)),
               itemCount: data.length,
               itemBuilder: (context, index) {
                 return Card.filled(

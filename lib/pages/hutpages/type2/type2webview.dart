@@ -4,9 +4,11 @@ import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
+import 'package:superhut/theme/glass/glass_theme.dart';
+import 'package:superhut/theme/glass/scrim_control_button.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -422,179 +424,160 @@ class _Type2WebviewState extends State<Type2Webview> {
           Navigator.of(context).pop();
         }
       },
-      child: SafeArea(
-        child: Scaffold(
-          extendBodyBehindAppBar: true,
-          // 移除AppBar，使用Stack来实现悬浮返回按钮
-          body: Stack(
-            children: [
-              // WebView占满整个屏幕
-              Positioned.fill(
-                child: EnhancedFutureBuilder(
-                  future: _initialSetupFuture,
-                  rememberFutureResult: true,
-                  whenDone: (v) {
-                    return InAppWebView(
-                      initialUrlRequest: URLRequest(
-                        url: WebUri(resultUrl),
-                        headers: headerMap, // 自定义 Header
-                      ),
-                      initialSettings: InAppWebViewSettings(
-                        javaScriptEnabled: true,
-                        geolocationEnabled: true,
-                        // 启用地理位置功能
-                        supportZoom: true,
-                        mediaPlaybackRequiresUserGesture: false,
-                        // 允许自动播放媒体
-                        allowsInlineMediaPlayback: true,
-                        useShouldOverrideUrlLoading: true,
-                        useOnLoadResource: true,
-                      ),
-                      onGeolocationPermissionsShowPrompt: (
-                        controller,
-                        origin,
-                      ) async {
-                        // 直接允许所有地理位置请求，不再弹出系统对话框
-                        return GeolocationPermissionShowPromptResponse(
-                          origin: origin,
-                          allow: true,
-                          retain: true,
-                        );
-                      },
-                      onLoadStart: (controller, url) {
-                        setState(() {
-                          _isPageLoading = true;
-                        });
-                        print('Start loading: $url');
-                      },
-                      onWebViewCreated: (controller) {
-                        _webViewController = controller;
-                      },
-                      onLoadStop: (controller, url) {
-                        setState(() {
-                          _isPageLoading = false;
-                        });
-                        _updateCanGoBackState();
-                        _removeNavigationElement();
-                        _setupAlipayLinkListener(); // 添加支付宝链接监听
-                        print('Stop loading: $url');
-                      },
-                      onUpdateVisitedHistory: (
-                        controller,
-                        url,
-                        androidIsReload,
-                      ) {
-                        _updateCanGoBackState();
-                        print('History updated: $url');
-                      },
-                      shouldOverrideUrlLoading: (
-                        controller,
-                        navigationAction,
-                      ) async {
-                        final url = navigationAction.request.url.toString();
-
-                        // 检查是否是支付宝协议链接
-                        if (url.startsWith('alipays://')) {
-                          _handleAlipayUrl(url);
-                          return NavigationActionPolicy.CANCEL;
-                        }
-
-                        return NavigationActionPolicy.ALLOW;
-                      },
-                    );
-                  },
-                  whenNotDone: Center(
-                    child: LoadingAnimationWidget.inkDrop(
-                      color: Theme.of(context).primaryColor,
-                      size: 40,
+      // 与 type1 一致：圆形玻璃返回 + 居中标题浮在网页之上，网页全屏铺底
+      // 但不为顶栏预留高度（网页自带头部，预留会出现双层标题）。
+      child: GlassScaffold(
+        // 网页自带标题栏，这里不再重复显示标题，只留一枚悬浮返回键。
+        title: '',
+        // WebView 是原生视图，玻璃采样不到网页画面，用半透明实底按钮
+        // 代替，避免渲染成一块没有折射的死灰圆片。
+        leading:
+            context.glassTheme.enabled
+                ? ScrimControlButton(
+                  icon: Icons.arrow_back_ios_new_rounded,
+                  tooltip: '返回',
+                  semanticLabel: '返回',
+                  onTap: () => Navigator.of(context).maybePop(),
+                )
+                : null,
+        body: Stack(
+          children: [
+            // WebView 占满顶栏以下的空间
+            Positioned.fill(
+              child: EnhancedFutureBuilder(
+                future: _initialSetupFuture,
+                rememberFutureResult: true,
+                whenDone: (v) {
+                  return InAppWebView(
+                    initialUrlRequest: URLRequest(
+                      url: WebUri(resultUrl),
+                      headers: headerMap, // 自定义 Header
                     ),
-                  ),
-                ),
-              ),
-
-              // 悬浮返回按钮，放在左上角，不会阻挡其他内容的点击
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Ionicons.arrow_back_circle_outline,
-                      color: Colors.white,
-                      size: 28,
+                    initialSettings: InAppWebViewSettings(
+                      javaScriptEnabled: true,
+                      geolocationEnabled: true,
+                      // 启用地理位置功能
+                      supportZoom: true,
+                      mediaPlaybackRequiresUserGesture: false,
+                      // 允许自动播放媒体
+                      allowsInlineMediaPlayback: true,
+                      useShouldOverrideUrlLoading: true,
+                      useOnLoadResource: true,
                     ),
-                    onPressed: () async {
-                      if (await _handleBackPressed()) {
-                        if (context.mounted) {
-                          Navigator.of(context).pop();
-                        }
-                      }
+                    onGeolocationPermissionsShowPrompt: (
+                      controller,
+                      origin,
+                    ) async {
+                      // 直接允许所有地理位置请求，不再弹出系统对话框
+                      return GeolocationPermissionShowPromptResponse(
+                        origin: origin,
+                        allow: true,
+                        retain: true,
+                      );
                     },
+                    onLoadStart: (controller, url) {
+                      setState(() {
+                        _isPageLoading = true;
+                      });
+                      print('Start loading: $url');
+                    },
+                    onWebViewCreated: (controller) {
+                      _webViewController = controller;
+                    },
+                    onLoadStop: (controller, url) {
+                      setState(() {
+                        _isPageLoading = false;
+                      });
+                      _updateCanGoBackState();
+                      _removeNavigationElement();
+                      _setupAlipayLinkListener(); // 添加支付宝链接监听
+                      print('Stop loading: $url');
+                    },
+                    onUpdateVisitedHistory: (controller, url, androidIsReload) {
+                      _updateCanGoBackState();
+                      print('History updated: $url');
+                    },
+                    shouldOverrideUrlLoading: (
+                      controller,
+                      navigationAction,
+                    ) async {
+                      final url = navigationAction.request.url.toString();
+
+                      // 检查是否是支付宝协议链接
+                      if (url.startsWith('alipays://')) {
+                        _handleAlipayUrl(url);
+                        return NavigationActionPolicy.CANCEL;
+                      }
+
+                      return NavigationActionPolicy.ALLOW;
+                    },
+                  );
+                },
+                whenNotDone: Center(
+                  child: LoadingAnimationWidget.inkDrop(
+                    color: Theme.of(context).primaryColor,
+                    size: 40,
                   ),
                 ),
               ),
+            ),
 
-              // 网页加载指示器
-              if (_isPageLoading)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withOpacity(0.3),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          LoadingAnimationWidget.inkDrop(
-                            color: Theme.of(context).primaryColor,
-                            size: 40,
+            // 网页加载指示器
+            if (_isPageLoading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        LoadingAnimationWidget.inkDrop(
+                          color: Theme.of(context).primaryColor,
+                          size: 40,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '加载中...',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '加载中...',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              // 权限请求指示器
-              if (_isRequestingPermission)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withOpacity(0.3),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+              ),
+            // 权限请求指示器
+            if (_isRequestingPermission)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
                           ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            '请求位置权限...',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          '请求位置权限...',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

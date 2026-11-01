@@ -76,12 +76,14 @@ class _commentaryPage3State extends State<commentaryPage3> {
         ),
       ],
       body: Container(
-        margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
+        margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
         child: EnhancedFutureBuilder(
           future: getOptionList(),
           rememberFutureResult: true,
           whenDone: (List theOptionList) {
             return ListView.builder(
+              // 顶部避让放进列表 padding，内容可滚到玻璃下方。
+              padding: EdgeInsets.only(top: glassTopInset(context)),
               itemCount: theOptionList.length + 1,
               itemBuilder: (BuildContext context, int index) {
                 // 获取当前问题的选项状态

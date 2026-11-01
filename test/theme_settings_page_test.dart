@@ -43,6 +43,30 @@ void main() {
     // 液态玻璃行：测试环境不支持玻璃，应说明原因并给出普通开关。
     expect(find.text('液态玻璃外观'), findsOneWidget);
     expect(find.text('当前平台不支持液态玻璃'), findsOneWidget);
+
+    // 玻璃通透度：关闭玻璃时回落 Material Slider，说明文案常驻。
+    expect(find.byType(Slider), findsOneWidget);
+    expect(find.textContaining('“透明” 更通透'), findsOneWidget);
+  });
+
+  testWidgets('通透度滑杆松手后提交到 controller', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = Get.put(ThemeController());
+    await controller.load();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: controller.lightTheme,
+        home: const ThemeSettingsPage(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(Slider), const Offset(160, 0));
+    await tester.pumpAndSettle();
+
+    expect(controller.glassTint.value, greaterThan(0.5));
   });
 
   testWidgets('selecting a preset updates controller immediately', (

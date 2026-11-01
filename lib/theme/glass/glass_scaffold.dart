@@ -25,7 +25,7 @@ class GlassScaffold extends StatefulWidget {
     required this.body,
     this.leading,
     this.actions = const [],
-    this.alwaysShowTitle = false,
+    this.alwaysShowTitle = true,
     this.floatingActionButton,
     this.bottomNavigationBar,
     this.backgroundColor,
@@ -45,7 +45,10 @@ class GlassScaffold extends StatefulWidget {
 
   final List<Widget> actions;
 
-  /// 页面不可滚动时让标题常驻。
+  /// 标题是否常驻，默认 `true`。
+  ///
+  /// 只有聚合多功能的浏览型页面（智慧工大）才传 `false`，让标题随滚动
+  /// 淡入淡出；其余页面标题始终可见，避免用户失去位置感。
   final bool alwaysShowTitle;
 
   final Widget? floatingActionButton;
@@ -122,12 +125,12 @@ class _GlassScaffoldState extends State<GlassScaffold> {
         widget.leading ??
         (showBack && canPop
             ? GlassControlButton(
-                icon: Icons.arrow_back_ios_new_rounded,
-                tooltip: '返回',
-                semanticLabel: '返回',
-                color: widget.foregroundColor,
-                onTap: () => Navigator.of(context).maybePop(),
-              )
+              icon: Icons.arrow_back_ios_new_rounded,
+              tooltip: '返回',
+              semanticLabel: '返回',
+              color: widget.foregroundColor,
+              onTap: () => Navigator.of(context).maybePop(),
+            )
             : null);
 
     final Widget body =
