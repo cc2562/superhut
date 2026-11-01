@@ -37,6 +37,8 @@ class CourseTableStyleController extends GetxController {
         imageBrightness: prefs.getDouble(CourseTableStyleKeys.imageBrightness),
         cardOpacity: prefs.getDouble(CourseTableStyleKeys.cardOpacity),
         material: prefs.getString(CourseTableStyleKeys.cardMaterial),
+        cardBlur: prefs.getDouble(CourseTableStyleKeys.cardBlur),
+        colorful: prefs.getBool(CourseTableStyleKeys.cardColorful),
         textColor: prefs.getString(CourseTableStyleKeys.textColor),
       );
       final path = next.backgroundImagePath;
@@ -67,6 +69,12 @@ class CourseTableStyleController extends GetxController {
 
   Future<void> setMaterial(CourseCardMaterial material) =>
       _apply(value.copyWith(material: material));
+
+  Future<void> setCardBlur(double blur) =>
+      _apply(value.copyWith(cardBlur: blur));
+
+  Future<void> setColorful(bool colorful) =>
+      _apply(value.copyWith(colorful: colorful));
 
   Future<void> setTextColor(CourseTextColorMode mode) =>
       _apply(value.copyWith(textColor: mode));

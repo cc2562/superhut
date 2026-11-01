@@ -15,7 +15,8 @@ import '../../theme/glass/glass_segmented.dart';
 import '../../theme/glass/glass_theme.dart';
 
 /// 「课表外观」设置页：背景色、背景图（不透明度 / 模糊 / 明暗）、
-/// 课程块不透明度 / 材质 / 文字颜色，全部即时生效并持久化。
+/// 课程块不透明度 / 彩色开关 / 材质 / 毛玻璃模糊 / 文字颜色，
+/// 全部即时生效并持久化。
 class CourseTableStylePage extends StatefulWidget {
   const CourseTableStylePage({super.key});
 
@@ -535,6 +536,10 @@ class _CourseTableStylePageState extends State<CourseTableStylePage> {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final bool liquidGlassHint =
         style.material == CourseCardMaterial.liquidGlass && !glass.enabled;
+    // 液态玻璃不可用时渲染层会降级成毛玻璃，模糊滑杆要跟着出现，
+    // 否则用户选完液态玻璃会发现「模糊设置没了」。
+    final bool frostedActive =
+        style.material == CourseCardMaterial.frosted || liquidGlassHint;
 
     return Card.outlined(
       clipBehavior: Clip.antiAlias,
@@ -558,15 +563,41 @@ class _CourseTableStylePageState extends State<CourseTableStylePage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 0, 0, 14),
               child: Text(
-                style.material == CourseCardMaterial.solid &&
-                        style.cardOpacity <= 0
-                    ? '不透明度为 0：课程块不显示任何底色，只保留文字'
-                    : '课程块底色不透明度',
+                _cardOpacityHint(style),
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ),
+            ListTile(
+              contentPadding: const EdgeInsets.fromLTRB(10, 0, 0, 0),
+              leading: Icon(
+                Icons.palette_outlined,
+                size: 20,
+                color: scheme.onSurfaceVariant,
+              ),
+              title: const Text('课程块彩色'),
+              subtitle: Text(
+                style.colorful
+                    ? '按课程区分颜色'
+                    : '已关闭：课程块不再区分颜色，只铺一层白/黑蒙版',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+              trailing: _GlassSwitch(
+                enabled: glass.enabled,
+                value: style.colorful,
+                onChanged:
+                    (value) =>
+                        _commit(() => _controller.setColorful(value)),
+              ),
+              onTap:
+                  () => _commit(
+                    () => _controller.setColorful(!style.colorful),
+                  ),
+            ),
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 0, 0, 8),
               child: Text(
@@ -603,6 +634,47 @@ class _CourseTableStylePageState extends State<CourseTableStylePage> {
                   ).textTheme.bodySmall?.copyWith(color: scheme.error),
                 ),
               ),
+            // 只有真的会渲染成毛玻璃时才出现：纯色 / 可用液态玻璃下没有模糊可调。
+            if (frostedActive) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 12, 0, 6),
+                child: Text(
+                  '毛玻璃模糊',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: _SliderRow(
+                  icon: Icons.blur_off,
+                  endIcon: Icons.blur_on,
+                  value: style.cardBlur,
+                  min: 0,
+                  max: CourseTableStyle.maxCardBlur,
+                  valueLabel: '${style.cardBlur.round()}',
+                  glassEnabled: glass.enabled,
+                  onLive:
+                      (value) => _preview(_style.copyWith(cardBlur: value)),
+                  onCommit:
+                      (value) => _commit(() => _controller.setCardBlur(value)),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 4, 0, 0),
+                child: Text(
+                  style.cardBlur < 0.5
+                      ? '模糊为 0：完全不雾化，课程块只是一层半透明底色'
+                      : '雾化身后背景的强度，越大越看不出底下是什么',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 16, 0, 8),
               child: Text(
@@ -683,6 +755,18 @@ class _CourseTableStylePageState extends State<CourseTableStylePage> {
   }
 
   // ── 工具 ────────────────────────────────────────────────────────────────
+
+  /// 不透明度滑杆的说明：开着彩色时是课程色浓度，关掉后变成白/黑蒙版浓度。
+  static String _cardOpacityHint(CourseTableStyle style) {
+    if (!style.colorful) {
+      return style.cardOpacity <= 0
+          ? '蒙版完全透明：课程块只剩文字，看不到任何底色'
+          : '无色蒙版浓度：拉满时课程块整体变白（深色页面变黑）';
+    }
+    return style.material == CourseCardMaterial.solid && style.cardOpacity <= 0
+        ? '不透明度为 0：课程块不显示任何底色，只保留文字'
+        : '课程块底色不透明度';
+  }
 
   static String _brightnessLabel(double value) {
     final int percent = (value * 100).round();
@@ -895,6 +979,34 @@ class _SliderRowState extends State<_SliderRow> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 设置页里的玻璃开关：玻璃开启时是玻璃旋钮，回退后是普通 M3 开关。
+///
+/// 与 `theme_settings_page.dart` 里的同名部件保持一致；那边是私有类，
+/// 这里另存一份而不是提升成公共组件，避免为一个开关牵动主题设置页。
+class _GlassSwitch extends StatelessWidget {
+  const _GlassSwitch({
+    required this.enabled,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool enabled;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled) {
+      return Switch(value: value, onChanged: onChanged);
+    }
+    return LiquidGlassSwitch(
+      value: value,
+      onChanged: onChanged,
+      activeColor: Theme.of(context).colorScheme.primary,
     );
   }
 }

@@ -19,6 +19,8 @@ void main() {
       expect(style.imageBrightness, 0.0);
       expect(style.cardOpacity, 0.82);
       expect(style.material, CourseCardMaterial.solid);
+      expect(style.cardBlur, 12.0);
+      expect(style.colorful, isTrue);
       expect(style.textColor, CourseTextColorMode.adaptive);
     });
 
@@ -52,11 +54,13 @@ void main() {
         imageBlur: 999,
         imageBrightness: -8,
         cardOpacity: -1,
+        cardBlur: 999,
       );
       expect(style.imageOpacity, 1.0);
       expect(style.imageBlur, CourseTableStyle.maxImageBlur);
       expect(style.imageBrightness, -1.0);
       expect(style.cardOpacity, 0.0);
+      expect(style.cardBlur, CourseTableStyle.maxCardBlur);
     });
 
     test('decode 对缺失与非法值容错', () {
@@ -65,11 +69,16 @@ void main() {
         textColor: 'not-a-mode',
         cardOpacity: 12,
         imageBlur: -4,
+        cardBlur: 999,
       );
       expect(decoded.material, CourseCardMaterial.solid);
       expect(decoded.textColor, CourseTextColorMode.adaptive);
       expect(decoded.cardOpacity, 1.0);
       expect(decoded.imageBlur, 0.0);
+      expect(decoded.cardBlur, CourseTableStyle.maxCardBlur);
+      // 老版本没有这两个键：彩色开启、模糊 12，观感与升级前一致。
+      expect(decoded.colorful, isTrue);
+      expect(CourseTableStyle.decode().cardBlur, 12.0);
       expect(decoded.backgroundImagePath, isNull);
     });
 
@@ -82,6 +91,8 @@ void main() {
         imageBrightness: -0.3,
         cardOpacity: 0.25,
         material: CourseCardMaterial.frosted,
+        cardBlur: 24,
+        colorful: false,
         textColor: CourseTextColorMode.white,
       );
       final Map<String, Object?> raw = style.encode();
@@ -93,6 +104,8 @@ void main() {
         imageBrightness: raw[CourseTableStyleKeys.imageBrightness] as double?,
         cardOpacity: raw[CourseTableStyleKeys.cardOpacity] as double?,
         material: raw[CourseTableStyleKeys.cardMaterial] as String?,
+        cardBlur: raw[CourseTableStyleKeys.cardBlur] as double?,
+        colorful: raw[CourseTableStyleKeys.cardColorful] as bool?,
         textColor: raw[CourseTableStyleKeys.textColor] as String?,
       );
       expect(restored, style);
@@ -154,7 +167,68 @@ void main() {
 
     test('卡片底色带上用户设定的不透明度', () {
       const CourseTableStyle style = CourseTableStyle(cardOpacity: 0.5);
-      expect(style.cardTint(accent).a, closeTo(0.5, 0.01));
+      expect(
+        style.cardTint(accent, pageEstimate: Colors.white).a,
+        closeTo(0.5, 0.01),
+      );
+    });
+  });
+
+  group('课程块彩色开关', () {
+    const Color accent = Color(0xFF1B3FA0);
+
+    test('打开彩色时基底色就是课程色', () {
+      expect(
+        CourseTableStyle.defaults.cardBaseColor(
+          accent,
+          pageEstimate: Colors.white,
+        ),
+        accent,
+      );
+    });
+
+    test('关闭彩色时按页面明暗铺白/黑蒙版，忽略课程色', () {
+      const CourseTableStyle style = CourseTableStyle(colorful: false);
+      expect(
+        style.cardBaseColor(accent, pageEstimate: Colors.white),
+        Colors.white,
+      );
+      expect(
+        style.cardBaseColor(accent, pageEstimate: Colors.black),
+        Colors.black,
+      );
+    });
+
+    test('蒙版浓度沿用不透明度，0 时完全透明', () {
+      const CourseTableStyle half = CourseTableStyle(
+        colorful: false,
+        cardOpacity: 0.5,
+      );
+      final Color tint = half.cardTint(accent, pageEstimate: Colors.white);
+      expect(tint.a, closeTo(0.5, 0.01));
+      expect(tint.computeLuminance(), closeTo(1.0, 0.01));
+
+      const CourseTableStyle clear = CourseTableStyle(
+        colorful: false,
+        cardOpacity: 0,
+      );
+      expect(
+        clear.cardTint(accent, pageEstimate: Colors.black).a,
+        closeTo(0.0, 0.001),
+      );
+    });
+
+    test('自适应文字按蒙版后的实际亮度选色', () {
+      const CourseTableStyle style = CourseTableStyle(colorful: false);
+      // 白蒙版拉满 → 深字；黑蒙版拉满 → 白字。
+      expect(
+        style.courseForeground(accent, pageEstimate: Colors.white),
+        const Color(0xFF1B1B1F),
+      );
+      expect(
+        style.courseForeground(accent, pageEstimate: Colors.black),
+        Colors.white,
+      );
     });
   });
 
@@ -223,6 +297,19 @@ void main() {
         prefs.getString(CourseTableStyleKeys.cardMaterial),
         CourseCardMaterial.liquidGlass.name,
       );
+    });
+
+    test('setColorful / setCardBlur 立即改内存并落盘', () async {
+      final controller = Get.put(CourseTableStyleController());
+      await controller.load();
+      await controller.setColorful(false);
+      await controller.setCardBlur(30);
+
+      expect(controller.value.colorful, isFalse);
+      expect(controller.value.cardBlur, 30);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool(CourseTableStyleKeys.cardColorful), isFalse);
+      expect(prefs.getDouble(CourseTableStyleKeys.cardBlur), 30);
     });
 
     test('背景图片路径失效时回落到纯色', () async {

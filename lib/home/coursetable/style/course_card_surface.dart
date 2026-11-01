@@ -34,7 +34,12 @@ class CourseCardSurface extends StatelessWidget {
     final AppGlassTheme glass = context.glassTheme;
     final BorderRadius radius = BorderRadius.circular(borderRadius);
     final double opacity = style.cardOpacity.clamp(0.0, 1.0);
-    final Color tint = accent.withValues(alpha: opacity);
+    // 底色统一由 style 计算：打开「课程块彩色」时是课程色，关闭时是无色蒙版
+    // （页面偏亮铺白、偏暗铺黑）。文字色自适应用的是同一份计算，不会两处打架。
+    final Color tint = style.cardTint(
+      accent,
+      pageEstimate: style.estimatedPageColor(scheme),
+    );
 
     // 液态玻璃没开启（或平台不支持）时降到毛玻璃，避免出现「选了但没效果」。
     final CourseCardMaterial material =
@@ -54,23 +59,31 @@ class CourseCardSurface extends StatelessWidget {
         );
 
       case CourseCardMaterial.frosted:
+        final double sigma = style.cardBlur.clamp(
+          0.0,
+          CourseTableStyle.maxCardBlur,
+        );
+        final Widget frostedBody = DecoratedBox(
+          decoration: BoxDecoration(
+            color: tint,
+            borderRadius: radius,
+            // 白玻璃压在浅色底图上也要有轮廓，与顶栏控件同一条发丝描边。
+            border: Border.all(
+              color: scheme.onSurface.withValues(
+                alpha: glass.isDark ? 0.16 : 0.10,
+              ),
+            ),
+          ),
+          child: child,
+        );
+        // sigma 为 0 时模糊没有视觉效果，直接跳过 BackdropFilter，
+        // 省掉一张离屏图层（每块课程卡各一份，周视图里一次就是十几张）。
+        if (sigma < 0.5) return frostedBody;
         return ClipRRect(
           borderRadius: radius,
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: tint,
-                borderRadius: radius,
-                // 白玻璃压在浅色底图上也要有轮廓，与顶栏控件同一条发丝描边。
-                border: Border.all(
-                  color: scheme.onSurface.withValues(
-                    alpha: glass.isDark ? 0.16 : 0.10,
-                  ),
-                ),
-              ),
-              child: child,
-            ),
+            filter: ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+            child: frostedBody,
           ),
         );
 
