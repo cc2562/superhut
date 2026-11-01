@@ -17,8 +17,9 @@ Future<T?> showGlassDialog<T>({
     return showDialog<T>(
       context: context,
       barrierDismissible: barrierDismissible,
-      builder: (context) =>
-          AlertDialog(title: title, content: content, actions: actions),
+      builder:
+          (context) =>
+              AlertDialog(title: title, content: content, actions: actions),
     );
   }
 
@@ -26,21 +27,22 @@ Future<T?> showGlassDialog<T>({
   return showLiquidGlassDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,
-    builder: (context) => LiquidGlassAlertDialog(
-      style: glass.dialogStyle,
-      title: title,
-      content: content,
-      actions: actions,
-      actionsPadding: const EdgeInsets.only(top: 4),
-      titleTextStyle: textTheme.titleLarge?.copyWith(
-        color: glass.foreground,
-        fontWeight: FontWeight.w600,
-      ),
-      contentTextStyle: textTheme.bodyMedium?.copyWith(
-        color: glass.foregroundMuted,
-        height: 1.55,
-      ),
-    ),
+    builder:
+        (context) => LiquidGlassAlertDialog(
+          style: glass.dialogStyle,
+          title: title,
+          content: content,
+          actions: actions,
+          actionsPadding: const EdgeInsets.only(top: 4),
+          titleTextStyle: textTheme.titleLarge?.copyWith(
+            color: glass.foreground,
+            fontWeight: FontWeight.w600,
+          ),
+          contentTextStyle: textTheme.bodyMedium?.copyWith(
+            color: glass.foregroundMuted,
+            height: 1.55,
+          ),
+        ),
   );
 }
 
@@ -99,15 +101,17 @@ Future<void> showGlassDraggableSheet({
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: initialChildSize,
-          minChildSize: minChildSize,
-          maxChildSize: maxChildSize,
-          builder: (context, controller) => bodyBuilder(context, controller),
-        ),
-      ),
+      builder:
+          (context) => SafeArea(
+            child: DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: initialChildSize,
+              minChildSize: minChildSize,
+              maxChildSize: maxChildSize,
+              builder:
+                  (context, controller) => bodyBuilder(context, controller),
+            ),
+          ),
     );
   }
 
@@ -117,18 +121,20 @@ Future<void> showGlassDraggableSheet({
     backgroundColor: Colors.transparent,
     elevation: 0,
     barrierColor: Colors.black26,
-    builder: (context) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: initialChildSize,
-      minChildSize: minChildSize,
-      maxChildSize: maxChildSize,
-      builder: (context, controller) => LiquidGlassSheet(
-        style: glass.sheetStyle,
-        foregroundColor: glass.foreground,
-        // 内容自带内边距，玻璃只负责表面与拖拽条。
-        padding: EdgeInsets.zero,
-        child: bodyBuilder(context, controller),
-      ),
-    ),
+    builder:
+        (context) => DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: initialChildSize,
+          minChildSize: minChildSize,
+          maxChildSize: maxChildSize,
+          builder:
+              (context, controller) => LiquidGlassSheet(
+                style: glass.sheetStyle,
+                foregroundColor: glass.foreground,
+                // 内容自带内边距，玻璃只负责表面与拖拽条。
+                padding: EdgeInsets.zero,
+                child: bodyBuilder(context, controller),
+              ),
+        ),
   );
 }

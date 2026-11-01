@@ -55,9 +55,12 @@ class _ExamSchedulePageState extends State<ExamSchedulePage> {
         return GlassScaffold(
           title: '考试安排',
           backgroundColor: Theme.of(context).colorScheme.surface,
+          // 顶部避让放进滚动容器 padding，内容才能滚到玻璃下方而不是被
+          // 截断在顶栏下沿（否则会看到一条底色带）。
           body: Container(
-            margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
+            margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
             child: ListView.builder(
+              padding: EdgeInsets.only(top: glassTopInset(context)),
               itemCount: examSchedules.length,
               itemBuilder: (context, index) {
                 if (examSchedules.isEmpty) {

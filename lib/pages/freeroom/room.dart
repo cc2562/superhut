@@ -40,12 +40,7 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
             direction: Axis.vertical,
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  10,
-                  glassTopInset(context),
-                  10,
-                  0,
-                ),
+                padding: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.center,

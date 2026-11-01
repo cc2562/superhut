@@ -123,40 +123,102 @@ class _ScorePageState extends State<ScorePage> {
               ),
             ),
           ],
-          body: Container(
-            margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
-            child: ListView.builder(
-              itemCount: scoreList.length + 1,
-              itemBuilder: (context, index) {
-                print(scoreList.length);
-                if (scoreList.isEmpty) {
-                  return Column(
-                    children: [
-                      BigTopCard(),
-                      SizedBox(height: 10),
-                      Text("当前学期没有成绩"),
-                    ],
-                  );
-                }
-                if (index == 0) {
-                  return BigTopCard();
-                } else {
-                  var ins = index - 1;
-                  return Card.filled(
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    child: Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Flex(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        direction: Axis.horizontal,
-                        children: [
-                          Expanded(
-                            flex: 10,
+          // 顶部避让放在滚动容器 padding 里（而不是 Container margin），
+          // 内容才能滚到玻璃下方，不会在顶栏下面留一条底色带。
+          body: ListView.builder(
+            padding: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
+            itemCount: scoreList.length + 1,
+            itemBuilder: (context, index) {
+              print(scoreList.length);
+              if (scoreList.isEmpty) {
+                return Column(
+                  children: [
+                    BigTopCard(),
+                    SizedBox(height: 10),
+                    Text("当前学期没有成绩"),
+                  ],
+                );
+              }
+              if (index == 0) {
+                return BigTopCard();
+              } else {
+                var ins = index - 1;
+                return Card.filled(
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  child: Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Flex(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      direction: Axis.horizontal,
+                      children: [
+                        Expanded(
+                          flex: 10,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                scoreList[ins].courseName,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  Chip(
+                                    label: Text(
+                                      scoreList[ins].courseNature,
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.surface,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 0,
+                                      horizontal: 0,
+                                    ),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Chip(
+                                    label: Text(
+                                      "绩点:${scoreList[ins].gradePoints}",
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.surface,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 0,
+                                      horizontal: 0,
+                                    ),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Chip(
+                                    label: Text(
+                                      "学分:${scoreList[ins].credit}",
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.surface,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 0,
+                                      horizontal: 0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: Padding(
+                            padding: EdgeInsets.only(right: 10),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  scoreList[ins].courseName,
+                                  scoreList[ins].fraction,
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -164,91 +226,25 @@ class _ScorePageState extends State<ScorePage> {
                                         Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    Chip(
-                                      label: Text(
-                                        scoreList[ins].courseNature,
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                      backgroundColor:
-                                          Theme.of(context).colorScheme.surface,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 0,
-                                        horizontal: 0,
-                                      ),
-                                    ),
-                                    SizedBox(width: 5),
-                                    Chip(
-                                      label: Text(
-                                        "绩点:${scoreList[ins].gradePoints}",
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                      backgroundColor:
-                                          Theme.of(context).colorScheme.surface,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 0,
-                                        horizontal: 0,
-                                      ),
-                                    ),
-                                    SizedBox(width: 5),
-                                    Chip(
-                                      label: Text(
-                                        "学分:${scoreList[ins].credit}",
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                      backgroundColor:
-                                          Theme.of(context).colorScheme.surface,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 0,
-                                        horizontal: 0,
-                                      ),
-                                    ),
-                                  ],
+                                Text(
+                                  scoreList[ins].state,
+                                  style: TextStyle(
+                                    fontSize: 12,
+
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          Expanded(
-                            flex: 3,
-                            child: Padding(
-                              padding: EdgeInsets.only(right: 10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    scoreList[ins].fraction,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Text(
-                                    scoreList[ins].state,
-                                    style: TextStyle(
-                                      fontSize: 12,
-
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  );
-                }
-              },
-            ),
+                  ),
+                );
+              }
+            },
           ),
         );
       },

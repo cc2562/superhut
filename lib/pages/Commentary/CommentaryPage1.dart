@@ -32,8 +32,10 @@ class _commentaryPage1State extends State<commentaryPage1> {
         rememberFutureResult: false,
         whenDone: (List batchesList) {
           return Container(
-            margin: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
+            margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
             child: ListView.builder(
+              // 顶部避让放进列表 padding，内容可滚到玻璃下方。
+              padding: EdgeInsets.only(top: glassTopInset(context)),
               itemCount: batchesList.length,
               itemBuilder: (BuildContext context, int index) {
                 return GestureDetector(

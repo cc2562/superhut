@@ -12,6 +12,7 @@ class ThemeController extends GetxController {
   static const _dynamicKey = 'appUseDynamicColor';
   static const _presetKey = 'appThemePreset';
   static const _glassKey = 'appUseLiquidGlass';
+  static const _glassTintKey = 'appGlassTint';
 
   final Rx<ThemeMode> themeMode = ThemeMode.system.obs;
   final RxBool useDynamicColor = true.obs;
@@ -19,6 +20,9 @@ class ThemeController extends GetxController {
 
   /// 「液态玻璃外观」开关，默认开启；仅在 Android / iOS 上生效。
   final RxBool useLiquidGlass = true.obs;
+
+  /// 玻璃通透度：`0` 最通透（透明），`1` 最有色调（更不透明），默认 `0.5`。
+  final RxDouble glassTint = 0.5.obs;
 
   ColorScheme? _dynamicLight;
   ColorScheme? _dynamicDark;
@@ -46,6 +50,7 @@ class ThemeController extends GetxController {
     useDynamicColor.value = prefs.getBool(_dynamicKey) ?? true;
     preset.value = _parsePreset(prefs.getString(_presetKey));
     useLiquidGlass.value = prefs.getBool(_glassKey) ?? true;
+    glassTint.value = (prefs.getDouble(_glassTintKey) ?? 0.5).clamp(0.0, 1.0);
   }
 
   void configureDynamicSchemes(ColorScheme? light, ColorScheme? dark) {
@@ -58,6 +63,7 @@ class ThemeController extends GetxController {
         ? _dynamicLight!
         : AppTheme.presetScheme(preset.value, Brightness.light),
     glassEnabled: glassEnabled,
+    glassTint: glassTint.value,
   );
 
   ThemeData get darkTheme => AppTheme.fromScheme(
@@ -65,6 +71,7 @@ class ThemeController extends GetxController {
         ? _dynamicDark!
         : AppTheme.presetScheme(preset.value, Brightness.dark),
     glassEnabled: glassEnabled,
+    glassTint: glassTint.value,
   );
 
   Future<void> setThemeMode(ThemeMode value) async {
@@ -84,6 +91,17 @@ class ThemeController extends GetxController {
     useLiquidGlass.value = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_glassKey, value);
+  }
+
+  /// 调整玻璃通透度（`0` 透明 ↔ `1` 色调）并持久化。
+  ///
+  /// 会触发整棵主题树重建，调用方应在手势结束时提交，而不是逐帧调用。
+  Future<void> setGlassTint(double value) async {
+    final next = value.clamp(0.0, 1.0);
+    if (glassTint.value == next) return;
+    glassTint.value = next;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_glassTintKey, next);
   }
 
   Future<void> selectPreset(AppThemePreset value) async {

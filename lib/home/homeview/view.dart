@@ -293,6 +293,43 @@ class _HomeviewPageState extends State<HomeviewPage>
     );
   }
 
+  /// 底部标签栏的发丝描边。
+  ///
+  /// 位置与 `LiquidGlassTabBar` 自身的摆放规则一致（水平居中、距底 =
+  /// 安全区内边距 + bottomMargin），只画一圈描边、不拦截点击。
+  Widget _glassTabBarHairline(
+    BuildContext context, {
+    required double width,
+    required double height,
+    required double bottomMargin,
+  }) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: bottomMargin + MediaQuery.paddingOf(context).bottom,
+          ),
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(height / 2),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(
+                    alpha: isDark ? 0.16 : 0.10,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 液态玻璃首页：内容层保持原样，只叠加悬浮的功能层。
   Widget _buildGlassShell(BuildContext context, HomeviewLogic logic) {
     final theme = Theme.of(context);
@@ -327,49 +364,66 @@ class _HomeviewPageState extends State<HomeviewPage>
               child: GlassTopBar(
                 title: _tabTitles[_selectedIndex],
                 revealed: _revealed,
+                // 三个标签页各自有大标题（第 X 周 / 功能 / 你好），
+                // 这里跟随滚动淡入即可，避免标题重复出现。
+                alwaysShowTitle: false,
               ),
             ),
-            ValueListenableBuilder<bool>(
-              valueListenable: _tabBarHidden,
-              builder: (context, hidden, child) {
-                return IgnorePointer(
-                  ignoring: hidden,
-                  child: AnimatedSlide(
-                    offset: hidden ? const Offset(0, 0.2) : Offset.zero,
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOut,
-                    child: AnimatedOpacity(
-                      opacity: hidden ? 0 : 1,
+            Positioned.fill(
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _tabBarHidden,
+                builder: (context, hidden, child) {
+                  return IgnorePointer(
+                    ignoring: hidden,
+                    child: AnimatedSlide(
+                      offset: hidden ? const Offset(0, 0.2) : Offset.zero,
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeOut,
-                      child: child,
+                      child: AnimatedOpacity(
+                        opacity: hidden ? 0 : 1,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        child: child,
+                      ),
                     ),
-                  ),
-                );
-              },
-              child: LiquidGlassTabBar(
-                items: const [
-                  LiquidGlassTabBarItem(
-                    icon: Ionicons.calendar_outline,
-                    selectedIcon: Ionicons.calendar,
-                  ),
-                  LiquidGlassTabBarItem(
-                    icon: Ionicons.apps_outline,
-                    selectedIcon: Ionicons.apps,
-                  ),
-                  LiquidGlassTabBarItem(
-                    icon: Ionicons.person_outline,
-                    selectedIcon: Ionicons.person,
-                  ),
-                ],
-                selectedIndex: _selectedIndex,
-                onChanged: (index) => _selectPage(logic, index),
-                style: glass.tabBarStyle,
-                itemStyle: glass.tabItemStyleOf(theme.colorScheme),
-                pillStyle: glass.tabPillStyle,
-                width: tabBarWidth,
-                height: 64,
-                margin: const EdgeInsets.only(bottom: 24),
+                  );
+                },
+                child: Stack(
+                  children: [
+                    LiquidGlassTabBar(
+                      items: const [
+                        LiquidGlassTabBarItem(
+                          icon: Ionicons.calendar_outline,
+                          selectedIcon: Ionicons.calendar,
+                        ),
+                        LiquidGlassTabBarItem(
+                          icon: Ionicons.apps_outline,
+                          selectedIcon: Ionicons.apps,
+                        ),
+                        LiquidGlassTabBarItem(
+                          icon: Ionicons.person_outline,
+                          selectedIcon: Ionicons.person,
+                        ),
+                      ],
+                      selectedIndex: _selectedIndex,
+                      onChanged: (index) => _selectPage(logic, index),
+                      style: glass.tabBarStyle,
+                      itemStyle: glass.tabItemStyleOf(theme.colorScheme),
+                      pillStyle: glass.tabPillStyle,
+                      width: tabBarWidth,
+                      height: 64,
+                      margin: const EdgeInsets.only(bottom: 24),
+                    ),
+                    // 与顶部圆钮同款发丝描边。底部栏自己不投影，
+                    // 靠这圈 8~16% 的描边在浅色/深色页面上勾出轮廓。
+                    _glassTabBarHairline(
+                      context,
+                      width: tabBarWidth,
+                      height: 64,
+                      bottomMargin: 24,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -166,7 +166,11 @@ abstract final class AppTheme {
     );
   }
 
-  static ThemeData fromScheme(ColorScheme scheme, {bool glassEnabled = false}) {
+  static ThemeData fromScheme(
+    ColorScheme scheme, {
+    bool glassEnabled = false,
+    double glassTint = 0.5,
+  }) {
     final isDark = scheme.brightness == Brightness.dark;
     final theme =
         isDark
@@ -193,7 +197,11 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: scheme.surface,
       extensions: <ThemeExtension<dynamic>>[
         AppSemanticColors.from(scheme),
-        AppGlassTheme(enabled: glassEnabled, brightness: scheme.brightness),
+        AppGlassTheme(
+          enabled: glassEnabled,
+          brightness: scheme.brightness,
+          tintStrength: glassTint,
+        ),
       ],
       appBarTheme: theme.appBarTheme.copyWith(
         centerTitle: false,

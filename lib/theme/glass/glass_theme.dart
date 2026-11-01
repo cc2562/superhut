@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 
@@ -11,7 +13,11 @@ import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 /// [foreground] / [foregroundMuted] 显式给出，避免依赖自适应采样。
 @immutable
 class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
-  const AppGlassTheme({required this.enabled, required this.brightness});
+  const AppGlassTheme({
+    required this.enabled,
+    required this.brightness,
+    this.tintStrength = 0.5,
+  });
 
   /// 玻璃外观是否启用。为 `false` 时所有玻璃组件都应回落到 Material 实现，
   /// 且**不构建任何 lens**。
@@ -19,14 +25,48 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
 
   final Brightness brightness;
 
+  /// 通透度：`0` 最通透（几乎只是折射），`1` 最有色调（更不透明、对比更强）。
+  ///
+  /// 由主题设置的「玻璃通透度」滑杆控制（透明 ↔ 色调），同时驱动底色的
+  /// alpha 与背景模糊强度；`0.5` 等于改造前的默认观感。
+  final double tintStrength;
+
   bool get isDark => brightness == Brightness.dark;
 
-  /// 中性玻璃底色：浅色 35% 白、深色 40% 烟灰黑。
-  Color get tint => isDark ? const Color(0x66000000) : const Color(0x59FFFFFF);
+  /// 中性玻璃底色：浅色白、深色烟灰黑，alpha 随 [tintStrength] 线性变化。
+  Color get tint {
+    final alpha =
+        isDark
+            ? ui.lerpDouble(0.26, 0.54, tintStrength)!
+            : ui.lerpDouble(0.16, 0.54, tintStrength)!;
+    return (isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF))
+        .withValues(alpha: alpha);
+  }
 
   /// 弹层用的更厚一点的底色（保证压在任意内容上都能读出文字）。
-  Color get elevatedTint =>
-      isDark ? const Color(0x8F000000) : const Color(0x80FFFFFF);
+  Color get elevatedTint {
+    final alpha =
+        isDark
+            ? ui.lerpDouble(0.40, 0.72, tintStrength)!
+            : ui.lerpDouble(0.30, 0.70, tintStrength)!;
+    return (isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF))
+        .withValues(alpha: alpha);
+  }
+
+  /// 模糊强度随通透度同向变化：越「色调」越雾化，越「透明」越清晰。
+  ///
+  /// 曲线是分段的，让三个档位都说得通：
+  /// * `tintStrength == 0` 时只剩 [base] 的 6%，约等于「几乎不模糊」——
+  ///   这是「透明」端该有的观感，能看清底下的内容；
+  /// * `0.5`（默认）保持 [base] 原值，等于改造前的观感；
+  /// * `1` 时放大到 1.8 倍，最「色调」的一档足够雾化、文字最稳。
+  double blurFor(double base) {
+    final double multiplier =
+        tintStrength <= 0.5
+            ? ui.lerpDouble(0.06, 1.0, tintStrength * 2)!
+            : ui.lerpDouble(1.0, 1.8, (tintStrength - 0.5) * 2)!;
+    return base * multiplier;
+  }
 
   /// 玻璃上的主要前景色。
   Color get foreground =>
@@ -55,37 +95,42 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
     intensity: isDark ? 0.45 : 0.6,
   );
 
-  LiquidGlassShadow get _contactShadow => LiquidGlassShadow(
-    blur: 12,
-    opacity: isDark ? 0.34 : 0.14,
-    inset: 2,
-  );
-
   /// 顶部栏控件用的玻璃：44×44 圆形（[radius] 22）或同高的椭圆胶囊。
-  LiquidGlassStyle controlStyle({double radius = 22}) => LiquidGlassStyle(
-    shape: LiquidGlassShape.continuousRoundedRectangle(cornerRadius: radius),
-    specular: _specular,
-    glow: _glow,
-    refractionIndex: 1.03,
-    refractionWidth: 12,
-    blur: 4,
-    color: tint,
-    shadow: _contactShadow,
-  );
+  ///
+  /// [withShadow] 控制是否带接触投影：悬浮在内容上的圆按钮需要它来分层，
+  /// 而排在同一平面里的分段控件不要——那圈投影会在控件周围留一条灰边。
+  LiquidGlassStyle controlStyle({double radius = 22, bool withShadow = true}) =>
+      LiquidGlassStyle(
+        shape: LiquidGlassShape.continuousRoundedRectangle(
+          cornerRadius: radius,
+        ),
+        specular: _specular,
+        glow: _glow,
+        refractionIndex: 1.03,
+        refractionWidth: 12,
+        blur: blurFor(4),
+        color: tint,
+        shadow:
+            withShadow
+                ? LiquidGlassShadow(
+                  blur: 12,
+                  opacity: isDark ? 0.34 : 0.14,
+                  inset: 2,
+                )
+                : null,
+      );
 
   /// 底部标签栏胶囊：形状交给组件按高度派生全胶囊。
+  ///
+  /// 不投影——与 iOS 原生底部栏一致，只用一层发丝描边勾出轮廓（描边由
+  /// 页面侧叠加，见 `homeview` 的标签栏描边层）。
   LiquidGlassStyle get tabBarStyle => LiquidGlassStyle(
     specular: _specular,
     glow: _glow,
     refractionIndex: 1.04,
     refractionWidth: 14,
-    blur: 5,
+    blur: blurFor(5),
     color: tint,
-    shadow: LiquidGlassShadow(
-      blur: 18,
-      opacity: isDark ? 0.4 : 0.16,
-      inset: 0,
-    ),
   );
 
   LiquidGlassTabItemStyle get tabItemStyle => LiquidGlassTabItemStyle(
@@ -131,13 +176,9 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
     glow: _glow,
     refractionIndex: 1.03,
     refractionWidth: 14,
-    blur: 6,
+    blur: blurFor(6),
     color: elevatedTint,
-    shadow: LiquidGlassShadow(
-      blur: 24,
-      opacity: isDark ? 0.45 : 0.2,
-      inset: 0,
-    ),
+    shadow: LiquidGlassShadow(blur: 24, opacity: isDark ? 0.45 : 0.2, inset: 0),
   );
 
   /// 锚定菜单面板：比对话框更小的圆角与更轻的投影。
@@ -147,7 +188,7 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
     glow: _glow,
     refractionIndex: 1.03,
     refractionWidth: 10,
-    blur: 5,
+    blur: blurFor(5),
     color: elevatedTint,
     shadow: LiquidGlassShadow(
       blur: 20,
@@ -163,7 +204,7 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
     glow: _glow,
     refractionIndex: 1.03,
     refractionWidth: 14,
-    blur: 6,
+    blur: blurFor(6),
     color: elevatedTint,
     shadow: LiquidGlassShadow(
       blur: 26,
@@ -173,19 +214,29 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
   );
 
   @override
-  AppGlassTheme copyWith({bool? enabled, Brightness? brightness}) {
+  AppGlassTheme copyWith({
+    bool? enabled,
+    Brightness? brightness,
+    double? tintStrength,
+  }) {
     return AppGlassTheme(
       enabled: enabled ?? this.enabled,
       brightness: brightness ?? this.brightness,
+      tintStrength: tintStrength ?? this.tintStrength,
     );
   }
 
   /// 样式对象本身不可插值，主题切换时按中点直接取一侧，避免中间态出现
-  /// 半套玻璃令牌。
+  /// 半套玻璃令牌；通透度是标量，可以连续插值。
   @override
   AppGlassTheme lerp(covariant AppGlassTheme? other, double t) {
     if (other == null) return this;
-    return t < 0.5 ? this : other;
+    final pickOther = t >= 0.5;
+    return AppGlassTheme(
+      enabled: pickOther ? other.enabled : enabled,
+      brightness: pickOther ? other.brightness : brightness,
+      tintStrength: ui.lerpDouble(tintStrength, other.tintStrength, t)!,
+    );
   }
 }
 
@@ -193,10 +244,7 @@ extension AppGlassThemeContext on BuildContext {
   /// 当前主题的玻璃令牌；主题未注入时返回一个「关闭」的占位实例。
   AppGlassTheme get glassTheme {
     return Theme.of(this).extension<AppGlassTheme>() ??
-        AppGlassTheme(
-          enabled: false,
-          brightness: Theme.of(this).brightness,
-        );
+        AppGlassTheme(enabled: false, brightness: Theme.of(this).brightness);
   }
 
   bool get glassEnabled => glassTheme.enabled;

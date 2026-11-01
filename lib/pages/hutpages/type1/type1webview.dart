@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/theme/glass/glass_scaffold.dart';
+import 'package:superhut/theme/glass/glass_theme.dart';
+import 'package:superhut/theme/glass/scrim_control_button.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 
 class Type1Webview extends StatefulWidget {
@@ -41,9 +43,20 @@ class _Type1WebviewState extends State<Type1Webview> {
   @override
   Widget build(BuildContext context) {
     return GlassScaffold(
-      title: '智慧工大',
-      // 网页内容不能滚到玻璃下方，整体下移避免遮挡。
-      insetBody: true,
+      // 网页全屏铺底，只留一枚悬浮返回键：网页自带头部，再叠一层标题会
+      // 变成双层，也会在浅色网页上失去对比。
+      title: '',
+      // WebView 是原生视图，玻璃镜片采样不到它的画面，这里改用半透明
+      // 实底的悬浮按钮，避免出现一块没有折射的死灰圆片。
+      leading:
+          context.glassTheme.enabled
+              ? ScrimControlButton(
+                icon: Icons.arrow_back_ios_new_rounded,
+                tooltip: '返回',
+                semanticLabel: '返回',
+                onTap: () => Navigator.of(context).maybePop(),
+              )
+              : null,
       body: EnhancedFutureBuilder(
         future: getDetail(),
         rememberFutureResult: true,
