@@ -10,6 +10,9 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/pages/score/jumpToScorePage.dart';
 import 'package:superhut/welcomepage/view.dart';
+import 'agreement/agreement_controller.dart';
+import 'agreement/consent_page.dart';
+import 'analytics/clarity_service.dart';
 import 'home/coursetable/style/course_table_style_controller.dart';
 import 'home/homeview/view.dart';
 import 'pages/drink/view/view.dart';
@@ -76,6 +79,11 @@ class _MyAppState extends State<MyApp> {
     CourseTableStyleController(),
   );
 
+  /// 协议同意状态：未同意前只显示同意页，且不启动任何统计 SDK。
+  final AgreementController agreementController = Get.put(
+    AgreementController(),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +103,8 @@ class _MyAppState extends State<MyApp> {
   void _handleWidgetAction(String actionType) {
     // 等待应用完全加载后再导航
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 未同意协议时只显示同意页，小组件跳转不能绕过这道门槛。
+      if (!agreementController.accepted) return;
       final context = navigatorKey.currentContext;
       if (context != null) {
         Widget? targetPage;
@@ -127,6 +137,7 @@ class _MyAppState extends State<MyApp> {
     final prefs = await SharedPreferences.getInstance();
     await themeController.load();
     await courseStyleController.load();
+    await agreementController.load();
     // await prefs.setBool('isFirstOpen', true);
     _isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
     if (_isFirstOpen) {
@@ -137,6 +148,27 @@ class _MyAppState extends State<MyApp> {
       _isFirstOpen = _isFirstOpen;
       _isLoading = false;
     });
+  }
+
+  /// 首页三级选择：未同意协议 → 同意页；已同意但未登录 → 欢迎页；否则首页。
+  ///
+  /// 同意页放在最前面，保证任何登录/课表等业务页面都不会先于同意出现，
+  /// 统计 SDK 也就永远不可能在未同意时启动。
+  Widget _buildHome() {
+    if (!agreementController.accepted) {
+      return AgreementConsentPage(onAccept: _handleAgreementAccepted);
+    }
+    return _isFirstOpen ? WelcomepagePage() : const HomeviewPage();
+  }
+
+  Future<void> _handleAgreementAccepted(BuildContext consentContext) async {
+    await agreementController.accept();
+    // 先启动 Clarity 再切页面：这次拿的是同意页的 context（位于 MaterialApp 内、
+    // 带 MediaQuery），页面切走后它就会被销毁。
+    if (consentContext.mounted) {
+      ClarityService.start(consentContext);
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -161,7 +193,7 @@ class _MyAppState extends State<MyApp> {
             theme: themeController.lightTheme,
             darkTheme: themeController.darkTheme,
             themeMode: themeController.themeMode.value,
-            home: _isFirstOpen ? WelcomepagePage() : const HomeviewPage(),
+            home: _buildHome(),
             builder: (context, child) {
               final theme = Theme.of(context);
               final isDark = theme.brightness == Brightness.dark;

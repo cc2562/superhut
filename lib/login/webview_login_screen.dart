@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -188,7 +189,8 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          WebViewWidget(controller: _webViewController),
+          // 登录网页包含学号密码，整块遮罩，避免被 Clarity 会话录制采集。
+          ClarityMask(child: WebViewWidget(controller: _webViewController)),
           Container(
             color: Theme.of(context).colorScheme.surface.withAlpha(245),
             width: double.infinity,

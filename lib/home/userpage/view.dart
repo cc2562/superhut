@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/welcomepage/view.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../agreement/agreement_documents.dart';
+import '../../agreement/agreement_page.dart';
 import '../../bridge/getCoursePage.dart';
 import '../../pages/score/scorepage.dart';
 import '../../pages/settings/course_table_style_page.dart';
@@ -332,6 +334,34 @@ class _UserPageState extends State<UserPage> {
                             ),
                           );
                         });
+                      },
+                    ),
+                    _buildFunctionItem(
+                      icon: Icons.description_outlined,
+                      title: '用户协议',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder:
+                                (_) => const AgreementPage(
+                                  document: AgreementDocuments.userAgreement,
+                                ),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildFunctionItem(
+                      icon: Icons.privacy_tip_outlined,
+                      title: '隐私政策',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder:
+                                (_) => const AgreementPage(
+                                  document: AgreementDocuments.privacyPolicy,
+                                ),
+                          ),
+                        );
                       },
                     ),
                     _buildFunctionItem(

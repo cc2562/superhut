@@ -65,6 +65,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.0.4"
+  clarity_flutter:
+    dependency: "direct main"
+    description:
+      name: clarity_flutter
+      sha256: "15347355a8bb55191a853d7773d1c5226c3cdf3556562cea2508c91b6b27e0bb"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.10.1"
   cli_util:
     dependency: transitive
     description:
@@ -933,6 +941,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.5.2"
+  protobuf:
+    dependency: transitive
+    description:
+      name: protobuf
+      sha256: "13b6717366aa7ec3792dd62c19c7d33a785708224365f2db23c5ca01f1c1a0f2"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "6.1.0"
   pub_semver:
     dependency: transitive
     description:
@@ -1275,6 +1291,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "7.0.1"
+  xxh3:
+    dependency: transitive
+    description:
+      name: xxh3
+      sha256: "399a0438f5d426785723c99da6b16e136f4953fb1e9db0bf270bd41dd4619916"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.2.0"
   yaml:
     dependency: transitive
     description:

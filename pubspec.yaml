@@ -70,6 +70,7 @@ dependencies:
   liquid_glass_easy: ^5.1.0
   image_picker: ^1.2.4
   flex_color_picker: ^3.8.0
+  clarity_flutter: ^1.10.1
 
 dev_dependencies:
   flutter_test:
