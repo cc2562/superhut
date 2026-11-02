@@ -60,7 +60,7 @@ void main() {
     expect(consentController.analyticsConsent, isFalse);
 
     // 整行可点：点副标题也能切换开关。
-    await tester.tap(find.text('Microsoft Clarity · 可随时关闭'));
+    await tester.tap(find.text('Microsoft Clarity'));
     await tester.pumpAndSettle();
     expect(consentController.analyticsConsent, isTrue);
     expect(recorder.enableCalls, 1);

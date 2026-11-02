@@ -54,16 +54,16 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
           (dialogContext) => AlertDialog(
             title: const Text('关闭使用体验分析？'),
             content: const Text(
-              '关闭后将立即停止后续的行为数据采集，不会影响课表、成绩等核心功能。\n\n'
+              '关闭后将立即停止后续的行为数据采集，不会影响课表、成绩等核心功能。\n\n体验分析不会记录用户的任何个人信息，只用于定位问题与改进体验。\n\n保持体验分析开启，可以帮助我们更准确地发现和定位问题，持续改善超级包菜的使用体验。感谢你帮助超级包菜变得更好！💜\n\n'
               '撤回同意不影响撤回前已经完成的处理。如需删除此前已上传的分析数据，'
               '请发送邮件至 syywqs@foxmail.com 申请。',
             ),
             actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('取消'),
-              ),
               FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('保持开启'),
+              ),
+              TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
                 child: const Text('仍要关闭'),
               ),
@@ -135,7 +135,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '保持体验分析的开启能够让我们更准确地定位问题，让超级包菜变得更好~',
+                      '保持体验分析开启，可以帮助我们更准确地发现和定位问题，持续改善超级包菜的使用体验。感谢你帮助超级包菜变得更好！💜',
                       style: theme.textTheme.bodySmall?.copyWith(
                         height: 1.6,
                         color: scheme.onSurfaceVariant,
