@@ -14,6 +14,7 @@ import '../../theme/glass/glass_segmented.dart';
 import '../../utils/course/coursemain.dart';
 import '../../utils/course/class_time_table.dart';
 import '../../widget_refresh_service.dart';
+import 'course_table_scroll_behavior.dart';
 import 'logic.dart';
 import 'style/course_card_surface.dart';
 import 'style/course_table_style.dart';
@@ -703,89 +704,93 @@ class _CourseTableViewState extends State<CourseTableView> {
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.only(bottom: 100),
-      itemCount: courses.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (context, index) {
-        final course = courses[index];
-        final courseColor = _getCourseColor(course.name);
-        final onCourse = style.courseForeground(
-          courseColor,
-          pageEstimate: _pageEstimate,
-        );
-        final onCourseMuted = onCourse.withValues(alpha: 0.82);
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 78,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    _courseTimeText(_currentDate, course),
-                    maxLines: 1,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+    // 同上：日视图的课程卡也是玻璃材质，拉伸期间同样会闪断。
+    return ScrollConfiguration(
+      behavior: const CourseTableScrollBehavior(),
+      child: ListView.separated(
+        padding: const EdgeInsets.only(bottom: 100),
+        itemCount: courses.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          final course = courses[index];
+          final courseColor = _getCourseColor(course.name);
+          final onCourse = style.courseForeground(
+            courseColor,
+            pageEstimate: _pageEstimate,
+          );
+          final onCourseMuted = onCourse.withValues(alpha: 0.82);
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 78,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      _courseTimeText(_currentDate, course),
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _courseSectionText(course),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.outline,
-                      fontSize: 12,
+                    const SizedBox(height: 4),
+                    Text(
+                      _courseSectionText(course),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.outline,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: CourseCardSurface(
-                accent: courseColor,
-                style: style,
-                borderRadius: 12,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => _showCourseDetails(course),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          course.name,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleMedium?.copyWith(
-                            color: onCourse,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          course.location.isEmpty ? '地点待定' : course.location,
-                          style: TextStyle(color: onCourseMuted),
-                        ),
-                        if (course.teacherName.isNotEmpty) ...[
-                          const SizedBox(height: 3),
+              const SizedBox(width: 12),
+              Expanded(
+                child: CourseCardSurface(
+                  accent: courseColor,
+                  style: style,
+                  borderRadius: 12,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _showCourseDetails(course),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            course.teacherName,
+                            course.name,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              color: onCourse,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            course.location.isEmpty ? '地点待定' : course.location,
                             style: TextStyle(color: onCourseMuted),
                           ),
+                          if (course.teacherName.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              course.teacherName,
+                              style: TextStyle(color: onCourseMuted),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -846,48 +851,54 @@ class _CourseTableViewState extends State<CourseTableView> {
   }
 
   Widget _buildWeekGrid(List<DateTime> weekDays, CourseTableStyle style) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SizedBox(
-                width: 40,
-                child: Column(
-                  children: List.generate(10, (index) {
-                    return Container(
-                      height: 60,
-                      margin: const EdgeInsets.fromLTRB(0, 1, 0, 1),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontSize: 10,
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ),
-            ...weekDays.map((day) {
-              return Expanded(
-                flex: 4,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 1),
+    // 不挂 overscroll 指示器：安卓 12+ 的拉伸会逐帧缩放滚动内容，
+    // 课程卡的模糊（BackdropFilter）会因此闪断，详见 CourseTableScrollBehavior。
+    return ScrollConfiguration(
+      behavior: const CourseTableScrollBehavior(),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 100),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: SizedBox(
+                  width: 40,
                   child: Column(
-                    children: _buildDayCourses(
-                      _courseData[_dateKey(day)] ?? [],
-                      style,
-                    ),
+                    children: List.generate(10, (index) {
+                      return Container(
+                        height: 60,
+                        margin: const EdgeInsets.fromLTRB(0, 1, 0, 1),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 10,
+                          ),
+                        ),
+                      );
+                    }),
                   ),
                 ),
-              );
-            }),
-          ],
+              ),
+              ...weekDays.map((day) {
+                return Expanded(
+                  flex: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 1),
+                    child: Column(
+                      children: _buildDayCourses(
+                        _courseData[_dateKey(day)] ?? [],
+                        style,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
