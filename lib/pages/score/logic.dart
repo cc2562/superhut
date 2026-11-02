@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../utils/token.dart';
 import '../../utils/withhttp.dart';
 
 class Score {
@@ -29,8 +28,7 @@ class Score {
 }
 
 Future<Map> semesterIdfc() async {
-  String token = await getToken();
-  //configureDio(token);
+  // token 由 configureDioFromStorage 从安全存储里统一取用。
   configureDioFromStorage();
   Response response;
   response = await postDioWithCookie('/njwhd/semesterList', {});
@@ -50,8 +48,6 @@ Future<Map> semesterIdfc() async {
 }
 
 Future<Map<String, Object>> getScore(String semesterId) async {
-  String token = await getToken();
-  //configureDio(token);
   configureDioFromStorage();
   Response response;
   response = await postDioWithCookie(

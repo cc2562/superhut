@@ -9,10 +9,16 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
+    <!--
+        allowBackup=false：关闭云备份与设备间迁移，避免 shared_prefs 里的历史数据
+        （以及任何残留凭据）被带出应用到不受控的备份中。
+        usesCleartextTraffic=false：全站端点均为 https，禁止明文流量以防中间人。
+    -->
     <application
             android:label="超级包菜"
             android:name="${applicationName}"
-            android:usesCleartextTraffic="true"
+            android:allowBackup="false"
+            android:usesCleartextTraffic="false"
             android:enableOnBackInvokedCallback="true"
             android:icon="@mipmap/launcher_icon" tools:targetApi="tiramisu">
         <activity

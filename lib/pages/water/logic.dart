@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/login/hut/view.dart';
+import 'package:superhut/security/credential_store.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 
 import 'state.dart';
@@ -13,10 +14,10 @@ class FunctionHotWaterLogic extends GetxController {
   final hutUserApi = HutUserApi();
 
   // Local storage for user information
+  /// 只在内存里暂存的会话信息；密码不进这个表，需要时直接从安全存储取。
   final Map<String, dynamic> _hutUserInfo = {
     "hutIsLogin": false,
     "username": "",
-    "password": "",
     "token": "",
     "deviceId": "",
   };
@@ -32,26 +33,34 @@ class FunctionHotWaterLogic extends GetxController {
     update();
   }
 
-  // Method to save user info to storage
+  /// 只持久化「是否已登录」这类非敏感状态。
+  ///
+  /// 这里以前会把整个 `_hutUserInfo`（含 username / password / token / deviceId）
+  /// `toString()` 后写进 SharedPreferences——注释写着排除密码，实际并没有。
+  /// 现在凭据只在内存与系统安全存储里流转，明文落盘彻底去掉。
   Future<void> saveUserInfo() async {
-    // Excluding password from persistent storage for security
-    Map<String, dynamic> storageInfo = Map.from(_hutUserInfo);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('hutIsLogin', _hutUserInfo['hutIsLogin'] == true);
+    } catch (error) {
+      debugPrint('保存热水登录状态失败：$error');
+    }
+  }
+
+  /// 从安全存储 + 本地登录标记还原内存中的用户信息。
+  Future<void> _restoreUserInfo() async {
+    final store = CredentialStore.instance;
+    _hutUserInfo["token"] = await store.readOrEmpty('hutToken');
+    _hutUserInfo["deviceId"] = await store.readOrEmpty('deviceId');
+    _hutUserInfo["username"] = await store.readOrEmpty('hutUsername');
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('hutUserInfo', storageInfo.toString());
-    // Store the data securely
-    // This is a simplified implementation
+    _hutUserInfo["hutIsLogin"] = prefs.getBool('hutIsLogin') ?? false;
   }
 
   // Method to load user info from storage
   Future<void> loadUserInfo() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _hutUserInfo["token"] = prefs.getString('hutToken') ?? "";
-      _hutUserInfo["deviceId"] = prefs.getString('deviceId') ?? "";
-      _hutUserInfo["username"] = prefs.getString('hutUsername') ?? "";
-      _hutUserInfo["password"] = prefs.getString('hutPassword') ?? "";
-      _hutUserInfo["hutIsLogin"] = prefs.getBool('hutIsLogin') ?? false;
-      //  print(_hutUserInfo["username"]);
+      await _restoreUserInfo();
     } catch (e) {
       // Handle errors
       print("Error loading user info: $e");
@@ -69,12 +78,7 @@ class FunctionHotWaterLogic extends GetxController {
 
   /// 判断是否需要跳转登录
   Future<void> checkLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    _hutUserInfo["token"] = prefs.getString('hutToken') ?? "";
-    _hutUserInfo["deviceId"] = prefs.getString('deviceId') ?? "";
-    _hutUserInfo["username"] = prefs.getString('hutUsername') ?? "";
-    _hutUserInfo["password"] = prefs.getString('hutPassword') ?? "";
-    _hutUserInfo["hutIsLogin"] = prefs.getBool('hutIsLogin') ?? false;
+    await _restoreUserInfo();
 
     if (_hutUserInfo["hutIsLogin"] == false) {
       Future.delayed(const Duration(milliseconds: 100), () {

@@ -104,22 +104,25 @@ void main() {
     expect(prefs.getBool('appUseLiquidGlass'), isTrue);
   });
 
-  test('glass tint defaults to the neutral midpoint and clamps on set', () async {
-    final controller = ThemeController();
-    await controller.load();
-    expect(controller.glassTint.value, 0.5);
+  test(
+    'glass tint defaults to the neutral midpoint and clamps on set',
+    () async {
+      final controller = ThemeController();
+      await controller.load();
+      expect(controller.glassTint.value, 0.5);
 
-    await controller.setGlassTint(0.8);
-    final prefs = await SharedPreferences.getInstance();
-    expect(controller.glassTint.value, 0.8);
-    expect(prefs.getDouble('appGlassTint'), 0.8);
+      await controller.setGlassTint(0.8);
+      final prefs = await SharedPreferences.getInstance();
+      expect(controller.glassTint.value, 0.8);
+      expect(prefs.getDouble('appGlassTint'), 0.8);
 
-    await controller.setGlassTint(2.4);
-    expect(controller.glassTint.value, 1.0);
+      await controller.setGlassTint(2.4);
+      expect(controller.glassTint.value, 1.0);
 
-    await controller.setGlassTint(-3);
-    expect(controller.glassTint.value, 0.0);
-  });
+      await controller.setGlassTint(-3);
+      expect(controller.glassTint.value, 0.0);
+    },
+  );
 
   test('glass tint is restored from preferences', () async {
     SharedPreferences.setMockInitialValues({'appGlassTint': 0.25});

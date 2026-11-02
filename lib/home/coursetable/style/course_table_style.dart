@@ -175,11 +175,10 @@ class CourseTableStyle {
       colorful ? accent : _monochromeBase(pageEstimate);
 
   /// 课程块底色（基底色 + 用户设定的不透明度）。
-  Color cardTint(Color accent, {required Color pageEstimate}) =>
-      cardBaseColor(
-        accent,
-        pageEstimate: pageEstimate,
-      ).withValues(alpha: cardOpacity.clamp(0.0, 1.0));
+  Color cardTint(Color accent, {required Color pageEstimate}) => cardBaseColor(
+    accent,
+    pageEstimate: pageEstimate,
+  ).withValues(alpha: cardOpacity.clamp(0.0, 1.0));
 
   /// 课程块文字颜色。
   ///

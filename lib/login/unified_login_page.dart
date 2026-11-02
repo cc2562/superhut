@@ -7,7 +7,7 @@ import 'package:superhut/login/hut/command.dart';
 import 'package:superhut/login/hut/sms_command.dart';
 import 'package:superhut/login/hut_cas_login_page.dart';
 import 'package:superhut/login/hut_sms_login_enabled.dart';
-import 'package:superhut/login/webview_login_screen.dart';
+import 'package:superhut/security/credential_store.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 
 enum _UnifiedLoginMode { password, sms }
@@ -25,7 +25,6 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
   final TextEditingController _pwdController = TextEditingController();
   late TabController _tabController;
   bool _isLoading = false;
-  final HutUserApi _api = HutUserApi();
   _UnifiedLoginMode _mode = _UnifiedLoginMode.password;
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _smsCodeController = TextEditingController();
@@ -69,56 +68,18 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
     }
   }
 
-  // 加载保存的账号密码
+  // 加载保存的账号密码（凭据在系统安全存储里）
   Future<void> _loadSavedCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedUser = prefs.getString('user');
-    if (savedUser != null && savedUser.isNotEmpty) {
+    final store = CredentialStore.instance;
+    final savedUser = await store.readOrEmpty('user');
+    if (savedUser.isNotEmpty) {
       _userNoController.text = savedUser;
 
       // 密码通常不应自动填充，但这里根据应用需求处理
-      final savedPassword = prefs.getString('password');
-      if (savedPassword != null && savedPassword.isNotEmpty) {
+      final savedPassword = await store.readOrEmpty('password');
+      if (savedPassword.isNotEmpty) {
         _pwdController.text = savedPassword;
       }
-    }
-  }
-
-  // 教务系统直接登录
-  void _loginWithCredentials() async {
-    if (_userNoController.text.isEmpty || _pwdController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请输入账号和密码')));
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // 直接使用WebView登录教务系统
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder:
-              (context) => WebViewLoginScreen(
-                userNo: _userNoController.text,
-                password: _pwdController.text,
-                showText: '登录中',
-                renew: false,
-              ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('登录失败: $e')));
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -143,7 +104,6 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
         password: _pwdController.text,
       );
       if (!mounted) return;
-      print('获取Token');
       String? token = await HutCasTokenRetriever.getJwxtToken(context);
       if (!mounted) return;
       if (token == null || token.isEmpty) {
@@ -172,14 +132,6 @@ class _UnifiedLoginPageState extends State<UnifiedLoginPage>
         _isLoading = false;
       });
     }
-  }
-
-  // 使用统一认证CAS登录工大平台并获取Token
-  void _loginWithHutPlatform() async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const HutCasLoginPage()),
-    );
   }
 
   // 发送短信验证码

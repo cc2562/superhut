@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:superhut/security/credential_store.dart';
+
 /// 慧生活798 接口统一返回结构
 class DrinkApiResult<T> {
   const DrinkApiResult({
@@ -96,10 +98,10 @@ class DrinkApi {
   }
 
   Future<void> _initToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_tokenKey);
+    // 饮水 token 属于凭据，走系统安全存储而不是 SharedPreferences。
+    final raw = await CredentialStore.instance.read(_tokenKey);
     if (raw == null) {
-      await prefs.setString(_tokenKey, jsonEncode(_token));
+      await CredentialStore.instance.write(_tokenKey, jsonEncode(_token));
       return;
     }
     try {
@@ -117,8 +119,7 @@ class DrinkApi {
   }
 
   Future<void> _saveToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, jsonEncode(_token));
+    await CredentialStore.instance.write(_tokenKey, jsonEncode(_token));
   }
 
   /// 清除本地登录态（凭据 + 登录标记）
@@ -127,8 +128,8 @@ class DrinkApi {
     _token["uid"] = "";
     _token["eid"] = "";
     _token["token"] = "";
+    await CredentialStore.instance.write(_tokenKey, jsonEncode(_token));
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, jsonEncode(_token));
     await prefs.setBool(_loginFlagKey, false);
   }
 
@@ -273,12 +274,7 @@ class DrinkApi {
       "acc/login",
       method: "POST",
       withAppType: true,
-      body: {
-        "openCode": "",
-        "authCode": messageCode,
-        "un": phone,
-        "cid": _cid,
-      },
+      body: {"openCode": "", "authCode": messageCode, "un": phone, "cid": _cid},
       parse: (data) {
         if (data is! Map) return null;
         return Map<String, dynamic>.from(data);
@@ -289,7 +285,11 @@ class DrinkApi {
 
     final al = result.data?["al"];
     if (al is! Map) {
-      return const DrinkApiResult(success: false, code: -1, msg: "登录失败：未获取到账号凭据");
+      return const DrinkApiResult(
+        success: false,
+        code: -1,
+        msg: "登录失败：未获取到账号凭据",
+      );
     }
 
     _token["uid"] = al["uid"]?.toString() ?? "";
@@ -299,8 +299,8 @@ class DrinkApi {
       return const DrinkApiResult(success: false, code: -1, msg: "登录失败：凭据为空");
     }
 
+    await CredentialStore.instance.write(_tokenKey, jsonEncode(_token));
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, jsonEncode(_token));
     await prefs.setBool(_loginFlagKey, true);
     return const DrinkApiResult(success: true, code: 0);
   }
@@ -322,11 +322,7 @@ class DrinkApi {
 
     final data = result.data;
     if (data == null || data["account"] == null) {
-      return DrinkApiResult(
-        success: false,
-        code: -99,
-        msg: "登录已失效，请重新登录",
-      );
+      return DrinkApiResult(success: false, code: -99, msg: "登录已失效，请重新登录");
     }
 
     final favos = data["favos"];
@@ -420,9 +416,7 @@ class DrinkApi {
   }
 
   /// 检测设备状态
-  Future<DrinkApiResult<DrinkDeviceStatus>> deviceStatus({
-    required String id,
-  }) {
+  Future<DrinkApiResult<DrinkDeviceStatus>> deviceStatus({required String id}) {
     return _request<DrinkDeviceStatus>(
       "ui/app/dev/status",
       auth: true,

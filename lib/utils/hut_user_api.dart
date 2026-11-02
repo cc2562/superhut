@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:superhut/security/credential_store.dart';
 import 'package:uuid/uuid.dart';
 
 /// Utility for transforming response data
@@ -687,23 +688,25 @@ class HutUserApi {
     final account = extractHutJwtSubject(idToken);
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('hutToken', idToken);
-    await prefs.setString('hutRefreshToken', refreshToken);
+    final store = CredentialStore.instance;
+    // 令牌、账号、设备号、手机号都是凭据/标识，写系统安全存储。
+    await store.write('hutToken', idToken);
+    await store.write('hutRefreshToken', refreshToken);
     if (account == null) {
-      await prefs.remove('hutAccount');
+      await store.delete('hutAccount');
     } else {
-      await prefs.setString('hutAccount', account);
+      await store.write('hutAccount', account);
     }
-    await prefs.setString('deviceId', deviceId);
+    await store.write('deviceId', deviceId);
     // SMS sessions have no password; persist mobile so the page can refill it.
-    await prefs.setString('hutMobile', mobile);
+    await store.write('hutMobile', mobile);
     await prefs.setString('loginType', 'hut');
     // Clear any leftover password credentials from a prior password login so
     // checkTokenValidity/refreshToken don't reuse a stale username with the
     // fresh SMS token (which would falsely invalidate the session on account
     // switch). Mark the auth method explicitly instead of inferring it.
-    await prefs.remove('hutUsername');
-    await prefs.remove('hutPassword');
+    await store.delete('hutUsername');
+    await store.delete('hutPassword');
     await prefs.setString('hutAuthMethod', kHutAuthMethodSms);
     await prefs.setBool('hutIsLogin', true);
     _token['idToken'] = idToken;
@@ -746,7 +749,7 @@ class HutUserApi {
     Response response;
     try {
       response = await dio.post(loginUrl, data: {});
-    } on Error catch (e) {
+    } on Error {
       return false;
     }
 
@@ -758,29 +761,26 @@ class HutUserApi {
     Map tokenData = data['data'];
     String idToken = tokenData['idToken'];
     String refreshToken = tokenData['refreshToken'];
-    print(idToken);
-    // 设置Token
+    // 设置Token（凭据写系统安全存储，认证数据不打印）
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('hutToken', idToken);
-    prefs.setString('hutRefreshToken', refreshToken);
-    prefs.setString('deviceId', deviceId);
-    prefs.setString('hutUsername', username);
-    prefs.setString('hutPassword', password);
+    final store = CredentialStore.instance;
+    await store.write('hutToken', idToken);
+    await store.write('hutRefreshToken', refreshToken);
+    await store.write('deviceId', deviceId);
+    await store.write('hutUsername', username);
+    await store.write('hutPassword', password);
     prefs.setString('loginType', 'hut');
     prefs.setString('hutAuthMethod', kHutAuthMethodPassword);
     prefs.setBool('hutIsLogin', true);
-    print(response.data);
-    print("结束！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！");
     return true;
   }
 
   /// 获取Token
   /// return Token
   Future<String> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString('hutToken') != null) {
-      //bool isv =await refreshToken();
-      _token["idToken"] = prefs.getString('hutToken')!;
+    final cached = await CredentialStore.instance.read('hutToken');
+    if (cached != null && cached.isNotEmpty) {
+      _token["idToken"] = cached;
     }
     return _token["idToken"];
   }
@@ -793,12 +793,14 @@ class HutUserApi {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    final store = CredentialStore.instance;
+    final String hutUsername = await store.readOrEmpty('hutUsername');
     // Branch on the explicit auth-method marker. Fall back to inferring from
     // hutUsername for sessions persisted before hutAuthMethod existed, so the
     // migration is transparent.
     final authMethod =
         prefs.getString('hutAuthMethod') ??
-        (prefs.getString('hutUsername')?.trim().isNotEmpty == true
+        (hutUsername.trim().isNotEmpty
             ? kHutAuthMethodPassword
             : kHutAuthMethodSms);
 
@@ -808,13 +810,14 @@ class HutUserApi {
 
     final account =
         authMethod == kHutAuthMethodSms
-            ? prefs.getString('hutAccount')?.trim() ?? ''
-            : prefs.getString('hutUsername')?.trim() ?? '';
+            ? (await store.readOrEmpty('hutAccount')).trim()
+            : hutUsername.trim();
     if (account.isEmpty) {
       return false;
     }
 
-    final deviceId = prefs.getString('deviceId') ?? 'null';
+    final String storedDeviceId = await store.readOrEmpty('deviceId');
+    final deviceId = storedDeviceId.isEmpty ? 'null' : storedDeviceId;
     final validator = _onlineTokenValidator;
     if (validator != null) {
       return validator(token: token, account: account, deviceId: deviceId);
@@ -864,7 +867,6 @@ class HutUserApi {
     return await _request.get(url, params: params, options: options).then((
       value,
     ) {
-      print(value.data);
       if (value.data != "") {
         return [];
       }
@@ -895,9 +897,8 @@ class HutUserApi {
   /// 获取洗澡设备
   /// return 设备列表
   Future<Map<String, dynamic>> getHotWaterDevice() async {
-    bool isV = await checkTokenValidity();
-    // print(isV);
-    // print(isV);
+    // 保持原有的会话校验副作用，只是不再关心返回值。
+    await checkTokenValidity();
     String token = await getToken();
     List openidls = await getOpenid();
     String openid = openidls[0];
@@ -1318,9 +1319,11 @@ class HutUserApi {
   //刷新Token
   Future<bool> refreshToken() async {
     final prefs = await SharedPreferences.getInstance();
+    final store = CredentialStore.instance;
+    final String hutUsername = await store.readOrEmpty('hutUsername');
     final authMethod =
         prefs.getString('hutAuthMethod') ??
-        (prefs.getString('hutUsername')?.trim().isNotEmpty == true
+        (hutUsername.trim().isNotEmpty
             ? kHutAuthMethodPassword
             : kHutAuthMethodSms);
 
@@ -1337,8 +1340,8 @@ class HutUserApi {
     }
 
     // Password sessions: re-run password login with stored credentials.
-    String _userName = prefs.getString('hutUsername') ?? "";
-    String _orgPassword = prefs.getString('hutPassword') ?? "";
+    String _userName = hutUsername;
+    String _orgPassword = await store.readOrEmpty('hutPassword');
     if (_userName.isEmpty || _orgPassword.isEmpty) {
       await _clearAuthenticationState(prefs);
       return false;
@@ -1362,9 +1365,10 @@ class HutUserApi {
   }
 
   Future<void> _clearAuthenticationState(SharedPreferences prefs) async {
-    await prefs.remove('hutToken');
-    await prefs.remove('hutRefreshToken');
-    await prefs.remove('hutAccount');
+    final store = CredentialStore.instance;
+    await store.delete('hutToken');
+    await store.delete('hutRefreshToken');
+    await store.delete('hutAccount');
     await prefs.remove('hutAuthMethod');
     await prefs.setBool('hutIsLogin', false);
     _token['idToken'] = '';

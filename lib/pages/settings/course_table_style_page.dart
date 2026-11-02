@@ -578,9 +578,7 @@ class _CourseTableStylePageState extends State<CourseTableStylePage> {
               ),
               title: const Text('课程块彩色'),
               subtitle: Text(
-                style.colorful
-                    ? '按课程区分颜色'
-                    : '已关闭：课程块不再区分颜色，只铺一层白/黑蒙版',
+                style.colorful ? '按课程区分颜色' : '已关闭：课程块不再区分颜色，只铺一层白/黑蒙版',
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
@@ -589,13 +587,10 @@ class _CourseTableStylePageState extends State<CourseTableStylePage> {
                 enabled: glass.enabled,
                 value: style.colorful,
                 onChanged:
-                    (value) =>
-                        _commit(() => _controller.setColorful(value)),
+                    (value) => _commit(() => _controller.setColorful(value)),
               ),
               onTap:
-                  () => _commit(
-                    () => _controller.setColorful(!style.colorful),
-                  ),
+                  () => _commit(() => _controller.setColorful(!style.colorful)),
             ),
             const SizedBox(height: 8),
             Padding(
@@ -655,8 +650,7 @@ class _CourseTableStylePageState extends State<CourseTableStylePage> {
                   max: CourseTableStyle.maxCardBlur,
                   valueLabel: '${style.cardBlur.round()}',
                   glassEnabled: glass.enabled,
-                  onLive:
-                      (value) => _preview(_style.copyWith(cardBlur: value)),
+                  onLive: (value) => _preview(_style.copyWith(cardBlur: value)),
                   onCommit:
                       (value) => _commit(() => _controller.setCardBlur(value)),
                 ),
@@ -667,9 +661,7 @@ class _CourseTableStylePageState extends State<CourseTableStylePage> {
                   style.cardBlur < 0.5
                       ? '模糊为 0：完全不雾化，课程块只是一层半透明底色'
                       : '雾化身后背景的强度，越大越看不出底下是什么',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
                 ),

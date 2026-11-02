@@ -7,19 +7,26 @@ import 'agreement_page.dart';
 
 /// 启动同意页（全屏、不可返回、不可手势关闭）。
 ///
-/// 只有在用户勾选「我已阅读并同意《用户协议》与《隐私政策》」并点击
-/// 「同意并继续」之后，调用方才会记录同意并启动 Clarity 采集；
-/// 未勾选时主按钮禁用（`onPressed: null`），点「不同意」则退出应用。
+/// 两档同意，均默认不勾选：
+/// * 必须勾选「我已阅读并同意《用户协议》与《隐私政策》」才能继续；
+/// * 行为分析（Microsoft Clarity）是**可选项**，不勾选也能正常使用全部核心功能。
+///
+/// 主按钮只在第一项勾选后启用（`onPressed: null` 表示禁用），
+/// 点「不同意」则退出应用。
 ///
 /// 两个回调都以参数注入，便于在 widget 测试里断言而不用真的退出进程。
 class AgreementConsentPage extends StatefulWidget {
   const AgreementConsentPage({super.key, required this.onAccept, this.onExit});
 
-  /// 用户同意后执行：落盘同意版本、启动统计 SDK、切到正式页面。
+  /// 用户同意后执行：落盘同意版本与行为分析同意、按需启动统计 SDK、切到正式页面。
   ///
   /// 传入本页的 [BuildContext]（位于 `MaterialApp` 之内、带 `MediaQuery`），
   /// Clarity 的初始化要求这样一个「widget 已构建」的 context。
-  final Future<void> Function(BuildContext context) onAccept;
+  final Future<void> Function(
+    BuildContext context, {
+    required bool analyticsConsent,
+  })
+  onAccept;
 
   /// 用户拒绝后执行；不传则使用内置的退出逻辑。
   final Future<void> Function()? onExit;
@@ -29,7 +36,11 @@ class AgreementConsentPage extends StatefulWidget {
 }
 
 class _AgreementConsentPageState extends State<AgreementConsentPage> {
+  /// 协议同意（必选）。
   bool _agreed = false;
+
+  /// 行为分析同意（可选），默认不勾选。
+  bool _analyticsConsent = false;
 
   /// 防止连点「同意并继续」触发两次启动。
   bool _submitting = false;
@@ -39,11 +50,16 @@ class _AgreementConsentPageState extends State<AgreementConsentPage> {
     setState(() => _agreed = !_agreed);
   }
 
+  void _toggleAnalyticsConsent() {
+    if (_submitting) return;
+    setState(() => _analyticsConsent = !_analyticsConsent);
+  }
+
   Future<void> _handleAccept() async {
     if (!_agreed || _submitting) return;
     setState(() => _submitting = true);
     try {
-      await widget.onAccept(context);
+      await widget.onAccept(context, analyticsConsent: _analyticsConsent);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -112,7 +128,9 @@ class _AgreementConsentPageState extends State<AgreementConsentPage> {
                       const SizedBox(height: 28),
                       _buildDocumentList(theme),
                       const SizedBox(height: 24),
-                      _buildAgreementCheckbox(theme),
+                      _buildAgreementRow(theme),
+                      const SizedBox(height: 8),
+                      _buildAnalyticsRow(theme),
                       const SizedBox(height: 20),
                       FilledButton(
                         onPressed:
@@ -178,8 +196,7 @@ class _AgreementConsentPageState extends State<AgreementConsentPage> {
         ),
         const SizedBox(height: 10),
         Text(
-          '在开始之前，请阅读并同意以下协议。为了改进产品体验，我们会在您同意后'
-          '使用匿名的使用行为统计，具体范围与关闭方式见《隐私政策》。',
+          '在开始之前，请阅读并同意以下协议。',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             height: 1.6,
@@ -216,7 +233,8 @@ class _AgreementConsentPageState extends State<AgreementConsentPage> {
     );
   }
 
-  Widget _buildAgreementCheckbox(ThemeData theme) {
+  /// 必选项：我已阅读并同意两份协议。
+  Widget _buildAgreementRow(ThemeData theme) {
     final ColorScheme scheme = theme.colorScheme;
     final TextStyle? textStyle = theme.textTheme.bodyMedium?.copyWith(
       height: 1.6,
@@ -235,33 +253,92 @@ class _AgreementConsentPageState extends State<AgreementConsentPage> {
       );
     }
 
+    return _ConsentRow(
+      value: _agreed,
+      enabled: !_submitting,
+      onToggle: _toggleAgreed,
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: <Widget>[
+          Text('我已阅读并同意', style: textStyle),
+          link(AgreementDocuments.userAgreement),
+          Text('与', style: textStyle),
+          link(AgreementDocuments.privacyPolicy),
+        ],
+      ),
+    );
+  }
+
+  /// 可选项：行为分析。默认不勾选，不勾选同样能用全部核心功能。
+  Widget _buildAnalyticsRow(ThemeData theme) {
+    final ColorScheme scheme = theme.colorScheme;
+    final TextStyle? textStyle = theme.textTheme.bodyMedium?.copyWith(
+      height: 1.6,
+    );
+
+    return _ConsentRow(
+      value: _analyticsConsent,
+      enabled: !_submitting,
+      onToggle: _toggleAnalyticsConsent,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[Text('我同意将使用行为数据用于产品改进', style: textStyle)],
+          ),
+          const SizedBox(height: 2),
+          GestureDetector(
+            onTap: () => _openDocument(AgreementDocuments.privacyPolicy),
+            child: Text(
+              '使用Microsoft Clarity，可选，可随时在「隐私设置」中关闭,不影响正常功能使用',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 一行「勾选框 + 可点文案」。整行文案也能切换，扩大命中区域。
+class _ConsentRow extends StatelessWidget {
+  const _ConsentRow({
+    required this.value,
+    required this.enabled,
+    required this.onToggle,
+    required this.child,
+  });
+
+  final bool value;
+  final bool enabled;
+  final VoidCallback onToggle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        // 勾选框与文案第一行对齐；整行文案也可点击切换，扩大命中区域。
+        // 勾选框与文案第一行对齐。
         SizedBox(
           width: 40,
           height: 28,
           child: Checkbox(
-            value: _agreed,
-            onChanged: _submitting ? null : (_) => _toggleAgreed(),
+            value: value,
+            onChanged: enabled ? (_) => onToggle() : null,
           ),
         ),
         Expanded(
           child: GestureDetector(
-            onTap: _toggleAgreed,
+            onTap: enabled ? onToggle : null,
             behavior: HitTestBehavior.opaque,
             child: Padding(
-              padding: const EdgeInsets.only(top: 3),
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: <Widget>[
-                  Text('我已阅读并同意', style: textStyle),
-                  link(AgreementDocuments.userAgreement),
-                  Text('与', style: textStyle),
-                  link(AgreementDocuments.privacyPolicy),
-                ],
-              ),
+              padding: const EdgeInsets.only(top: 3, bottom: 4),
+              child: child,
             ),
           ),
         ),

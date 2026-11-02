@@ -32,11 +32,7 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
   bool _showEasterEgg = false; // 是否显示彩蛋
   double _lastDragRotationY = 0.0; // 记录上一次拖动的Y轴旋转角度
   String _currentEasterEggText = ""; // 当前显示的彩蛋文本
-  double _textOpacity = 0.0; // 文字整体的不透明度
   bool _isFadingOut = false; // 是否正在淡出
-  String _displayedText = ""; // 当前逐字显示的文本
-  int _currentCharIndex = 0; // 当前显示到第几个字符
-  List<double> _charOpacities = []; // 存储每个字符的不透明度
 
   // 重力感应相关变量
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
@@ -148,25 +144,6 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
       }
     });
 
-    // 添加文字动画监听
-    _textAnimationController.addListener(() {
-      if (mounted) {
-        setState(() {
-          // 更新文字不透明度
-          _textOpacity = _textAnimationController.value;
-        });
-      }
-    });
-
-    // 添加淡出动画监听
-    _fadeOutController.addListener(() {
-      if (mounted) {
-        setState(() {
-          _textOpacity = 1.0 - _fadeOutController.value;
-        });
-      }
-    });
-
     _fadeOutController.addStatusListener((status) {
       if (status == AnimationStatus.completed && _isFadingOut) {
         setState(() {
@@ -238,31 +215,11 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // 更新字符不透明度
-  void _updateCharOpacities() {
-    // 重置不透明度数组
-    _charOpacities = List.filled(_currentCharIndex, 0.0);
-
-    // 计算每个字符的不透明度
-    for (int i = 0; i < _currentCharIndex; i++) {
-      // 计算该字符应显示多久
-      double timeDisplayed =
-          (_textAnimationController.value * _currentEasterEggText.length - i) /
-          3;
-      // 限制在0-1之间
-      _charOpacities[i] = timeDisplayed.clamp(0.0, 1.0);
-    }
-  }
-
   // 随机选择一个彩蛋文本
   void _selectRandomEasterEggText() {
     final random = math.Random();
     final index = random.nextInt(_easterEggTexts.length);
     _currentEasterEggText = _easterEggTexts[index];
-    _displayedText = "";
-    _currentCharIndex = 0;
-    _charOpacities = [];
-    _textOpacity = 0.0;
     _textAnimationController.reset();
     _textAnimationController.forward();
   }
