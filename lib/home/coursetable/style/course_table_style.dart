@@ -180,6 +180,13 @@ class CourseTableStyle {
     pageEstimate: pageEstimate,
   ).withValues(alpha: cardOpacity.clamp(0.0, 1.0));
 
+  /// 非课程色表面的底色：基底色 × 用户设定的不透明度。
+  ///
+  /// 周视图「今天」指示与日视图「下一节课」不是课程块，没有 accent，直接用
+  /// 主题色作基底。不透明度语义与课程块完全一致：0 时完全透明，1 时完全不透。
+  Color surfaceTint(Color base) =>
+      base.withValues(alpha: cardOpacity.clamp(0.0, 1.0));
+
   /// 课程块文字颜色。
   ///
   /// 自适应会把「课程色按当前不透明度合成到页面底色上」的结果当作实际背景，

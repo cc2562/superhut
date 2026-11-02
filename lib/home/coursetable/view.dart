@@ -617,7 +617,7 @@ class _CourseTableViewState extends State<CourseTableView> {
     );
   }
 
-  Widget _buildNextCourseCard() {
+  Widget _buildNextCourseCard(CourseTableStyle style) {
     final courses = _courseData[_dateKey(_currentDate)] ?? const <Course>[];
     final nextCourses = findNextCoursesForDay(
       day: _currentDate,
@@ -628,55 +628,63 @@ class _CourseTableViewState extends State<CourseTableView> {
 
     return SizedBox(
       width: double.infinity,
-      child: Card.filled(
-        margin: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-        color: colorScheme.primaryContainer,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '下一节课',
-                style: TextStyle(
-                  color: colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (nextCourses.isEmpty)
+      child: Padding(
+        // 原 Card 的 margin，改材质后手动保留，避免日视图整体位移。
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+        child: CourseMaterialSurface(
+          // 不是课程块，没有课程色：用主题色作基底，材质/模糊/不透明度跟随外观设置。
+          tint: style.surfaceTint(colorScheme.primaryContainer),
+          style: style,
+          borderRadius: 12,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  '今天没有下一节课',
-                  style: TextStyle(color: colorScheme.onPrimaryContainer),
-                )
-              else
-                ...nextCourses.indexed.map((entry) {
-                  final index = entry.$1;
-                  final course = entry.$2;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (index > 0)
-                        Divider(
-                          color: colorScheme.onPrimaryContainer.withAlpha(50),
+                  '下一节课',
+                  style: TextStyle(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (nextCourses.isEmpty)
+                  Text(
+                    '今天没有下一节课',
+                    style: TextStyle(color: colorScheme.onPrimaryContainer),
+                  )
+                else
+                  ...nextCourses.indexed.map((entry) {
+                    final index = entry.$1;
+                    final course = entry.$2;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (index > 0)
+                          Divider(
+                            color: colorScheme.onPrimaryContainer.withAlpha(50),
+                          ),
+                        Text(
+                          course.name,
+                          style: TextStyle(
+                            color: colorScheme.onPrimaryContainer,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      Text(
-                        course.name,
-                        style: TextStyle(
-                          color: colorScheme.onPrimaryContainer,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(height: 3),
+                        Text(
+                          '${_courseTimeText(_currentDate, course)}  ${course.location}',
+                          style: TextStyle(
+                            color: colorScheme.onPrimaryContainer,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '${_courseTimeText(_currentDate, course)}  ${course.location}',
-                        style: TextStyle(color: colorScheme.onPrimaryContainer),
-                      ),
-                    ],
-                  );
-                }),
-            ],
+                      ],
+                    );
+                  }),
+              ],
+            ),
           ),
         ),
       ),
@@ -809,40 +817,43 @@ class _CourseTableViewState extends State<CourseTableView> {
 
   Widget _buildWeekHeader(List<DateTime> weekDays) {
     final scheme = Theme.of(context).colorScheme;
+    final CourseTableStyle style = _style;
     return Row(
       children: [
         const Expanded(child: SizedBox()),
         ...weekDays.map((day) {
-          final showText =
+          final bool isToday = isSameCourseDate(day, _now);
+          final String showText =
               '${_weekdayMap[day.weekday]!}\n${DateFormat('M-d').format(day)}';
+          final Widget label = Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Text(
+              showText,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color:
+                    isToday
+                        ? scheme.onPrimaryContainer
+                        : scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+            ),
+          );
           return Expanded(
             flex: 4,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color:
-                      isSameCourseDate(day, _now)
-                          ? scheme.primaryContainer
-                          : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Text(
-                    showText,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color:
-                          isSameCourseDate(day, _now)
-                              ? scheme.onPrimaryContainer
-                              : scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 2,
-                  ),
-                ),
-              ),
+              // 只有今天需要表面：其余六格保持透明，不为它们各建一层空表面。
+              child:
+                  isToday
+                      ? CourseMaterialSurface(
+                        tint: style.surfaceTint(scheme.primaryContainer),
+                        style: style,
+                        borderRadius: 12,
+                        child: label,
+                      )
+                      : label,
             ),
           );
         }),
@@ -1013,7 +1024,7 @@ class _CourseTableViewState extends State<CourseTableView> {
           ),
           if (_viewMode == CourseTableViewMode.week) _buildWeekHeader(weekDays),
           if (_viewMode == CourseTableViewMode.day && isViewingToday)
-            _buildNextCourseCard(),
+            _buildNextCourseCard(style),
           Expanded(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,

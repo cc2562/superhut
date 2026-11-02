@@ -172,6 +172,38 @@ void main() {
         closeTo(0.5, 0.01),
       );
     });
+
+    test('非课程色表面沿用同一份不透明度，只改 alpha', () {
+      const Color base = Color(0xFFD0BCFF);
+      const CourseTableStyle half = CourseTableStyle(cardOpacity: 0.5);
+      final Color tint = half.surfaceTint(base);
+
+      expect(tint.a, closeTo(0.5, 0.01));
+      expect(tint.r, closeTo(base.r, 0.001));
+      expect(tint.g, closeTo(base.g, 0.001));
+      expect(tint.b, closeTo(base.b, 0.001));
+
+      expect(
+        const CourseTableStyle(cardOpacity: 0).surfaceTint(base).a,
+        closeTo(0.0, 0.001),
+      );
+      expect(
+        const CourseTableStyle(cardOpacity: 1).surfaceTint(base).a,
+        closeTo(1.0, 0.001),
+      );
+    });
+
+    test('非课程色表面不受彩色开关与文字策略影响', () {
+      const Color base = Color(0xFFD0BCFF);
+      final CourseTableStyle style = CourseTableStyle.defaults.copyWith(
+        colorful: false,
+        textColor: CourseTextColorMode.white,
+        cardOpacity: 0.4,
+      );
+
+      expect(style.surfaceTint(base).a, closeTo(0.4, 0.01));
+      expect(style.surfaceTint(base).r, closeTo(base.r, 0.001));
+    });
   });
 
   group('课程块彩色开关', () {

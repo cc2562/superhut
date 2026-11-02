@@ -756,8 +756,8 @@ class _CourseTableStylePageState extends State<CourseTableStylePage> {
           : '无色蒙版浓度：拉满时课程块整体变白（深色页面变黑）';
     }
     return style.material == CourseCardMaterial.solid && style.cardOpacity <= 0
-        ? '不透明度为 0：课程块不显示任何底色，只保留文字'
-        : '课程块底色不透明度';
+        ? '不透明度为 0：课程块、今天指示与下一节课都不显示底色，只保留文字'
+        : '课程块、今天指示与下一节课的底色不透明度';
   }
 
   static String _brightnessLabel(double value) {
