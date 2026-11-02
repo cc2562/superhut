@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -450,69 +451,76 @@ class _Type2WebviewState extends State<Type2Webview> {
                 future: _initialSetupFuture,
                 rememberFutureResult: true,
                 whenDone: (v) {
-                  return InAppWebView(
-                    initialUrlRequest: URLRequest(
-                      url: WebUri(resultUrl),
-                      headers: headerMap, // 自定义 Header
-                    ),
-                    initialSettings: InAppWebViewSettings(
-                      javaScriptEnabled: true,
-                      geolocationEnabled: true,
-                      // 启用地理位置功能
-                      supportZoom: true,
-                      mediaPlaybackRequiresUserGesture: false,
-                      // 允许自动播放媒体
-                      allowsInlineMediaPlayback: true,
-                      useShouldOverrideUrlLoading: true,
-                      useOnLoadResource: true,
-                    ),
-                    onGeolocationPermissionsShowPrompt: (
-                      controller,
-                      origin,
-                    ) async {
-                      // 直接允许所有地理位置请求，不再弹出系统对话框
-                      return GeolocationPermissionShowPromptResponse(
-                        origin: origin,
-                        allow: true,
-                        retain: true,
-                      );
-                    },
-                    onLoadStart: (controller, url) {
-                      setState(() {
-                        _isPageLoading = true;
-                      });
-                      print('Start loading: $url');
-                    },
-                    onWebViewCreated: (controller) {
-                      _webViewController = controller;
-                    },
-                    onLoadStop: (controller, url) {
-                      setState(() {
-                        _isPageLoading = false;
-                      });
-                      _updateCanGoBackState();
-                      _removeNavigationElement();
-                      _setupAlipayLinkListener(); // 添加支付宝链接监听
-                      print('Stop loading: $url');
-                    },
-                    onUpdateVisitedHistory: (controller, url, androidIsReload) {
-                      _updateCanGoBackState();
-                      print('History updated: $url');
-                    },
-                    shouldOverrideUrlLoading: (
-                      controller,
-                      navigationAction,
-                    ) async {
-                      final url = navigationAction.request.url.toString();
+                  // 网页内容（含缴费等个人信息）整块遮罩。
+                  return ClarityMask(
+                    child: InAppWebView(
+                      initialUrlRequest: URLRequest(
+                        url: WebUri(resultUrl),
+                        headers: headerMap, // 自定义 Header
+                      ),
+                      initialSettings: InAppWebViewSettings(
+                        javaScriptEnabled: true,
+                        geolocationEnabled: true,
+                        // 启用地理位置功能
+                        supportZoom: true,
+                        mediaPlaybackRequiresUserGesture: false,
+                        // 允许自动播放媒体
+                        allowsInlineMediaPlayback: true,
+                        useShouldOverrideUrlLoading: true,
+                        useOnLoadResource: true,
+                      ),
+                      onGeolocationPermissionsShowPrompt: (
+                        controller,
+                        origin,
+                      ) async {
+                        // 直接允许所有地理位置请求，不再弹出系统对话框
+                        return GeolocationPermissionShowPromptResponse(
+                          origin: origin,
+                          allow: true,
+                          retain: true,
+                        );
+                      },
+                      onLoadStart: (controller, url) {
+                        setState(() {
+                          _isPageLoading = true;
+                        });
+                        print('Start loading: $url');
+                      },
+                      onWebViewCreated: (controller) {
+                        _webViewController = controller;
+                      },
+                      onLoadStop: (controller, url) {
+                        setState(() {
+                          _isPageLoading = false;
+                        });
+                        _updateCanGoBackState();
+                        _removeNavigationElement();
+                        _setupAlipayLinkListener(); // 添加支付宝链接监听
+                        print('Stop loading: $url');
+                      },
+                      onUpdateVisitedHistory: (
+                        controller,
+                        url,
+                        androidIsReload,
+                      ) {
+                        _updateCanGoBackState();
+                        print('History updated: $url');
+                      },
+                      shouldOverrideUrlLoading: (
+                        controller,
+                        navigationAction,
+                      ) async {
+                        final url = navigationAction.request.url.toString();
 
-                      // 检查是否是支付宝协议链接
-                      if (url.startsWith('alipays://')) {
-                        _handleAlipayUrl(url);
-                        return NavigationActionPolicy.CANCEL;
-                      }
+                        // 检查是否是支付宝协议链接
+                        if (url.startsWith('alipays://')) {
+                          _handleAlipayUrl(url);
+                          return NavigationActionPolicy.CANCEL;
+                        }
 
-                      return NavigationActionPolicy.ALLOW;
-                    },
+                        return NavigationActionPolicy.ALLOW;
+                      },
+                    ),
                   );
                 },
                 whenNotDone: Center(

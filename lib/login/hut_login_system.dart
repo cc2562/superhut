@@ -1,3 +1,4 @@
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -162,84 +163,87 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
       insetBody: true,
       body: Stack(
         children: [
-          InAppWebView(
-            initialUrlRequest: URLRequest(
-              url: WebUri(
-                '$_initialUrl?idToken=${widget.initialIdToken}&service=https%3A%2F%2Fjwxtsj.hut.edu.cn%2Fnjwhd%2FloginSso&token=${widget.initialIdToken}',
+          // 统一认证网页包含学号密码，整块遮罩，避免被 Clarity 会话录制采集。
+          ClarityMask(
+            child: InAppWebView(
+              initialUrlRequest: URLRequest(
+                url: WebUri(
+                  '$_initialUrl?idToken=${widget.initialIdToken}&service=https%3A%2F%2Fjwxtsj.hut.edu.cn%2Fnjwhd%2FloginSso&token=${widget.initialIdToken}',
+                ),
+                headers: {
+                  "User-Agent":
+                      "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
+                  "Connection": "keep-alive",
+                  "Accept":
+                      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                  "Accept-Encoding": "gzip, deflate, br, zstd",
+                  "sec-ch-ua":
+                      "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
+                  "sec-ch-ua-mobile": "?1",
+                  "sec-ch-ua-platform": "\"Android\"",
+                  "upgrade-insecure-requests": "1",
+                  "x-requested-with": "com.supwisdom.hut",
+                  "sec-fetch-site": "none",
+                  "sec-fetch-mode": "navigate",
+                  "sec-fetch-user": "?1",
+                  "sec-fetch-dest": "document",
+                  "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                },
               ),
-              headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
-                "Connection": "keep-alive",
-                "Accept":
-                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                "Accept-Encoding": "gzip, deflate, br, zstd",
-                "sec-ch-ua":
-                    "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
-                "sec-ch-ua-mobile": "?1",
-                "sec-ch-ua-platform": "\"Android\"",
-                "upgrade-insecure-requests": "1",
-                "x-requested-with": "com.supwisdom.hut",
-                "sec-fetch-site": "none",
-                "sec-fetch-mode": "navigate",
-                "sec-fetch-user": "?1",
-                "sec-fetch-dest": "document",
-                "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+              initialOptions: InAppWebViewGroupOptions(
+                crossPlatform: InAppWebViewOptions(
+                  useShouldOverrideUrlLoading: true,
+                  useOnLoadResource: true,
+                  javaScriptEnabled: true,
+                  cacheEnabled: true,
+                ),
+              ),
+              onWebViewCreated: (controller) {
+                _webViewController = controller;
               },
-            ),
-            initialOptions: InAppWebViewGroupOptions(
-              crossPlatform: InAppWebViewOptions(
-                useShouldOverrideUrlLoading: true,
-                useOnLoadResource: true,
-                javaScriptEnabled: true,
-                cacheEnabled: true,
-              ),
-            ),
-            onWebViewCreated: (controller) {
-              _webViewController = controller;
-            },
-            shouldOverrideUrlLoading: (controller, navigationAction) async {
-              final url = navigationAction.request.url.toString();
-              _checkUrlAndExtractTokenAndCookie(url);
-              return NavigationActionPolicy.ALLOW;
-            },
-            onLoadStart: (controller, url) {
-              if (url != null) {
-                setState(() {
-                  _isLoading = true;
-                  _currentUrl = url.toString();
-                });
-                _checkUrlAndExtractTokenAndCookie(_currentUrl);
-              }
-            },
-            onLoadStop: (controller, url) {
-              if (url != null) {
-                final loadedUrl = url.toString();
+              shouldOverrideUrlLoading: (controller, navigationAction) async {
+                final url = navigationAction.request.url.toString();
+                _checkUrlAndExtractTokenAndCookie(url);
+                return NavigationActionPolicy.ALLOW;
+              },
+              onLoadStart: (controller, url) {
+                if (url != null) {
+                  setState(() {
+                    _isLoading = true;
+                    _currentUrl = url.toString();
+                  });
+                  _checkUrlAndExtractTokenAndCookie(_currentUrl);
+                }
+              },
+              onLoadStop: (controller, url) {
+                if (url != null) {
+                  final loadedUrl = url.toString();
+                  setState(() {
+                    _isLoading = false;
+                    _currentUrl = loadedUrl;
+                  });
+                  if (isHutCasAuthenticationPage(loadedUrl)) {
+                    _reportAuthenticationRequired();
+                    return;
+                  }
+                  _checkUrlAndExtractTokenAndCookie(_currentUrl);
+
+                  // 输出当前URL到控制台，便于调试
+                  print('页面加载完成: $_currentUrl');
+                }
+              },
+              onLoadError: (controller, url, code, message) {
                 setState(() {
                   _isLoading = false;
-                  _currentUrl = loadedUrl;
                 });
-                if (isHutCasAuthenticationPage(loadedUrl)) {
-                  _reportAuthenticationRequired();
-                  return;
+                if (widget.onError != null) {
+                  widget.onError!('页面加载错误: $message');
                 }
-                _checkUrlAndExtractTokenAndCookie(_currentUrl);
-
-                // 输出当前URL到控制台，便于调试
-                print('页面加载完成: $_currentUrl');
-              }
-            },
-            onLoadError: (controller, url, code, message) {
-              setState(() {
-                _isLoading = false;
-              });
-              if (widget.onError != null) {
-                widget.onError!('页面加载错误: $message');
-              }
-            },
-            onConsoleMessage: (controller, consoleMessage) {
-              print('Console: ${consoleMessage.message}');
-            },
+              },
+              onConsoleMessage: (controller, consoleMessage) {
+                print('Console: ${consoleMessage.message}');
+              },
+            ),
           ),
           if (_isLoading)
             Container(
