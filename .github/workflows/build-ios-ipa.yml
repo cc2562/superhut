@@ -38,6 +38,18 @@ jobs:
       - name: Build iOS app without code signing
         run: flutter build ios --release --no-codesign
 
+      # 课程实时活动的 Widget Extension 必须被嵌进 Runner.app/PlugIns，
+      # 否则灵动岛/锁屏卡片不会出现；这里在打包 IPA 之前就把它卡住。
+      - name: Verify widget extension is embedded
+        run: |
+          set -euo pipefail
+
+          APPEX="build/ios/iphoneos/Runner.app/PlugIns/SuperhutWidgets.appex"
+          [ -d "$APPEX" ] || { echo "SuperhutWidgets.appex was not embedded at $APPEX"; exit 1; }
+          [ -f "$APPEX/SuperhutWidgets" ] || { echo "SuperhutWidgets binary is missing"; exit 1; }
+
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPointIdentifier" "$APPEX/Info.plist"
+
       - name: Package unsigned IPA
         run: |
           set -euo pipefail

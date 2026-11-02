@@ -20,6 +20,7 @@ import 'style/course_card_surface.dart';
 import 'style/course_table_style.dart';
 import 'style/course_table_style_controller.dart';
 import '../../utils/course/getCourse.dart';
+import '../../live_activity/class_live_activity_controller.dart';
 import '../../live_notification_manager.dart';
 
 class CourseTableView extends StatefulWidget {
@@ -813,6 +814,8 @@ class _CourseTableViewState extends State<CourseTableView> {
     }
     _courseData = await loadClassFromLocal();
     LiveNotificationManager.syncSchedule(_courseData);
+    // iOS 灵动岛与 Android 实时通知共用同一份课表快照，互不影响。
+    ClassLiveActivityController.maybeInstance?.syncSchedule(_courseData);
   }
 
   Widget _buildWeekHeader(List<DateTime> weekDays) {

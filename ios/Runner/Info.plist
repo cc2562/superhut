@@ -52,5 +52,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- 课程实时活动：上课前 10 分钟在灵动岛/锁屏展示倒计时。
+	     缺少该键时 Activity.request 会直接失败。 -->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 </dict>
 </plist>

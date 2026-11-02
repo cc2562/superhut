@@ -14,6 +14,7 @@ import 'agreement/agreement_controller.dart';
 import 'agreement/consent_page.dart';
 import 'analytics/clarity_service.dart';
 import 'home/coursetable/style/course_table_style_controller.dart';
+import 'live_activity/class_live_activity_controller.dart';
 import 'privacy/privacy_consent_controller.dart';
 import 'security/credential_store.dart';
 import 'home/homeview/view.dart';
@@ -94,6 +95,11 @@ class _MyAppState extends State<MyApp> {
     PrivacyConsentController(agreement: agreementController),
   );
 
+  /// 灵动岛课程提醒（仅 iOS）：注册在 main 里，未打开课表页也能在回到前台时补发。
+  final ClassLiveActivityController liveActivityController = Get.put(
+    ClassLiveActivityController(),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -149,6 +155,7 @@ class _MyAppState extends State<MyApp> {
     await courseStyleController.load();
     await agreementController.load();
     await privacyConsentController.load();
+    await liveActivityController.load();
     // await prefs.setBool('isFirstOpen', true);
     _isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
     setState(() {
