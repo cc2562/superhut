@@ -14,6 +14,10 @@ void main() {
   });
 
   testWidgets('两项都不勾时按钮禁用；只勾协议即可继续，且不上报行为分析同意', (tester) async {
+    // 两项说明都变长后，默认 800×600 视口放不下主按钮，放大到手机竖屏高度。
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     int accepted = 0;
     int exited = 0;
     bool? reportedAnalytics;
@@ -52,6 +56,9 @@ void main() {
   });
 
   testWidgets('单独勾选行为分析后才上报 true', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     bool? reportedAnalytics;
 
     await tester.pumpWidget(

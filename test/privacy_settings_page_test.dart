@@ -65,11 +65,11 @@ void main() {
     expect(consentController.analyticsConsent, isTrue);
     expect(recorder.enableCalls, 1);
 
-    // 关闭会弹确认框；取消则不改状态、不撤回。
+    // 关闭会弹确认框；选择保持开启则不改状态、不撤回。
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
     expect(find.text('关闭使用体验分析？'), findsOneWidget);
-    await tester.tap(find.text('取消'));
+    await tester.tap(find.text('保持开启'));
     await tester.pumpAndSettle();
     expect(consentController.analyticsConsent, isTrue);
     expect(recorder.withdrawCalls, 0);

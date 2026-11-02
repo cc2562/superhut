@@ -10,6 +10,9 @@ import 'course_table_style.dart';
 ///
 /// 布局（高度、外边距、内边距）仍由课表页决定，这里只负责表面与描边，
 /// 这样周视图、日视图和设置页预览可以共用同一份材质实现。
+///
+/// 只负责把「课程身份色」换算成实际底色；材质渲染统一委托给
+/// [CourseMaterialSurface]，避免课表页出现第二套 switch。
 class CourseCardSurface extends StatelessWidget {
   const CourseCardSurface({
     super.key,
@@ -31,15 +34,53 @@ class CourseCardSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final AppGlassTheme glass = context.glassTheme;
-    final BorderRadius radius = BorderRadius.circular(borderRadius);
-    final double opacity = style.cardOpacity.clamp(0.0, 1.0);
     // 底色统一由 style 计算：打开「课程块彩色」时是课程色，关闭时是无色蒙版
     // （页面偏亮铺白、偏暗铺黑）。文字色自适应用的是同一份计算，不会两处打架。
     final Color tint = style.cardTint(
       accent,
       pageEstimate: style.estimatedPageColor(scheme),
     );
+
+    return CourseMaterialSurface(
+      tint: tint,
+      style: style,
+      borderRadius: borderRadius,
+      child: child,
+    );
+  }
+}
+
+/// 课表页可选外观的通用表面：纯色 / 毛玻璃 / 液态玻璃。
+///
+/// 只接收**已经算好 alpha 的 [tint]**，因此课程块（课程色）、周视图「今天」
+/// 指示、日视图「下一节课」（主题色）可以共用同一份材质实现与降级逻辑：
+/// * 液态玻璃未开启（或平台不支持）时降级为毛玻璃，避免「选了但没效果」；
+/// * 毛玻璃 `sigma < 0.5` 时跳过 [BackdropFilter]，不为看不见的模糊付离屏开销；
+/// * 纯色且完全透明时直接返回 [child]，不产生任何图层。
+class CourseMaterialSurface extends StatelessWidget {
+  const CourseMaterialSurface({
+    super.key,
+    required this.tint,
+    required this.style,
+    required this.child,
+    this.borderRadius = 8,
+  });
+
+  /// 已带不透明度的底色。
+  final Color tint;
+
+  /// 材质与模糊参数的来源（课程块外观设置）。
+  final CourseTableStyle style;
+
+  final Widget child;
+
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final AppGlassTheme glass = context.glassTheme;
+    final BorderRadius radius = BorderRadius.circular(borderRadius);
 
     // 液态玻璃没开启（或平台不支持）时降到毛玻璃，避免出现「选了但没效果」。
     final CourseCardMaterial material =
@@ -49,7 +90,7 @@ class CourseCardSurface extends StatelessWidget {
 
     switch (material) {
       case CourseCardMaterial.solid:
-        if (opacity <= 0) {
+        if (tint.a <= 0) {
           // 纯色 0 透明度 = 完全不显示底色，只留文字与点击区域。
           return child;
         }
