@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:superhut/security/credential_store.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 
 class ElectricityApi {
@@ -19,11 +19,7 @@ class ElectricityApi {
   onInit() async {
     openids = await hutApi.getOpenid();
     openid = openids[0];
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString('hutToken') != null) {
-      //bool isv =await refreshToken();
-      token = prefs.getString('hutToken')!;
-    }
+    token = await CredentialStore.instance.readOrEmpty('hutToken');
     JSESSIONID = openids[1];
     await getUserInfo();
     configureHutDio();

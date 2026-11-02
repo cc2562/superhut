@@ -1,6 +1,7 @@
 import java.util.Properties
 import java.io.FileInputStream
 import org.gradle.api.tasks.compile.JavaCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
@@ -24,10 +25,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     defaultConfig {
@@ -79,6 +76,21 @@ android {
             )
         }
     }
+}
+
+// Kotlin 2.4 已移除 android { kotlinOptions }，这里用 KGP 的 compilerOptions
+// 继续把 Kotlin 字节码锁在 JVM 11，与上面的 compileOptions 保持一致。
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+    }
+}
+
+dependencies {
+    // AGP 9 默认不再给所有子项目加依赖约束（android.dependency.constraints 默认改为
+    // false），androidx.core 会回落到 1.13.1；而 NotificationHelper 用到了 1.16 才有的
+    // NotificationCompat.ProgressStyle / setRequestPromotedOngoing。显式钉住版本。
+    implementation("androidx.core:core-ktx:1.17.0")
 }
 
 flutter {

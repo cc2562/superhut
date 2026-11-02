@@ -7,7 +7,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../bridge/getCoursePage.dart';
 import '../../pages/score/scorepage.dart';
+import '../../pages/settings/course_table_style_page.dart';
+import '../../pages/settings/privacy_settings_page.dart';
 import '../../pages/settings/theme_settings_page.dart';
+import '../../security/credential_store.dart';
 import '../../utils/hut_user_api.dart';
 import '../../utils/token.dart';
 import '../../widgets/material_grouped_list.dart';
@@ -295,6 +298,17 @@ class _UserPageState extends State<UserPage> {
                       },
                     ),
                     _buildFunctionItem(
+                      icon: Icons.dashboard_customize_outlined,
+                      title: '课表外观',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const CourseTableStylePage(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildFunctionItem(
                       icon: Icons.palette_outlined,
                       title: '外观与主题',
                       onTap: () {
@@ -310,8 +324,8 @@ class _UserPageState extends State<UserPage> {
                       title: "退出登录",
                       onTap: () async {
                         final prefs = await SharedPreferences.getInstance();
-                        prefs.setString('user', "");
-                        prefs.setString('password', "");
+                        // 凭据都在系统安全存储里，退出登录要一并清掉（含各服务 token/cookie）。
+                        await CredentialStore.instance.clearSensitive();
                         await prefs.setBool('isFirstOpen', true);
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           Navigator.of(context).pushReplacement(
@@ -320,6 +334,17 @@ class _UserPageState extends State<UserPage> {
                             ),
                           );
                         });
+                      },
+                    ),
+                    _buildFunctionItem(
+                      icon: Icons.privacy_tip_outlined,
+                      title: '隐私设置',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const PrivacySettingsPage(),
+                          ),
+                        );
                       },
                     ),
                     _buildFunctionItem(

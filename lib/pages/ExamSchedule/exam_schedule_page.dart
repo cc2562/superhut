@@ -4,6 +4,7 @@ import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/ExamSchedule/exam_schedule_bridge.dart';
 import 'package:superhut/theme/app_theme.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 
 class ExamSchedulePage extends StatefulWidget {
   const ExamSchedulePage({super.key});
@@ -51,12 +52,15 @@ class _ExamSchedulePageState extends State<ExamSchedulePage> {
       future: getExamSchedule(),
       rememberFutureResult: true,
       whenDone: (da) {
-        return Scaffold(
+        return GlassScaffold(
+          title: '考试安排',
           backgroundColor: Theme.of(context).colorScheme.surface,
-          appBar: AppBar(title: Text("考试安排")),
+          // 顶部避让放进滚动容器 padding，内容才能滚到玻璃下方而不是被
+          // 截断在顶栏下沿（否则会看到一条底色带）。
           body: Container(
-            margin: EdgeInsets.only(left: 10, right: 10),
+            margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
             child: ListView.builder(
+              padding: EdgeInsets.only(top: glassTopInset(context)),
               itemCount: examSchedules.length,
               itemBuilder: (context, index) {
                 if (examSchedules.isEmpty) {
@@ -236,8 +240,8 @@ class _ExamSchedulePageState extends State<ExamSchedulePage> {
           ),
         );
       },
-      whenNotDone: Scaffold(
-        appBar: AppBar(title: Text("考试安排")),
+      whenNotDone: GlassScaffold(
+        title: '考试安排',
         body: Center(
           child: LoadingAnimationWidget.inkDrop(
             color: Theme.of(context).primaryColor,

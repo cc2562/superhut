@@ -3,6 +3,8 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import 'glass/glass_theme.dart';
+
 enum AppThemePreset { indigo, blue, teal, purple, orange, rose }
 
 extension AppThemePresetData on AppThemePreset {
@@ -164,7 +166,11 @@ abstract final class AppTheme {
     );
   }
 
-  static ThemeData fromScheme(ColorScheme scheme) {
+  static ThemeData fromScheme(
+    ColorScheme scheme, {
+    bool glassEnabled = false,
+    double glassTint = 0.5,
+  }) {
     final isDark = scheme.brightness == Brightness.dark;
     final theme =
         isDark
@@ -189,7 +195,14 @@ abstract final class AppTheme {
 
     return theme.copyWith(
       scaffoldBackgroundColor: scheme.surface,
-      extensions: <ThemeExtension<dynamic>>[AppSemanticColors.from(scheme)],
+      extensions: <ThemeExtension<dynamic>>[
+        AppSemanticColors.from(scheme),
+        AppGlassTheme(
+          enabled: glassEnabled,
+          brightness: scheme.brightness,
+          tintStrength: glassTint,
+        ),
+      ],
       appBarTheme: theme.appBarTheme.copyWith(
         centerTitle: false,
         elevation: 0,

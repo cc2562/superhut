@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../security/credential_store.dart';
 import '../utils/pwd.dart';
 import '../utils/token.dart';
 
@@ -10,11 +11,9 @@ Future<bool> loginHut(String userNo, String orgPassword) async {
   print("Started");
   // 加密密码
   final encryptedPassword = encryptPassword(orgPassword, Sw);
-  print('加密后的密码：  $encryptedPassword');
 
   // 二次Base64编码
   final pwd = base64Encode(utf8.encode(encryptedPassword));
-  print('加密并Base64 编码后的密码：  $pwd');
   final dio = Dio();
   dio.options.baseUrl = 'https://jwxtsj.hut.edu.cn';
   dio.options.connectTimeout = Duration(seconds: 5);
@@ -27,7 +26,6 @@ Future<bool> loginHut(String userNo, String orgPassword) async {
   };
   Response response = await dio.post('/njwhd/login?userNo=$userNo&pwd=$pwd');
   Map data = response.data;
-  print(data);
   Map userData = data['data'];
   String name = userData['name'];
   String token = userData['token'];
@@ -36,8 +34,9 @@ Future<bool> loginHut(String userNo, String orgPassword) async {
   String clsName = userData['clsName'];
   final prefs = await SharedPreferences.getInstance();
   saveToken(token);
-  prefs.setString('user', userNo);
-  prefs.setString('password', orgPassword);
+  // 账号密码属于凭据，写系统安全存储；姓名/学院/班级只是展示型缓存，留在 prefs。
+  await CredentialStore.instance.write('user', userNo);
+  await CredentialStore.instance.write('password', orgPassword);
   await prefs.setBool('isFirstOpen', false);
   await prefs.setString('name', name);
   await prefs.setString('entranceYear', entranceYear);

@@ -5,6 +5,7 @@ import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:superhut/pages/freeroom/buildingBridge.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 
 class FreeRoomPage extends StatefulWidget {
   final String buildingId, buildingName;
@@ -28,9 +29,9 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
+      title: widget.buildingName,
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(title: Text(widget.buildingName)),
       body: EnhancedFutureBuilder(
         future: getRoom(date, nodeId, widget.buildingId, false),
         rememberFutureResult: false,
@@ -39,7 +40,7 @@ class _FreeRoomPageState extends State<FreeRoomPage> {
             direction: Axis.vertical,
             children: [
               Padding(
-                padding: EdgeInsets.only(left: 10, right: 10),
+                padding: EdgeInsets.fromLTRB(10, glassTopInset(context), 10, 0),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.center,

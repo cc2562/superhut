@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:superhut/utils/token.dart';
 import 'package:superhut/utils/withhttp.dart';
 
 late String currentTerm;

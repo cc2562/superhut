@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:superhut/security/credential_store.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 import 'package:superhut/utils/token.dart';
 
@@ -97,19 +98,17 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
   // 保存获取到的新token和cookie
   Future<void> _saveTokenAndCookie(Map<String, String> data) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-
       String token = data['token'] ?? '';
       String myClientTicket = data['my_client_ticket'] ?? '';
 
-      // 保存token
+      // 保存token（凭据走系统安全存储；键名由调用方传入，可能不是固定的）
       if (token.isNotEmpty) {
-        await prefs.setString(widget.tokenKey, token);
+        await CredentialStore.instance.write(widget.tokenKey, token);
       }
 
       // 保存cookie
       if (myClientTicket.isNotEmpty) {
-        await prefs.setString(widget.cookieKey, myClientTicket);
+        await CredentialStore.instance.write(widget.cookieKey, myClientTicket);
       }
 
       if (widget.onLoginComplete != null) {
@@ -131,8 +130,10 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('HUT统一认证'), leading: SizedBox()),
+      return GlassScaffold(
+        title: 'HUT统一认证',
+        showBackButton: false,
+        insetBody: true,
         body: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -147,8 +148,10 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
     }
 
     if (_errorMessage != null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('HUT统一认证'), leading: SizedBox()),
+      return GlassScaffold(
+        title: 'HUT统一认证',
+        showBackButton: false,
+        insetBody: true,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -212,16 +215,8 @@ class HutCasLoginExample extends StatelessWidget {
                 ),
           ),
         );
-        String token = result['token'] ?? '';
-        String myClientTicket = result['my_client_ticket'] ?? '';
-        print('获取到的教务系统Token: $token');
-        print('获取到的my_client_ticket: $myClientTicket');
         if (result != null && result is Map<String, String>) {
-          // 使用获取到的token和cookie
-          String token = result['token'] ?? '';
-          String myClientTicket = result['my_client_ticket'] ?? '';
-          print('获取到的教务系统Token: $token');
-          print('获取到的my_client_ticket: $myClientTicket');
+          // 使用获取到的token和cookie（不再打印，认证数据一律不进日志）
         }
       },
       child: const Text('登录教务系统'),
@@ -233,23 +228,22 @@ class HutCasLoginExample extends StatelessWidget {
 class HutCasTokenRetriever {
   /// Clears the cached academic-system session before switching HUT accounts.
   static Future<void> clearCachedSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('my_client_ticket');
+    final store = CredentialStore.instance;
+    await store.delete('token');
+    await store.delete('my_client_ticket');
   }
 
   static Future<Map<String, String>?> getJwxtTokenAndCookie(
     BuildContext context,
   ) async {
-    // 先检查是否有缓存的token
-    final prefs = await SharedPreferences.getInstance();
-    final cachedToken = prefs.getString('token') ?? '';
-    final cachedCookie = prefs.getString('my_client_ticket') ?? '';
+    // 先检查是否有缓存的token（在系统安全存储里）
+    final store = CredentialStore.instance;
+    final cachedToken = await store.readOrEmpty('token');
+    final cachedCookie = await store.readOrEmpty('my_client_ticket');
     print('开始');
     if (cachedToken.isNotEmpty) {
       // 使用token.dart中的checkTokenValid方法验证token有效性
       bool isTokenValid = await checkTokenValid();
-      print(isTokenValid);
       if (isTokenValid) {
         return {'token': cachedToken, 'my_client_ticket': cachedCookie};
       }

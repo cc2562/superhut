@@ -7,6 +7,7 @@ import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../theme/glass/glass_scaffold.dart';
 import 'logic.dart';
 
 // Local implementation of ScreenUtils
@@ -87,14 +88,13 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    // 背景渐变保持全屏，只把内容让到悬浮顶栏下方；SafeArea 已经吃掉状态栏，
+    // 这里只补顶栏本身的高度（玻璃关闭时为 0）。
+    final double topBarGap =
+        glassTopInset(context) - MediaQuery.paddingOf(context).top;
+    return GlassScaffold(
+      title: S.of(context).function_hot_water,
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text(S.of(context).function_hot_water),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
           Positioned.fill(
@@ -122,30 +122,33 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
             ),
           ),
           SafeArea(
-            child: Column(
-              children: [
-                // 热水状态显示
-                waterStatusWidget(),
+            child: Padding(
+              padding: EdgeInsets.only(top: topBarGap),
+              child: Column(
+                children: [
+                  // 热水状态显示
+                  waterStatusWidget(),
 
-                // 设备选择区域
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: deviceDrinkRowBtnWidget(),
+                  // 设备选择区域
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: deviceDrinkRowBtnWidget(),
+                    ),
                   ),
-                ),
 
-                // 开始/结束按钮区域
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: deviceHotWaterBtnWidget(context),
+                  // 开始/结束按钮区域
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: deviceHotWaterBtnWidget(context),
+                    ),
                   ),
-                ),
 
-                // 余额显示
-                balanceCardWidget(context),
-              ],
+                  // 余额显示
+                  balanceCardWidget(context),
+                ],
+              ),
             ),
           ),
           // 添加气泡动画
@@ -1005,7 +1008,7 @@ class _BubbleAnimationState extends State<BubbleAnimation>
       }
 
       // Remove bubbles that have completed their animation
-      bubbles.removeWhere((bubble) => bubble.isCompleted);
+      bubbles.removeWhere((bubble) => bubble.isCompleted.value);
     });
   }
 
@@ -1034,7 +1037,10 @@ class Bubble extends StatefulWidget {
   final Offset position;
   final Offset destination;
   final Duration duration;
-  bool isCompleted = false;
+
+  /// 动画是否结束。用 [ValueNotifier] 而不是普通字段：
+  /// `StatefulWidget` 是不可变的，可变状态只能放在可监听对象或 State 里。
+  final ValueNotifier<bool> isCompleted = ValueNotifier<bool>(false);
 
   Bubble({
     Key? key,
@@ -1072,13 +1078,14 @@ class _BubbleState extends State<Bubble> with SingleTickerProviderStateMixin {
     );
 
     _controller.forward().then((_) {
-      widget.isCompleted = true;
+      widget.isCompleted.value = true;
     });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    widget.isCompleted.dispose();
     super.dispose();
   }
 

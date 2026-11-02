@@ -4,6 +4,7 @@ import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:superhut/pages/Commentary/CommentaryApi.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 
 class commentaryPage3 extends StatefulWidget {
   final String batchId;
@@ -54,29 +55,35 @@ class _commentaryPage3State extends State<commentaryPage3> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GlassScaffold(
+      title: '',
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        actions: [
-          TextButton(
-            onPressed: () async {
-              //getUserSelect();
-              List _userSelect = await autoFinishCommentary();
-              toSubmitCommentary(_userSelect);
-            },
-            child: Text('一键完成'),
+      // 非图标动作（文字按钮）需要更宽的操作胶囊。
+      actionsReservedWidth: 108,
+      actions: [
+        TextButton(
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-        ],
-      ),
+          onPressed: () async {
+            //getUserSelect();
+            List _userSelect = await autoFinishCommentary();
+            toSubmitCommentary(_userSelect);
+          },
+          child: Text('一键完成'),
+        ),
+      ],
       body: Container(
-        margin: EdgeInsets.only(left: 10, right: 10),
+        margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
         child: EnhancedFutureBuilder(
           future: getOptionList(),
           rememberFutureResult: true,
           whenDone: (List theOptionList) {
             return ListView.builder(
+              // 顶部避让放进列表 padding，内容可滚到玻璃下方。
+              padding: EdgeInsets.only(top: glassTopInset(context)),
               itemCount: theOptionList.length + 1,
               itemBuilder: (BuildContext context, int index) {
                 // 获取当前问题的选项状态

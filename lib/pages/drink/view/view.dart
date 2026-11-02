@@ -7,6 +7,7 @@ import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:superhut/theme/app_theme.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 
 import 'logic.dart';
 
@@ -29,14 +30,13 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    // 背景渐变保持全屏，只把内容让到悬浮顶栏下方；SafeArea 已经吃掉状态栏，
+    // 这里只补顶栏本身的高度（玻璃关闭时为 0）。
+    final double topBarGap =
+        glassTopInset(context) - MediaQuery.paddingOf(context).top;
+    return GlassScaffold(
+      title: '快速喝水',
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text('快速喝水'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
           // 添加背景渐变
@@ -65,59 +65,64 @@ class _FunctionDrinkPageState extends State<FunctionDrinkPage> {
             ),
           ),
           SafeArea(
-            child: Column(
-              children: [
-                // 热水状态显示
-                waterStatusWidget(),
+            child: Padding(
+              padding: EdgeInsets.only(top: topBarGap),
+              child: Column(
+                children: [
+                  // 热水状态显示
+                  waterStatusWidget(),
 
-                // 选择饮水设备按钮
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          deviceDrinkRowBtnWidget(),
-                          paymentInfoWidget(),
-                        ],
+                  // 选择饮水设备按钮
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            deviceDrinkRowBtnWidget(),
+                            paymentInfoWidget(),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: 20),
-                    child: TextButton(
-                      onPressed: () {
-                        _showMoreFunctionsBottomSheet(context);
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '展开更多功能',
-                            style: TextStyle(
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: 20),
+                      child: TextButton(
+                        onPressed: () {
+                          _showMoreFunctionsBottomSheet(context);
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '展开更多功能',
+                              style: TextStyle(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Icon(
+                              Icons.keyboard_arrow_right,
                               color:
                                   Theme.of(
                                     context,
                                   ).colorScheme.onSurfaceVariant,
                             ),
-                          ),
-                          Icon(
-                            Icons.keyboard_arrow_right,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           // 添加气泡动画
@@ -885,13 +890,14 @@ class _QRCodeScannerPageState extends State<QRCodeScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('扫描设备二维码', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
+    return GlassScaffold(
+      title: '扫描设备二维码',
+      // 压在相机预览上，前景固定白色。
+      foregroundColor: Colors.white,
+      backgroundColor: Colors.black,
+      // 相机预览是实拍画面：色带在原生视图上采样不到，硬叠一层
+      // 黑底也会把取景画面压暗，直接关掉。
+      showScrollEdge: false,
       body: Stack(
         children: [
           QRView(

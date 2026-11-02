@@ -1,7 +1,11 @@
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:superhut/theme/glass/glass_scaffold.dart';
+import 'package:superhut/theme/glass/glass_theme.dart';
+import 'package:superhut/theme/glass/scrim_control_button.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 
 class Type1Webview extends StatefulWidget {
@@ -39,53 +43,72 @@ class _Type1WebviewState extends State<Type1Webview> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("智慧工大")),
+    return GlassScaffold(
+      // 网页全屏铺底，只留一枚悬浮返回键：网页自带头部，再叠一层标题会
+      // 变成双层，也会在浅色网页上失去对比。
+      title: '',
+      // 滚动边缘色带同样采样不到 WebView 的原生画面，关了它，
+      // 免得顶栏下方横一条与网页内容无关的底色带。
+      showScrollEdge: false,
+      // WebView 是原生视图，玻璃镜片采样不到它的画面，这里改用半透明
+      // 实底的悬浮按钮，避免出现一块没有折射的死灰圆片。
+      leading:
+          context.glassTheme.enabled
+              ? ScrimControlButton(
+                icon: Icons.arrow_back_ios_new_rounded,
+                tooltip: '返回',
+                semanticLabel: '返回',
+                onTap: () => Navigator.of(context).maybePop(),
+              )
+              : null,
       body: EnhancedFutureBuilder(
         future: getDetail(),
         rememberFutureResult: true,
         whenDone: (v) {
           return Stack(
             children: [
-              InAppWebView(
-                initialUrlRequest: URLRequest(
-                  url: WebUri(resultUrl),
-                  headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
-                    "Connection": "keep-alive",
-                    "Accept":
-                        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                    "Accept-Encoding": "gzip, deflate, br, zstd",
-                    "sec-ch-ua":
-                        "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
-                    "sec-ch-ua-mobile": "?1",
-                    "sec-ch-ua-platform": "\"Android\"",
-                    "Upgrade-Insecure-Requests": "1",
-                    "x-id-token": token,
-                    "X-Requested-With": "com.supwisdom.hut",
-                    "Sec-Fetch-Site": "none",
-                    "Sec-Fetch-Mode": "navigate",
-                    "Sec-Fetch-User": "?1",
-                    "Sec-Fetch-Dest": "document",
-                    "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-                    "Cookie":
-                        "userToken=$token; Domain=mycas.hut.edu.cn; Path=/",
-                  }, // 自定义 Header
+              // 教务网页包含学号与成绩等敏感信息，整块遮罩。
+              ClarityMask(
+                child: InAppWebView(
+                  initialUrlRequest: URLRequest(
+                    url: WebUri(resultUrl),
+                    headers: {
+                      "User-Agent":
+                          "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
+                      "Connection": "keep-alive",
+                      "Accept":
+                          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                      "Accept-Encoding": "gzip, deflate, br, zstd",
+                      "sec-ch-ua":
+                          "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
+                      "sec-ch-ua-mobile": "?1",
+                      "sec-ch-ua-platform": "\"Android\"",
+                      "Upgrade-Insecure-Requests": "1",
+                      "x-id-token": token,
+                      "X-Requested-With": "com.supwisdom.hut",
+                      "Sec-Fetch-Site": "none",
+                      "Sec-Fetch-Mode": "navigate",
+                      "Sec-Fetch-User": "?1",
+                      "Sec-Fetch-Dest": "document",
+                      "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                      "Cookie":
+                          "userToken=$token; Domain=mycas.hut.edu.cn; Path=/",
+                    }, // 自定义 Header
+                  ),
+
+                  onLoadStart: (controller, url) {
+                    setState(() {
+                      _isPageLoading = true;
+                    });
+                    print('Start loading: $url');
+                  },
+
+                  onLoadStop: (controller, url) {
+                    setState(() {
+                      _isPageLoading = false;
+                    });
+                  },
                 ),
-
-                onLoadStart: (controller, url) {
-                  setState(() {
-                    _isPageLoading = true;
-                  });
-                  print('Start loading: $url');
-                },
-
-                onLoadStop: (controller, url) {
-                  setState(() {
-                    _isPageLoading = false;
-                  });
-                },
               ),
               if (_isPageLoading)
                 Positioned.fill(

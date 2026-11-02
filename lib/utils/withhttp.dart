@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:superhut/security/credential_store.dart';
 
 final dio = Dio(); // With default `Options`.
 final hutDio = Dio(); // With default `Options`.
@@ -43,11 +44,12 @@ Future<void> configureDioWithCookie(
   };
 }
 
-// 新增：从SharedPreferences获取token和cookie并配置dio
+// 新增：从安全存储取 token 和 cookie 并配置 dio
 Future<void> configureDioFromStorage() async {
-  final prefs = await SharedPreferences.getInstance();
-  String token = prefs.getString('token') ?? '';
-  String myClientTicket = prefs.getString('my_client_ticket') ?? '';
+  final store = CredentialStore.instance;
+  // read 走内存缓存，热路径不会每次都敲 Keystore/Keychain。
+  String token = await store.readOrEmpty('token');
+  String myClientTicket = await store.readOrEmpty('my_client_ticket');
 
   await configureDioWithCookie(token, myClientTicket: myClientTicket);
 }
@@ -65,7 +67,6 @@ Future<Response> postDio(String path, Map postData) async {
       },
     ),
   );
-  print(response.data);
   return response;
 }
 
@@ -89,6 +90,5 @@ Future<Response> postDioWithCookie(
     data: postData,
     options: Options(followRedirects: false),
   );
-  print(response.data);
   return response;
 }

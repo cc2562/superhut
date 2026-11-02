@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../bridge/getCoursePage.dart';
+import '../security/credential_store.dart';
 import '../utils/token.dart';
 
 class WebViewLoginScreen extends StatefulWidget {
@@ -73,8 +75,9 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
             'TokenChannel',
             onMessageReceived: (message) async {
               final prefs = await SharedPreferences.getInstance();
-              prefs.setString('user', widget.userNo);
-              prefs.setString('password', widget.password);
+              // 账号密码写系统安全存储；loginType 是非敏感的流程标记，留 prefs。
+              await CredentialStore.instance.write('user', widget.userNo);
+              await CredentialStore.instance.write('password', widget.password);
               prefs.setString('loginType', 'jwxt');
               await prefs.setBool('isFirstOpen', false);
               _handleResponse();
@@ -188,7 +191,8 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          WebViewWidget(controller: _webViewController),
+          // 登录网页包含学号密码，整块遮罩，避免被 Clarity 会话录制采集。
+          ClarityMask(child: WebViewWidget(controller: _webViewController)),
           Container(
             color: Theme.of(context).colorScheme.surface.withAlpha(245),
             width: double.infinity,

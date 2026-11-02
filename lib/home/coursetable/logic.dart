@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../../utils/course/class_time_table.dart';
 import '../../utils/course/coursemain.dart';
+
 /*
  * 课程数据模型类
  * @param name 课程名称
