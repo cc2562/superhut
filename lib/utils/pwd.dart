@@ -67,15 +67,5 @@ String encryptPassword(String password, String key) {
   return base64Encode(encrypted.bytes);
 }
 
-void main() {
-  // 示例密码
-  final password = "cc80212562";
-
-  // 加密密码
-  final encryptedPassword = encryptPassword(password, Sw);
-  print('加密后的密码：  $encryptedPassword');
-
-  // 二次Base64编码
-  final pwd = base64Encode(utf8.encode(encryptedPassword));
-  print('加密并Base64 编码后的密码：  $pwd');
-}
+// 这里原本有一段带明文示例密码的调试用 main()，已删除：
+// 源码里不应该出现任何真实凭据，也不应该打印加密后的密码。

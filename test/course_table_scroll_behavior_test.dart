@@ -14,9 +14,7 @@ void main() {
   Widget wrap(Widget child) =>
       MaterialApp(theme: androidM3, home: Scaffold(body: child));
 
-  Widget tallList() => ListView(
-    children: const [SizedBox(height: 4000)],
-  );
+  Widget tallList() => ListView(children: const [SizedBox(height: 4000)]);
 
   testWidgets('对照组：默认安卓 M3 列表会挂拉伸指示器', (tester) async {
     await tester.pumpWidget(wrap(tallList()));

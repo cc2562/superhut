@@ -13,14 +13,21 @@ void main() {
     expect(ClarityService.projectId, 's1q3qmd7zu');
   });
 
-  testWidgets('未勾选时按钮禁用，勾选后可同意，不同意走回调', (tester) async {
+  testWidgets('两项都不勾时按钮禁用；只勾协议即可继续，且不上报行为分析同意', (tester) async {
     int accepted = 0;
     int exited = 0;
+    bool? reportedAnalytics;
 
     await tester.pumpWidget(
       MaterialApp(
         home: AgreementConsentPage(
-          onAccept: (BuildContext context) async => accepted++,
+          onAccept: (
+            BuildContext context, {
+            required bool analyticsConsent,
+          }) async {
+            accepted++;
+            reportedAnalytics = analyticsConsent;
+          },
           onExit: () async => exited++,
         ),
       ),
@@ -29,7 +36,7 @@ void main() {
     final Finder agreeButton = find.widgetWithText(FilledButton, '同意并继续');
     expect(tester.widget<FilledButton>(agreeButton).onPressed, isNull);
 
-    // 点文案也能切换勾选（命中区域更大）。
+    // 只勾第一项（协议必选）。
     await tester.tap(find.text('我已阅读并同意'));
     await tester.pump();
     expect(tester.widget<FilledButton>(agreeButton).onPressed, isNotNull);
@@ -37,17 +44,46 @@ void main() {
     await tester.tap(agreeButton);
     await tester.pump();
     expect(accepted, 1);
+    expect(reportedAnalytics, isFalse);
 
     await tester.tap(find.text('不同意，退出应用'));
     await tester.pump();
     expect(exited, 1);
   });
 
+  testWidgets('单独勾选行为分析后才上报 true', (tester) async {
+    bool? reportedAnalytics;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AgreementConsentPage(
+          onAccept: (
+            BuildContext context, {
+            required bool analyticsConsent,
+          }) async {
+            reportedAnalytics = analyticsConsent;
+          },
+          onExit: () async {},
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('我已阅读并同意'));
+    await tester.tap(find.text('我同意将使用行为数据用于产品改进'));
+    await tester.pump();
+
+    await tester.tap(find.widgetWithText(FilledButton, '同意并继续'));
+    await tester.pump();
+
+    expect(reportedAnalytics, isTrue);
+  });
+
   testWidgets('同意页可以直接打开两份协议', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: AgreementConsentPage(
-          onAccept: (BuildContext context) async {},
+          onAccept:
+              (BuildContext context, {required bool analyticsConsent}) async {},
           onExit: () async {},
         ),
       ),

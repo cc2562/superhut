@@ -14,6 +14,8 @@ import 'agreement/agreement_controller.dart';
 import 'agreement/consent_page.dart';
 import 'analytics/clarity_service.dart';
 import 'home/coursetable/style/course_table_style_controller.dart';
+import 'privacy/privacy_consent_controller.dart';
+import 'security/credential_store.dart';
 import 'home/homeview/view.dart';
 import 'pages/drink/view/view.dart';
 import 'pages/water/view.dart';
@@ -53,6 +55,10 @@ Future<void> main() async {
     }
   }
 
+  // 把老版本明文存在 SharedPreferences 里的凭据搬进系统安全存储并删掉原键。
+  // 幂等且失败不阻塞启动；放在 runApp 之前，后续任何读取都能直接命中新位置。
+  await CredentialStore.instance.migrateFromPrefs();
+
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   runApp(const MyApp());
 }
@@ -67,7 +73,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _isFirstOpen = true;
   bool _isLoading = true;
-  bool _isOldVersion = false;
   static const platform = MethodChannel(
     'com.superhut.rice.superhut/widget_actions',
   );
@@ -82,6 +87,11 @@ class _MyAppState extends State<MyApp> {
   /// 协议同意状态：未同意前只显示同意页，且不启动任何统计 SDK。
   final AgreementController agreementController = Get.put(
     AgreementController(),
+  );
+
+  /// 行为分析（Clarity）的单独同意状态，与协议同意相互独立。
+  late final PrivacyConsentController privacyConsentController = Get.put(
+    PrivacyConsentController(agreement: agreementController),
   );
 
   @override
@@ -138,15 +148,29 @@ class _MyAppState extends State<MyApp> {
     await themeController.load();
     await courseStyleController.load();
     await agreementController.load();
+    await privacyConsentController.load();
     // await prefs.setBool('isFirstOpen', true);
     _isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
-    if (_isFirstOpen) {
-    } else {
-      _isOldVersion = prefs.getString('name') == null ? true : false;
-    }
     setState(() {
       _isFirstOpen = _isFirstOpen;
       _isLoading = false;
+    });
+    // 冷启动时用户此前已经同意过：等首帧渲染完成后再启动采集。
+    // 这里必须用 navigatorKey 的 context（在 MaterialApp 之内、带 MediaQuery），
+    // MyApp 自身的 context 在 MaterialApp 之上，SDK 会拒绝初始化。
+    _scheduleAnalyticsStart();
+  }
+
+  /// 已同意时在首帧后幂等启动 Clarity。
+  ///
+  /// 未同意（包括同意过协议但没勾选行为分析）时什么都不做，
+  /// 用户之后仍可在「隐私设置」里手动开启。
+  void _scheduleAnalyticsStart() {
+    if (!privacyConsentController.analyticsAllowed) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final BuildContext? context = navigatorKey.currentContext;
+      if (context == null) return;
+      ClarityService.start(context);
     });
   }
 
@@ -161,11 +185,16 @@ class _MyAppState extends State<MyApp> {
     return _isFirstOpen ? WelcomepagePage() : const HomeviewPage();
   }
 
-  Future<void> _handleAgreementAccepted(BuildContext consentContext) async {
+  Future<void> _handleAgreementAccepted(
+    BuildContext consentContext, {
+    required bool analyticsConsent,
+  }) async {
     await agreementController.accept();
+    await privacyConsentController.setAnalyticsConsent(analyticsConsent);
     // 先启动 Clarity 再切页面：这次拿的是同意页的 context（位于 MaterialApp 内、
     // 带 MediaQuery），页面切走后它就会被销毁。
-    if (consentContext.mounted) {
+    // 未勾选行为分析时不调用任何 SDK 方法，应用照常可用。
+    if (analyticsConsent && consentContext.mounted) {
       ClarityService.start(consentContext);
     }
     if (mounted) setState(() {});

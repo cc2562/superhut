@@ -71,10 +71,13 @@ dependencies:
   image_picker: ^1.2.4
   flex_color_picker: ^3.8.0
   clarity_flutter: ^1.10.1
+  flutter_secure_storage: ^10.3.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # 测试里用来模拟「安全存储失效」，断言降级路径不会抛异常。
+  flutter_secure_storage_platform_interface: ^2.1.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

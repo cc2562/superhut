@@ -228,8 +228,8 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
                   }
                   _checkUrlAndExtractTokenAndCookie(_currentUrl);
 
-                  // 输出当前URL到控制台，便于调试
-                  print('页面加载完成: $_currentUrl');
+                  // 不再打印当前 URL 与页面 console：其中的 code / ticket 参数
+                  // 本身就是凭据，认证相关的任何内容都不应进日志。
                 }
               },
               onLoadError: (controller, url, code, message) {
@@ -239,9 +239,6 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
                 if (widget.onError != null) {
                   widget.onError!('页面加载错误: $message');
                 }
-              },
-              onConsoleMessage: (controller, consoleMessage) {
-                print('Console: ${consoleMessage.message}');
               },
             ),
           ),
@@ -268,11 +265,7 @@ class HutLoginExample extends StatelessWidget {
     return HutLoginSystem(
       initialIdToken: idToken,
       onTokenAndCookieExtracted: (result) {
-        // 处理提取到的token和cookie
-        String token = result['token'] ?? '';
-        String myClientTicket = result['my_client_ticket'] ?? '';
-        print('提取到的token: $token');
-        print('提取到的my_client_ticket: $myClientTicket');
+        // 处理提取到的token和cookie（认证数据不打印）
         // 这里可以保存token和cookie或导航到其他页面
         ScaffoldMessenger.of(
           context,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../security/credential_store.dart';
 import '../../utils/hut_user_api.dart';
 
 var api = HutUserApi();
@@ -24,7 +24,8 @@ void loginToHuT(String username, String password, context) {
 }
 
 /// 读取上次短信登录回填的手机号（无则空串）。
+///
+/// 手机号属于个人标识，跟着其它凭据一起放在系统安全存储里。
 Future<String> readHutMobile() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('hutMobile') ?? '';
+  return CredentialStore.instance.readOrEmpty('hutMobile');
 }

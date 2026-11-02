@@ -1008,7 +1008,7 @@ class _BubbleAnimationState extends State<BubbleAnimation>
       }
 
       // Remove bubbles that have completed their animation
-      bubbles.removeWhere((bubble) => bubble.isCompleted);
+      bubbles.removeWhere((bubble) => bubble.isCompleted.value);
     });
   }
 
@@ -1037,7 +1037,10 @@ class Bubble extends StatefulWidget {
   final Offset position;
   final Offset destination;
   final Duration duration;
-  bool isCompleted = false;
+
+  /// 动画是否结束。用 [ValueNotifier] 而不是普通字段：
+  /// `StatefulWidget` 是不可变的，可变状态只能放在可监听对象或 State 里。
+  final ValueNotifier<bool> isCompleted = ValueNotifier<bool>(false);
 
   Bubble({
     Key? key,
@@ -1075,13 +1078,14 @@ class _BubbleState extends State<Bubble> with SingleTickerProviderStateMixin {
     );
 
     _controller.forward().then((_) {
-      widget.isCompleted = true;
+      widget.isCompleted.value = true;
     });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    widget.isCompleted.dispose();
     super.dispose();
   }
 

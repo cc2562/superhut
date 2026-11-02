@@ -62,7 +62,11 @@ void main() {
             height: 40,
             pillHighlight: true,
             segments: const [
-              GlassSegment(value: 'a', label: '系统', icon: Icons.brightness_auto),
+              GlassSegment(
+                value: 'a',
+                label: '系统',
+                icon: Icons.brightness_auto,
+              ),
               GlassSegment(value: 'b', label: '浅色', icon: Icons.light_mode),
               GlassSegment(value: 'c', label: '深色', icon: Icons.dark_mode),
             ],

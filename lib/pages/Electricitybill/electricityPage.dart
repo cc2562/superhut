@@ -47,7 +47,7 @@ class _ElectricityPageState extends State<ElectricityPage> {
 
   Future<void> getBalance() async {
     await hutUserApi.getCardBalance().then((value) {
-      balance = value.toString() ?? '--';
+      balance = value.toString();
       setState(() {
         balance = balance;
       });
@@ -533,10 +533,9 @@ class _ElectricityPageState extends State<ElectricityPage> {
     final TextEditingController deviceCodeController = TextEditingController();
     final prefs = await SharedPreferences.getInstance();
     bool isEnable = prefs.getBool('enableBillWarning') ?? false;
-    String RoomId = "", RoomName = "";
+    String RoomName = "";
     double bill = 0;
     if (isEnable) {
-      RoomId = prefs.getString('enableRoomId') ?? '';
       RoomName = prefs.getString('enableRoomName') ?? '';
       bill = prefs.getDouble('enableBill') ?? 0;
     }

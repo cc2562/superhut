@@ -62,9 +62,8 @@ class _Type2WebviewState extends State<Type2Webview> {
   String token = '';
 
   String enCodeUrl(String url) {
-    String encoded = Uri.encodeComponent(url);
-    print(encoded);
-    return encoded;
+    // 编码后的 URL 可能带着 token 查询参数，不再输出到日志。
+    return Uri.encodeComponent(url);
   }
 
   List getTokenAccept(String tokenAccept) {
@@ -80,9 +79,7 @@ class _Type2WebviewState extends State<Type2Webview> {
 
   bool doWithAccept() {
     List tokenAcceptList = getTokenAccept(widget.tokenAccept);
-    print(tokenAcceptList);
     for (var item in tokenAcceptList) {
-      print(item);
       if (item['tokenType'] == 'header') {
         headerMap.addAll({item['tokenKey']: token});
       } else if (item['tokenType'] == 'url') {
@@ -101,14 +98,14 @@ class _Type2WebviewState extends State<Type2Webview> {
     } else {
       headerMap.remove("Cookie");
     }
-    print(headerMap);
+    // 这里以前会打印整个 headerMap（含 token 与 Cookie），
+    // 认证数据一律不落日志。
     return true;
   }
 
   Future<bool> getDetail() async {
     token = await api.getToken();
     resultUrl = widget.serviceUrl;
-    print(resultUrl);
     doWithAccept();
     await _injectWebViewCookies();
     return true;
@@ -154,21 +151,10 @@ class _Type2WebviewState extends State<Type2Webview> {
           sameSite: HTTPCookieSameSitePolicy.LAX,
         );
       }
-
-      if (kDebugMode) {
-        final cookies = await cookieManager.getCookies(url: webUri);
-        final cookieDebugInfo = cookies
-            .where((cookie) => _getCookieTokenKeys().contains(cookie.name))
-            .map(
-              (cookie) =>
-                  '${cookie.name}; domain=${cookie.domain}; path=${cookie.path}',
-            )
-            .join(', ');
-        print('Type2 WebView cookies injected for $webUri: $cookieDebugInfo');
-      }
     } catch (e) {
+      // 只记错误本身，不带 cookie 内容。
       if (kDebugMode) {
-        print('Type2 WebView cookie injection failed: $e');
+        debugPrint('Type2 WebView cookie 注入失败: $e');
       }
     }
   }
@@ -392,7 +378,6 @@ class _Type2WebviewState extends State<Type2Webview> {
   void _handleAlipayUrl(String url) async {
     try {
       final Uri uri = Uri.parse(url);
-      print(url);
       if (!await launchUrl(uri)) {
         ScaffoldMessenger.of(
           context,
@@ -484,7 +469,6 @@ class _Type2WebviewState extends State<Type2Webview> {
                         setState(() {
                           _isPageLoading = true;
                         });
-                        print('Start loading: $url');
                       },
                       onWebViewCreated: (controller) {
                         _webViewController = controller;
@@ -496,7 +480,6 @@ class _Type2WebviewState extends State<Type2Webview> {
                         _updateCanGoBackState();
                         _removeNavigationElement();
                         _setupAlipayLinkListener(); // 添加支付宝链接监听
-                        print('Stop loading: $url');
                       },
                       onUpdateVisitedHistory: (
                         controller,
@@ -504,7 +487,6 @@ class _Type2WebviewState extends State<Type2Webview> {
                         androidIsReload,
                       ) {
                         _updateCanGoBackState();
-                        print('History updated: $url');
                       },
                       shouldOverrideUrlLoading: (
                         controller,

@@ -2,20 +2,18 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/login/loginwithpost.dart';
+import 'package:superhut/security/credential_store.dart';
 import 'package:superhut/utils/withhttp.dart';
 
 import '../login/hut_cas_login_page.dart';
 import '../login/unified_login_page.dart';
 
 Future<void> saveToken(String token) async {
-  final prefs = await SharedPreferences.getInstance();
-  prefs.setString('token', token);
+  await CredentialStore.instance.write('token', token);
 }
 
 Future<String> getToken() async {
-  final prefs = await SharedPreferences.getInstance();
-  String token = prefs.getString('token') ?? '';
-  return token;
+  return CredentialStore.instance.readOrEmpty('token');
 }
 
 Future<bool> checkTokenValid() async {
@@ -44,8 +42,19 @@ Future<bool> renewToken(BuildContext context) async {
       return true;
     }
     try {
-      String user = prefs.getString('user') ?? "1";
-      String password = prefs.getString('password') ?? "1";
+      final store = CredentialStore.instance;
+      final String user = await store.readOrEmpty('user');
+      final String password = await store.readOrEmpty('password');
+      if (user.isEmpty || password.isEmpty) {
+        // 安全存储里没有凭据（换机、撤销权限、系统升级导致 KeyStore 失效等），
+        // 直接引导重新登录，不要拿空账号去撞接口。
+        await _returnToLoginAfterAuthenticationExpired(
+          navigator,
+          prefs,
+          messenger,
+        );
+        return false;
+      }
       return await loginHut(user, password);
     } on DioException catch (error) {
       debugPrint('教务系统登录续期网络错误: $error');
