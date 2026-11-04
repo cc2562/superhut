@@ -152,4 +152,47 @@ void main() {
     expect(controller.syncedCount, 2);
     expect(gateway.calendars.values.single, hasLength(2));
   });
+
+  test('更新失败时不推进指纹，下次同步会重试', () async {
+    await controller.setEnabled(true);
+    // 插入两条：一次批量写入。
+    expect(gateway.writeCalls, 1);
+
+    courseData = <String, List<Course>>{
+      '2025-03-03': <Course>[buildCourse(location: '公共301')],
+      '2025-03-04': <Course>[buildCourse(location: '公共301')],
+    };
+    gateway.failWrites = true;
+    await controller.syncNow();
+    // 这一轮尝试更新（失败），指纹不能被前移。
+    expect(gateway.writeCalls, 2);
+    expect(controller.syncedCount, 2);
+
+    gateway.failWrites = false;
+    await controller.syncNow();
+    // 若失败时把新指纹写进了簿记，这一轮会判成「内容未变」而不再写入。
+    expect(gateway.writeCalls, 3, reason: '更新失败的条目必须留在更新队列里');
+  });
+
+  test('删除失败时保留簿记，权限恢复后重试删除', () async {
+    await controller.setEnabled(true);
+    expect(controller.syncedCount, 2);
+
+    courseData = <String, List<Course>>{};
+    gateway.failDeletes = true;
+    await controller.syncNow();
+
+    expect(
+      controller.syncedCount,
+      2,
+      reason: '删除失败的记录必须留在簿记里，否则日历里的残留事件再也无法清理',
+    );
+    expect(controller.lastError.value, isNotEmpty);
+
+    gateway.failDeletes = false;
+    await controller.syncNow();
+
+    expect(controller.syncedCount, 0);
+    expect(gateway.calendars.values.single, isEmpty);
+  });
 }

@@ -198,12 +198,19 @@ class InMemoryCalendarGateway implements CalendarGateway {
     this.supported = true,
     this.permissionGranted = true,
     this.failWrites = false,
+    this.failDeletes = false,
   });
 
   final bool supported;
 
   bool permissionGranted;
   bool failWrites;
+
+  /// 为 true 时删除全部失败：对应原生侧把异常吞掉、只返回 0 条的情况。
+  bool failDeletes;
+
+  /// [writeEvents] 的调用次数（含失败的那些），用于验证失败后是否重试。
+  int writeCalls = 0;
 
   /// calendarId → 事件 id 列表。
   final Map<String, List<String>> calendars = <String, List<String>>{};
@@ -244,6 +251,7 @@ class InMemoryCalendarGateway implements CalendarGateway {
     required String calendarId,
     required List<CalendarEventPayload> events,
   }) async {
+    writeCalls += 1;
     if (failWrites) {
       return List<String?>.filled(events.length, null);
     }
@@ -272,6 +280,7 @@ class InMemoryCalendarGateway implements CalendarGateway {
     required String calendarId,
     required List<String> eventIds,
   }) async {
+    if (failDeletes) return 0;
     deletedEventIds.addAll(eventIds);
     final List<String>? stored = calendars[calendarId];
     if (stored == null) return 0;

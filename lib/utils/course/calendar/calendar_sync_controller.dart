@@ -219,13 +219,29 @@ class CalendarSyncController extends GetxController {
       return;
     }
 
+    // 删除失败的 id 不能从簿记里丢掉：网关把平台异常吞成「删除 0 条」，
+    // 记录一旦被排除，系统日历里残留的事件就再也无法追踪或清理。
+    // 网关只返回成功条数、不指明具体哪几条失败，保守起见整块保留。
+    final Set<String> failedDeleteIds = <String>{};
     for (final List<String> chunk in _chunks(plan.deleteEventIds, batchSize)) {
-      await _gateway.deleteEvents(calendarId: calendarId, eventIds: chunk);
+      final int deleted = await _gateway.deleteEvents(
+        calendarId: calendarId,
+        eventIds: chunk,
+      );
+      if (deleted < chunk.length) failedDeleteIds.addAll(chunk);
       advance(chunk.length);
     }
 
     final Map<String, CalendarSyncRecord> nextRecords =
-        <String, CalendarSyncRecord>{...plan.unchanged};
+        <String, CalendarSyncRecord>{
+          ...plan.unchanged,
+          // 删除失败的记录留在簿记里，下一轮同步会重新把它们判成「待删除」。
+          if (failedDeleteIds.isNotEmpty)
+            for (final MapEntry<String, CalendarSyncRecord> entry
+                in records.entries)
+              if (failedDeleteIds.contains(entry.value.eventId))
+                entry.key: entry.value,
+        };
 
     // 更新沿用原事件 id：日历里不会出现「删掉再建」的抖动。
     for (final List<PlannedCalendarEvent> chunk in _chunks(
@@ -238,13 +254,20 @@ class CalendarSyncController extends GetxController {
             chunk.map((PlannedCalendarEvent event) => event.toPayload()).toList(),
       );
       for (int i = 0; i < chunk.length; i++) {
-        final String? id = ids[i] ?? chunk[i].eventId;
+        final PlannedCalendarEvent event = chunk[i];
+        final String? id = ids[i];
         if (id != null && id.isNotEmpty) {
-          nextRecords[chunk[i].key] = CalendarSyncRecord(
+          nextRecords[event.key] = CalendarSyncRecord(
             eventId: id,
-            fingerprint: chunk[i].fingerprint,
+            fingerprint: event.fingerprint,
           );
+          continue;
         }
+        // 更新失败：不能沿用旧 id 配新指纹，否则下一轮会判定「内容未变」而
+        // 永不重试，时间/地点/提醒就会一直停留在旧值。原样保留上一条记录
+        // （旧 id + 旧指纹），让它继续排在更新队列里。
+        final CalendarSyncRecord? previous = records[event.key];
+        if (previous != null) nextRecords[event.key] = previous;
       }
       advance(chunk.length);
     }
@@ -272,10 +295,13 @@ class CalendarSyncController extends GetxController {
     }
 
     await _saveSyncResult(records: nextRecords);
-    lastError.value = '';
+    // 删除失败不算整轮失败（新增与更新已经生效），但要让用户知道还有残留；
+    // 这些记录已留在簿记里，下一轮同步会自动重试。
+    lastError.value = failedDeleteIds.isEmpty ? '' : '部分日历事件删除失败，下次同步会重试';
     debugPrint(
       '日历同步完成：新增 ${plan.inserts.length}、更新 ${plan.updates.length}、'
-      '删除 ${plan.deleteEventIds.length}',
+      '删除 ${plan.deleteEventIds.length}'
+      '${failedDeleteIds.isEmpty ? '' : '（失败 ${failedDeleteIds.length}）'}',
     );
   }
 

@@ -174,6 +174,13 @@ class ClassLiveActivityController extends GetxController
     final bool sameCourse = _activeCourseId == plan.courseId;
     if (sameCourse && _activePhase == plan.phase) return;
 
+    if (!sameCourse) {
+      // 换课前必须先收掉上一节课的活动：原生 start 只会结束课程 id 相同的
+      // 活动，上一节课（例如 08:45 结束、下一节同时进入提醒窗口）会一直留在
+      // 灵动岛/通知栏；而 _activeCourseId 被覆盖后就再也找不到它来收尾了。
+      await _endActive();
+    }
+
     // 同一门课只做 update（阶段切换），避免反复 request 让灵动岛闪烁。
     final bool ok =
         sameCourse
