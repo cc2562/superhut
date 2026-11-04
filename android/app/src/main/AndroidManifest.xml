@@ -42,6 +42,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- 友盟集成测试：扫码/浏览器打开 um.<AppKey> 唤起应用并切到测试环境
+                 实时看日志。scheme 由友盟固定为 um.+AppKey，不能改名；
+                 必须与上面的 MAIN/LAUNCHER 过滤器并列，不能合并。 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="um.6aeac349863270068cb58c1b"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
