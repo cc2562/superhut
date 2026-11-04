@@ -33,4 +33,25 @@ void main() {
   test('空事件名被拒绝', () {
     expect(UmengEventTracker.track('   '), isFalse);
   });
+
+  test('未初始化时转发未捕获异常不抛异常，也不上报', () {
+    expect(
+      () => UmengService.reportUncaughtError(
+        StateError('未捕获的异步错误'),
+        StackTrace.current,
+      ),
+      returnsNormally,
+    );
+  });
+
+  test('撤回同意后转发未捕获异常同样被丢弃', () async {
+    await UmengService.withdraw();
+    expect(
+      () => UmengService.reportUncaughtError(
+        Exception('撤回后产生的错误'),
+        StackTrace.current,
+      ),
+      returnsNormally,
+    );
+  });
 }

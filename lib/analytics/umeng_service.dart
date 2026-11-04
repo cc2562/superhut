@@ -125,11 +125,30 @@ class UmengService {
       enableLog: kDebugMode || const bool.fromEnvironment('umengApmLog'),
       enableTrackingPageFps: true,
       enableTrackingPagePerf: true,
-      enableTrackingApi: true,
+      // 必须保持关闭：开启后组件会安装全局 HttpOverrides 记录每个请求的完整 URL，
+      // 而本应用把学号/密码、手机号/验证码放在 query string 里（见 HutUserApi），
+      // 这些凭据会被原样上报到友盟。宁可少一项网络性能指标，也不能泄露凭据。
+      enableTrackingApi: false,
       // 组件的 ensureInitialized 每次都会 new 一个新绑定，重复调用会直接断言失败。
       // 启动时（main）已经用 ApmWidgetsFlutterBinding 初始化过，这里不再重复创建。
       initFlutterBinding: () {},
     ).init();
+  }
+
+  /// 转发应用级未捕获的异步错误到 U-APM。
+  ///
+  /// 组件内部的 `runZonedGuarded` 只包住传入 `appRunner` 的场景；本应用要等用户同意
+  /// 才初始化，那时 `runApp` 早已在根 zone 执行完毕，无法再被包进去。
+  /// 因此由 `main` 注册 `PlatformDispatcher.onError` 兜住根 zone 的错误，转到这里上报。
+  ///
+  /// 未初始化（未同意或已撤回）时直接丢弃，避免绕过同意门控。
+  static void reportUncaughtError(Object error, StackTrace stack) {
+    if (!_started || _revoked) return;
+    try {
+      ExceptionTrace.zonedGuardedErrorHandler(exception: error, stack: stack);
+    } catch (reportError) {
+      debugPrint('友盟未捕获异常上报失败：$reportError');
+    }
   }
 
   /// 供测试查看撤回状态。

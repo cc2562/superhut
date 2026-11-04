@@ -36,6 +36,15 @@ Future<void> main() async {
   // 这一步只装钩子，不采集、不上报；真正的初始化仍在用户同意之后。
   ApmWidgetsFlutterBinding.ensureInitialized();
 
+  // 兜住根 zone 里没人捕获的异步错误（Future 里抛出的异常、未设 catchError 的请求等）。
+  // U-APM 自带的 runZonedGuarded 只覆盖它启动 appRunner 的场景，而本应用要等用户
+  // 同意才初始化，runApp 早已执行完毕，只能在这里补一次。未同意时上报会被丢弃。
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    UmengService.reportUncaughtError(error, stack);
+    // 返回 false：保留 Flutter 默认的错误处理与日志，避免我们吞掉问题。
+    return false;
+  };
+
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
     final availableVersion = await WebViewEnvironment.getAvailableVersion();
     assert(
