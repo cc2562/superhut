@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/glass/glass_scaffold.dart';
 import '../../utils/hut_user_api.dart';
 import 'electricityApi.dart';
+import 'electricity_history_page.dart';
 
 class ElectricityPage extends StatefulWidget {
   const ElectricityPage({super.key});
@@ -396,6 +397,17 @@ class _ElectricityPageState extends State<ElectricityPage> {
                   });
                 },
               ),
+            ),
+            _buildFunctionItem(
+              icon: Icons.insights_rounded,
+              title: "用电历史",
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ElectricityHistoryPage(),
+                  ),
+                );
+              },
             ),
             _buildFunctionItem(
               icon: Ionicons.alert_circle_outline,

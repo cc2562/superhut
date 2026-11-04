@@ -45,6 +45,8 @@ dependencies:
   responsive_framework: ^1.5.1
   shared_preferences: ^2.5.2
   intl: any
+  # 用电历史页的曲线图（纯 Dart 绘制，无平台通道依赖）。
+  fl_chart: ^1.3.0
   dio: ^5.8.0+1
   enhanced_future_builder: ^2.0.0
   path_provider: ^2.1.5
