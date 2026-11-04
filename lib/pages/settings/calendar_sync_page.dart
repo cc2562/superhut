@@ -134,9 +134,11 @@ class _CalendarSyncPageState extends State<CalendarSyncPage> {
     if (confirmed != true) return;
     await _controller.clearSyncedEvents();
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('已清除同步事件')));
+    // 清理不完整时不要报「已清除」：失败的记录仍留在簿记里等下一轮重试。
+    final String error = _controller.lastError.value;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error.isEmpty ? '已清除同步事件' : error)),
+    );
   }
 
   @override

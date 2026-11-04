@@ -104,25 +104,40 @@ class CalendarSyncBridge(private val context: Context) {
             put(CalendarContract.Events.HAS_ALARM, if (reminderMinutes > 0) 1 else 0)
         }
 
-        val eventId: Long = if (existingId != null && eventExists(existingId)) {
+        val existingTarget = existingId?.takeIf { eventExists(it) }
+        val updating = existingTarget != null
+        val eventId: Long = if (existingTarget != null) {
             resolver.update(
-                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, existingId),
+                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, existingTarget),
                 values,
                 null,
                 null,
             )
-            existingId
+            existingTarget
         } else {
             val uri = resolver.insert(CalendarContract.Events.CONTENT_URI, values) ?: return null
             ContentUris.parseId(uri)
         }
 
-        // 提醒写入失败不能连累事件本身：事件已经在日历里了，必须把 id 交回 Dart，
-        // 否则下一轮同步会再插一条，重复提醒反而更多。
+        // 提醒写不进去就把整次写入判失败：返回 null 让 Dart 侧不推进指纹，下一轮重试。
+        // 新建的事件还要回滚掉，否则会留下一条「有事件没提醒」的孤儿；
+        // 更新的事件已经覆盖了原内容，只能靠下一轮重试补上提醒。
         try {
             updateReminder(eventId, reminderMinutes)
         } catch (error: Exception) {
             android.util.Log.w(TAG, "update reminder failed: $eventId", error)
+            if (!updating) {
+                try {
+                    resolver.delete(
+                        ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId),
+                        null,
+                        null,
+                    )
+                } catch (rollbackError: Exception) {
+                    android.util.Log.w(TAG, "rollback event failed: $eventId", rollbackError)
+                }
+            }
+            return null
         }
         return eventId
     }

@@ -150,20 +150,49 @@ class CalendarSyncController extends GetxController {
   Future<void> clearSyncedEvents() async {
     final CalendarSyncSettings current = settings.value;
     final String? calendarId = current.calendarId;
+    final Map<String, CalendarSyncRecord> remaining =
+        <String, CalendarSyncRecord>{};
+
     if (calendarId != null) {
-      final List<String> ids =
-          current.records.values
-              .map((CalendarSyncRecord record) => record.eventId)
-              .toList();
-      for (final List<String> chunk in _chunks(ids, batchSize)) {
-        await _gateway.deleteEvents(calendarId: calendarId, eventIds: chunk);
+      final List<MapEntry<String, CalendarSyncRecord>> entries =
+          current.records.entries.toList();
+      for (final List<MapEntry<String, CalendarSyncRecord>> chunk
+          in _chunks(entries, batchSize)) {
+        final int deleted = await _gateway.deleteEvents(
+          calendarId: calendarId,
+          eventIds:
+              chunk
+                  .map(
+                    (MapEntry<String, CalendarSyncRecord> entry) =>
+                        entry.value.eventId,
+                  )
+                  .toList(),
+        );
+        if (deleted >= chunk.length) continue;
+        // 删除失败（例如权限被撤销）时不能清掉这些簿记：事件还留在系统日历里，
+        // 记录一旦丢失就再也追踪不到，下次同步还会重复插入。
+        for (final MapEntry<String, CalendarSyncRecord> entry in chunk) {
+          remaining[entry.key] = entry.value;
+        }
       }
     }
-    await _store.clearRecords();
-    settings.value = current.copyWith(
-      records: const <String, CalendarSyncRecord>{},
-      lastSyncAtMillis: null,
-    );
+
+    if (remaining.isEmpty) {
+      await _store.clearRecords();
+      settings.value = current.copyWith(
+        records: const <String, CalendarSyncRecord>{},
+        lastSyncAtMillis: null,
+      );
+      lastError.value = '';
+    } else {
+      await _store.saveAfterSync(
+        records: remaining,
+        lastSyncAtMillis:
+            current.lastSyncAtMillis ?? DateTime.now().millisecondsSinceEpoch,
+      );
+      settings.value = current.copyWith(records: remaining);
+      lastError.value = '部分日历事件清理失败，下次同步会重试';
+    }
     progress.value = 0;
   }
 

@@ -137,6 +137,24 @@ void main() {
     expect(gateway.deletedEventIds, hasLength(2));
     expect(gateway.calendars, hasLength(1));
     expect(controller.syncedCount, 0);
+    expect(controller.lastError.value, isEmpty);
+  });
+
+  test('手动清除失败时保留簿记并提示不完整', () async {
+    await controller.setEnabled(true);
+    gateway.failDeletes = true;
+
+    await controller.clearSyncedEvents();
+
+    expect(controller.syncedCount, 2, reason: '删除失败的记录不能随清除一起丢掉');
+    expect(controller.lastError.value, isNotEmpty);
+
+    gateway.failDeletes = false;
+    await controller.clearSyncedEvents();
+
+    expect(controller.syncedCount, 0);
+    expect(controller.lastError.value, isEmpty);
+    expect(gateway.calendars.values.single, isEmpty);
   });
 
   test('写入失败时不写簿记，下次同步补写', () async {
