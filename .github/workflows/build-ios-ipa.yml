@@ -15,7 +15,7 @@ jobs:
   build-ios:
     # Xcode 16.3+ 需要 macOS 15+；macos-14 最高只有 Xcode 16.2，
     # 无法编译 shared_preferences_foundation 2.6.0 中带尾随逗号的 Swift 代码
-    runs-on: macos-15
+    runs-on: macos-15-intel
 
     steps:
       - name: Checkout
