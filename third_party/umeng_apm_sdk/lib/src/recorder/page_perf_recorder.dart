@@ -58,9 +58,12 @@ class PagePerfRecorder extends BaseRecorder {
   }
 
   void _removePageStack(Route? route) {
-    if (route != null) {
-      pageStack.remove(route);
-    }
+    if (route == null) return;
+    // 【本地补丁】pageStack 里存的是 {'route': route, 'pvId': pvId} 映射，
+    // 原来直接 pageStack.remove(route) 永远匹配不到元素，被弹出/移除的路由会一直
+    // 留在栈里：内存随开关页面次数无上限增长，且 _selectCurrentPageStack 每帧都要
+    // 扫一遍全量历史，UI 线程开销越来越大。改为按 map 里的 route 匹配删除。
+    pageStack.removeWhere((element) => element is Map && element['route'] == route);
   }
 
   Route? _selectCurrentPageStack() {
