@@ -73,6 +73,9 @@ class _HealthScorePageState extends State<HealthScorePage> {
 
   Future<void> _relogin() async {
     final int seq = ++_requestSeq;
+    // 续期失败时 renewToken 可能只在原地提示（如网络错误），不会跳走，
+    // 因此要先把原错误留一份，失败后恢复，避免出现「无数据也无错误」的空态。
+    final Object? previousError = _error;
     setState(() {
       _loading = true;
       _error = null;
@@ -83,7 +86,10 @@ class _HealthScorePageState extends State<HealthScorePage> {
     final bool ok = await renewToken(context);
     if (!mounted || seq != _requestSeq) return;
     if (!ok) {
-      setState(() => _loading = false);
+      setState(() {
+        _error = previousError ?? const HealthScoreAuthException();
+        _loading = false;
+      });
       return;
     }
     // 登录态刷新后，体测子系统自己的 CAS 会话也要重新建立。

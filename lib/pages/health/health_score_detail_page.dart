@@ -67,6 +67,8 @@ class _HealthScoreDetailPageState extends State<HealthScoreDetailPage> {
 
   Future<void> _relogin() async {
     final int seq = ++_requestSeq;
+    // 同主页：续期失败且未跳转时恢复错误态，避免 _table! 空断言崩溃。
+    final Object? previousError = _error;
     setState(() {
       _loading = true;
       _error = null;
@@ -76,7 +78,10 @@ class _HealthScoreDetailPageState extends State<HealthScoreDetailPage> {
     final bool ok = await renewToken(context);
     if (!mounted || seq != _requestSeq) return;
     if (!ok) {
-      setState(() => _loading = false);
+      setState(() {
+        _error = previousError ?? const HealthScoreAuthException();
+        _loading = false;
+      });
       return;
     }
     widget.api.resetSession();
