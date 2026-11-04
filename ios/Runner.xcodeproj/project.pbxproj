@@ -21,6 +21,7 @@
 		AA0000000000000000000009 /* ClassLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000008 /* ClassLiveActivityAttributes.swift */; };
 		AA000000000000000000000A /* ClassLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000008 /* ClassLiveActivityAttributes.swift */; };
 		AA000000000000000000000C /* LiveActivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000B /* LiveActivityBridge.swift */; };
+		CA0000000000000000000002 /* CalendarSyncBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0000000000000000000001 /* CalendarSyncBridge.swift */; };
 		AA0000000000000000000016 /* SuperhutWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* SuperhutWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -94,6 +95,7 @@
 		AA0000000000000000000006 /* ClassLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassLiveActivityWidget.swift; sourceTree = "<group>"; };
 		AA0000000000000000000008 /* ClassLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassLiveActivityAttributes.swift; sourceTree = "<group>"; };
 		AA000000000000000000000B /* LiveActivityBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityBridge.swift; sourceTree = "<group>"; };
+		CA0000000000000000000001 /* CalendarSyncBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncBridge.swift; sourceTree = "<group>"; };
 		AA000000000000000000000D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -191,6 +193,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				AA000000000000000000000B /* LiveActivityBridge.swift */,
+				CA0000000000000000000001 /* CalendarSyncBridge.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -480,6 +483,7 @@
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				AA000000000000000000000A /* ClassLiveActivityAttributes.swift in Sources */,
 				AA000000000000000000000C /* LiveActivityBridge.swift in Sources */,
+				CA0000000000000000000002 /* CalendarSyncBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

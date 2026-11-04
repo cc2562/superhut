@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../bridge/getCoursePage.dart';
 import '../../pages/score/scorepage.dart';
+import '../../pages/settings/calendar_sync_page.dart';
 import '../../pages/settings/course_table_style_page.dart';
 import '../../pages/settings/privacy_settings_page.dart';
 import '../../pages/settings/reminder_settings_page.dart';
@@ -309,6 +310,19 @@ class _UserPageState extends State<UserPage> {
                         );
                       },
                     ),
+                    // 系统日历同步是移动端能力，桌面端不显示入口。
+                    if (CalendarSyncPage.isAvailable)
+                      _buildFunctionItem(
+                        icon: Icons.event_available_outlined,
+                        title: '日历同步',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const CalendarSyncPage(),
+                            ),
+                          );
+                        },
+                      ),
                     _buildFunctionItem(
                       icon: Icons.palette_outlined,
                       title: '外观与主题',

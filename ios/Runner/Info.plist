@@ -48,6 +48,12 @@
 	<string>用于从相册选取图片，作为课程表页面的背景。</string>
 	<key>NSCameraUsageDescription</key>
 	<string>用于拍摄照片，作为课程表页面的背景。</string>
+	<!-- 日历同步：把课程表与自定义日程写入系统日历的「超级包菜课表」。
+	     缺少该键时请求日历权限会直接失败；iOS 17 起还需要 FullAccess 的说明文案。 -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>用于把课程表和自定义日程写入系统日历，方便在日历 App 中查看与提醒。</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>用于创建「超级包菜课表」日历，并把课程与自定义日程写入其中。</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
