@@ -6,6 +6,7 @@ import 'package:superhut/pages/Electricitybill/electricityPage.dart';
 import 'package:superhut/pages/ExamSchedule/exam_schedule_page.dart';
 import 'package:superhut/pages/drink/view/view.dart';
 import 'package:superhut/pages/freeroom/building.dart';
+import 'package:superhut/pages/health/health_score_page.dart';
 import 'package:superhut/pages/hutpages/hutmain.dart';
 import 'package:superhut/pages/water/view.dart';
 
@@ -256,6 +257,31 @@ class _FunctionPageState extends State<FunctionPage> {
                       );
                     } finally {
                       _setLoading("commentary", false);
+                    }
+                  },
+                ),
+                _buildActivityItem(
+                  id: "health_score",
+                  title: "体测查询",
+                  rating: null,
+                  iconData: Ionicons.fitness,
+                  hasArrow: true,
+                  onTap: () async {
+                    _setLoading("health_score", true);
+                    try {
+                      // 功能页统一先做登录态判断与自动续期，再进入体测页；
+                      // 体测子系统自己的 CAS 会话由 HealthScoreApi 建立。
+                      if (!await renewToken(context) || !context.mounted) {
+                        return;
+                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HealthScorePage(),
+                        ),
+                      );
+                    } finally {
+                      _setLoading("health_score", false);
                     }
                   },
                 ),
