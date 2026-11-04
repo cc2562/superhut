@@ -521,7 +521,7 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
                   ),
                 ),
                 Text(
-                  "版本: 1.5.1",
+                  "版本: 1.6.0",
                   style: TextStyle(
                     fontSize: 14,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
