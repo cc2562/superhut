@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:superhut/security/credential_store.dart';
-import 'package:superhut/theme/glass/glass_scaffold.dart';
 import 'package:superhut/utils/hut_user_api.dart';
 import 'package:superhut/utils/token.dart';
 
+import 'auth_status_view.dart';
 import 'hut_login_system.dart';
 
 class HutCasLoginPage extends StatefulWidget {
@@ -74,11 +74,21 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _errorMessage = '获取认证令牌失败: $e';
       });
     }
+  }
+
+  /// 重新拉取 idToken，供失败态的「重新尝试」调用。
+  void _retryGetIdToken() {
+    setState(() {
+      _errorMessage = null;
+      _isLoading = true;
+    });
+    _getIdToken();
   }
 
   Future<void> _finishWithAuthenticationFailure() async {
@@ -129,50 +139,39 @@ class _HutCasLoginPageState extends State<HutCasLoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
     if (_isLoading) {
-      return GlassScaffold(
-        title: 'HUT统一认证',
-        showBackButton: false,
-        insetBody: true,
-        body: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('正在准备登录...'),
-            ],
+      return Scaffold(
+        backgroundColor: colors.surface,
+        body: const SafeArea(
+          child: AuthStatusView(
+            icon: Icons.lock_outline_rounded,
+            title: '正在准备统一认证',
+            description: '正在获取登录凭据，请稍候',
+            showProgress: true,
           ),
         ),
       );
     }
 
     if (_errorMessage != null) {
-      return GlassScaffold(
-        title: 'HUT统一认证',
-        showBackButton: false,
-        insetBody: true,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                color: Theme.of(context).colorScheme.error,
-                size: 48,
+      return Scaffold(
+        backgroundColor: colors.surface,
+        body: SafeArea(
+          child: AuthStatusView(
+            icon: Icons.error_outline_rounded,
+            title: '认证失败',
+            description: _errorMessage!,
+            isError: true,
+            actions: <Widget>[
+              FilledButton(
+                onPressed: _retryGetIdToken,
+                child: const Text('重新尝试'),
               ),
-              const SizedBox(height: 16),
-              Text(_errorMessage!, textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _errorMessage = null;
-                    _isLoading = true;
-                  });
-                  _getIdToken();
-                },
-                child: const Text('重试'),
+              TextButton(
+                onPressed: () => Navigator.of(context).maybePop(),
+                child: const Text('返回'),
               ),
             ],
           ),
