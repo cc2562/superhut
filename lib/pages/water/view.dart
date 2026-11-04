@@ -4,10 +4,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/glass/glass_scaffold.dart';
+import '../../theme/glass/glass_theme.dart';
 import 'logic.dart';
 
 // Local implementation of ScreenUtils
@@ -420,8 +422,10 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
     );
   }
 
-  /// 余额卡片
+  /// 余额卡片：开启液态玻璃时换成玻璃材质，否则保持 Material 卡片。
   Widget balanceCardWidget(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final AppGlassTheme glass = context.glassTheme;
     return Padding(
       padding: EdgeInsets.only(bottom: 30, left: 20, right: 20),
       child: GetBuilder<FunctionHotWaterLogic>(
@@ -430,48 +434,73 @@ class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
             return SizedBox.shrink();
           }
 
-          return Card.filled(
-            child: SizedBox(
-              width: double.infinity,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // 玻璃上的文字与图标改用中性前景色，避免主题色在模糊渐变上发灰。
+          final Color iconColor =
+              glass.enabled ? glass.foreground : scheme.primary;
+          final Color textColor =
+              glass.enabled ? glass.foreground : scheme.onSurface;
+          final Color arrowColor =
+              glass.enabled ? glass.foregroundMuted : scheme.onSurfaceVariant;
+
+          final Widget content = Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.account_balance_wallet,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 28,
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          S
-                              .of(context)
-                              .function_hot_water_campus_balance(
-                                logic.state.balance.value,
-                              ),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    Icon(
+                      Icons.account_balance_wallet,
+                      color: iconColor,
+                      size: 28,
                     ),
-                    IconButton(
-                      icon: Icon(Icons.arrow_forward_ios, size: 16),
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      onPressed: () {
-                        _launchUrl();
-                      },
+                    SizedBox(width: 12),
+                    Text(
+                      S
+                          .of(context)
+                          .function_hot_water_campus_balance(
+                            logic.state.balance.value,
+                          ),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
                     ),
                   ],
                 ),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward_ios, size: 16),
+                  color: arrowColor,
+                  onPressed: () {
+                    _launchUrl();
+                  },
+                ),
+              ],
+            ),
+          );
+
+          if (!glass.enabled) {
+            return Card.filled(
+              child: SizedBox(width: double.infinity, child: content),
+            );
+          }
+
+          // 与顶栏控件、分段控件同一条发丝描边：白玻璃压在浅色渐变上
+          // 才看得出边界，否则会糊成一片。
+          return Container(
+            width: double.infinity,
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: scheme.onSurface.withValues(
+                  alpha: glass.isDark ? 0.16 : 0.10,
+                ),
               ),
+            ),
+            child: LiquidGlassLens(
+              style: glass.cardStyle(radius: 12),
+              child: content,
             ),
           );
         },

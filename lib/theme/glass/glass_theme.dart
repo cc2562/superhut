@@ -7,7 +7,10 @@ import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 ///
 /// 按 Apple Liquid Glass 规范，玻璃只用于「功能层」——导航栏、工具栏、
 /// 弹层与控件；内容层（列表、卡片、表单）保持 Material 3 材质。因此这里
-/// 只提供控件与 chrome 需要的样式，不提供任何内容面板样式。
+/// 只提供控件与 chrome 需要的样式，不提供内容面板样式。
+///
+/// 唯一的例外是 [cardStyle]（洗澡热水页底部的校园卡余额卡片，2026-11-04
+/// 用户指定），不要把这个样式推广到别的卡片。
 ///
 /// 玻璃本身固定为中性白 / 烟灰黑，不随主题色染色；文字与图标颜色由
 /// [foreground] / [foregroundMuted] 显式给出，避免依赖自适应采样。
@@ -233,6 +236,26 @@ class AppGlassTheme extends ThemeExtension<AppGlassTheme> {
       blur: 16,
       opacity: isDark ? 0.36 : 0.16,
       inset: 2,
+    ),
+  );
+
+  /// 内容卡片（当前只有洗澡热水页的校园卡余额用）。
+  ///
+  /// 形态是「宽而扁」的单行卡片：灯光取字段档（只有顶边微亮，不做整圈），
+  /// 底色用 [tint] 让页面底部的橙色渐变透上来，投影很轻——它贴在渐变上，
+  /// 太重会像弹层。
+  LiquidGlassStyle cardStyle({double radius = 12}) => LiquidGlassStyle(
+    shape: LiquidGlassShape.continuousRoundedRectangle(cornerRadius: radius),
+    specular: _fieldSpecular,
+    glow: _fieldGlow,
+    refractionIndex: 1.03,
+    refractionWidth: 12,
+    blur: blurFor(8),
+    color: tint,
+    shadow: LiquidGlassShadow(
+      blur: 16,
+      opacity: isDark ? 0.30 : 0.12,
+      inset: 1,
     ),
   );
 
