@@ -1,14 +1,14 @@
 import 'dart:async'; // 导入异步包，用于处理传感器数据流
 import 'dart:math' as math;
 
-import 'package:confetti/confetti.dart'; // 添加彩带库
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:ionicons_plus/ionicons_plus.dart'; // 导入服务包，用于震动
 import 'package:sensors_plus/sensors_plus.dart'; // 导入传感器包，用于重力感应
 
 import '../../theme/glass/glass_scaffold.dart';
+import 'badge_effects.dart';
+import 'trans_badge.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -21,18 +21,28 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
   late AnimationController _flipController;
   late AnimationController _swingController;
   late AnimationController _returnController; // 添加回正动画控制器
-  late ConfettiController _confettiController; // 添加彩带控制器
   late AnimationController _textAnimationController; // 添加文字动画控制器
   late AnimationController _fadeOutController; // 添加淡出动画控制器
+  late AnimationController _glowController; // 彩蛋泛光：240ms 起，淡出时收回
+  late AnimationController _burstController; // 彩蛋粒子：1.2s 一次性
   bool _isAnimating = false;
   bool _isDragging = false;
   double _dragRotationY = 0.0; // 存储拖动时的Y轴旋转角度
   double _dragRotationX = 0.0; // 存储拖动时的X轴旋转角度（上下凹凸效果）
-  double _totalRotation = 0.0; // 记录总旋转角度
   bool _showEasterEgg = false; // 是否显示彩蛋
   double _lastDragRotationY = 0.0; // 记录上一次拖动的Y轴旋转角度
+  double _lastDragRotationX = 0.0; // 回正动画的起始X轴角度
   String _currentEasterEggText = ""; // 当前显示的彩蛋文本
   bool _isFadingOut = false; // 是否正在淡出
+
+  /// 徽章姿态。手势与重力只更新这个 notifier，徽章子树自行重绘，
+  /// 不再每帧 setState 重建整页（下面还挂着作者信息与长文本）。
+  final ValueNotifier<BadgePose> _pose = ValueNotifier<BadgePose>(
+    const BadgePose(),
+  );
+
+  /// 「转满四圈」的累计判定。
+  final BadgeSpinAccumulator _spin = BadgeSpinAccumulator();
 
   // 重力感应相关变量
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
@@ -88,9 +98,16 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
       vsync: this,
     );
 
-    // 彩带控制器
-    _confettiController = ConfettiController(
-      duration: const Duration(seconds: 3),
+    // 彩蛋泛光：快速亮起，淡出时随文案一起收回。
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 240),
+      vsync: this,
+    );
+
+    // 彩蛋粒子：一次性爆发，播完即停。
+    _burstController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
     );
 
     // 文字动画控制器
@@ -122,25 +139,21 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
       }
     });
 
-    // 添加回正动画监听
+    // 添加回正动画监听：只更新徽章姿态，不重建整页。
     _returnController.addListener(() {
-      if (mounted) {
-        setState(() {
-          // 线性插值计算当前旋转角度
-          _dragRotationY = _lastDragRotationY * (1 - _returnController.value);
-          _dragRotationX = _dragRotationX * (1 - _returnController.value);
-        });
-      }
+      final double remain = 1 - _returnController.value;
+      _dragRotationY = _lastDragRotationY * remain;
+      _dragRotationX = _lastDragRotationX * remain;
+      _syncPose();
     });
 
     _returnController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _returnController.reset();
-        setState(() {
-          _dragRotationY = 0.0;
-          _dragRotationX = 0.0;
-          _useGravity = true; // 回正动画完成后，重新启用重力感应
-        });
+        _dragRotationY = 0.0;
+        _dragRotationX = 0.0;
+        _useGravity = true; // 回正动画完成后，重新启用重力感应
+        _syncPose();
       }
     });
 
@@ -191,14 +204,13 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
         final double targetRotationX = yInput * 0.1; // 前后倾斜
 
         // 应用阻尼效果，使运动更平滑
-        setState(() {
-          _gravityRotationY = _gravityRotationY * 0.8 + targetRotationY * 0.2;
-          _gravityRotationX = _gravityRotationX * 0.8 + targetRotationX * 0.2;
+        _gravityRotationY = _gravityRotationY * 0.8 + targetRotationY * 0.2;
+        _gravityRotationX = _gravityRotationX * 0.8 + targetRotationX * 0.2;
 
-          // 限制旋转范围
-          _gravityRotationY = _gravityRotationY.clamp(-0.5, 0.5);
-          _gravityRotationX = _gravityRotationX.clamp(-0.2, 0.2);
-        });
+        // 限制旋转范围
+        _gravityRotationY = _gravityRotationY.clamp(-0.5, 0.5);
+        _gravityRotationX = _gravityRotationX.clamp(-0.2, 0.2);
+        _syncPose();
       }
     });
   }
@@ -208,9 +220,11 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
     _flipController.dispose();
     _swingController.dispose();
     _returnController.dispose();
-    _confettiController.dispose();
     _textAnimationController.dispose();
     _fadeOutController.dispose();
+    _glowController.dispose();
+    _burstController.dispose();
+    _pose.dispose();
     _accelerometerSubscription?.cancel(); // 取消传感器订阅
     super.dispose();
   }
@@ -232,6 +246,7 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
         _dragRotationX = 0.0; // 重置X轴旋转角度
         _useGravity = false; // 动画期间禁用重力感应
       });
+      _syncPose();
       // 触发震动反馈
       HapticFeedback.selectionClick();
       _flipController.forward();
@@ -242,55 +257,70 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
   void _onPanUpdate(DragUpdateDetails details) {
     if (_isAnimating) return; // 如果正在播放动画，不处理拖动
 
+    _isDragging = true;
+    _useGravity = false; // 拖动期间禁用重力感应
+
+    // 记录上一次的旋转角度，用于计算旋转了多少圈
+    final double previousRotationY = _dragRotationY;
+
+    // 水平移动距离转换为旋转角度（每10逻辑像素对应π/8弧度）
+    // 注意这里用-=，让滑动方向与旋转方向匹配
+    _dragRotationY -= details.delta.dx * math.pi / 80;
+
+    // 计算旋转增量并累加到总旋转角度
+    final double deltaRotation = _dragRotationY - previousRotationY;
+    _spin.add(deltaRotation);
+
+    // 当旋转角度变化超过一定阈值时触发震动
+    if (deltaRotation.abs() > 0.1) {
+      HapticFeedback.lightImpact(); // 轻微震动
+    }
+
+    // 垂直移动转换为X轴旋转（上下凹凸效果）
+    // 限制X轴旋转范围在-0.3到0.3弧度之间（约-17度到17度）
+    final double previousRotationX = _dragRotationX;
+    _dragRotationX -= details.delta.dy * math.pi / 200;
+    _dragRotationX = _dragRotationX.clamp(-0.3, 0.3);
+
+    // 当垂直旋转角度变化超过一定阈值时也触发震动
+    if ((previousRotationX - _dragRotationX).abs() > 0.05) {
+      HapticFeedback.lightImpact(); // 轻微震动
+    }
+
+    _syncPose();
+
+    // 累计转满四圈即触发彩蛋
+    if (_spin.shouldReveal && !_showEasterEgg && !_isFadingOut) {
+      _revealEasterEgg();
+    }
+  }
+
+  /// 把拖动 / 重力 / 回正的结果换算成徽章姿态。
+  ///
+  /// 只在手势与重力路径上调用；动画期间姿态由 [AnimatedBuilder] 直接算。
+  void _syncPose() {
+    _pose.value = BadgePose(
+      rotationX: _dragRotationX + (_isDragging ? 0 : _gravityRotationX),
+      rotationY: _dragRotationY + (_isDragging ? 0 : _gravityRotationY),
+    );
+  }
+
+  /// 转满四圈：泛光亮起、粒子爆发、随机文案出现，8 秒后回收。
+  void _revealEasterEgg() {
+    _spin.reset();
+    _glowController.forward();
+    _burstController.forward(from: 0);
+    _selectRandomEasterEggText();
+    HapticFeedback.mediumImpact();
     setState(() {
-      _isDragging = true;
-      _useGravity = false; // 拖动期间禁用重力感应
+      _showEasterEgg = true;
+    });
 
-      // 记录上一次的旋转角度，用于计算旋转了多少圈
-      double previousRotationY = _dragRotationY;
-
-      // 水平移动距离转换为旋转角度（每10逻辑像素对应π/8弧度）
-      // 注意这里用-=，让滑动方向与旋转方向匹配
-      _dragRotationY -= details.delta.dx * math.pi / 80;
-
-      // 计算旋转增量并累加到总旋转角度
-      double deltaRotation = _dragRotationY - previousRotationY;
-      _totalRotation += deltaRotation.abs();
-
-      // 当旋转角度变化超过一定阈值时触发震动
-      if (deltaRotation.abs() > 0.1) {
-        HapticFeedback.lightImpact(); // 轻微震动
-      }
-
-      // 检查是否旋转超过4圈（8π）
-      if (_totalRotation >= 8 * math.pi && !_showEasterEgg && !_isFadingOut) {
-        _showEasterEgg = true;
-        _confettiController.play();
-        // 选择随机彩蛋文本并开始动画
-        _selectRandomEasterEggText();
-        // 触发较强的震动提示用户发现了彩蛋
-        HapticFeedback.mediumImpact();
-        // 重置总旋转角度计数
-        _totalRotation = 0.0;
-        // 8秒后开始淡出彩蛋文字
-        Future.delayed(Duration(seconds: 8), () {
-          if (mounted && _showEasterEgg && !_isFadingOut) {
-            _isFadingOut = true;
-            _fadeOutController.forward(from: 0.0);
-          }
-        });
-      }
-
-      // 垂直移动转换为X轴旋转（上下凹凸效果）
-      // 限制X轴旋转范围在-0.3到0.3弧度之间（约-17度到17度）
-      double previousRotationX = _dragRotationX;
-      _dragRotationX -= details.delta.dy * math.pi / 200;
-      _dragRotationX = _dragRotationX.clamp(-0.3, 0.3);
-
-      // 当垂直旋转角度变化超过一定阈值时也触发震动
-      if ((previousRotationX - _dragRotationX).abs() > 0.05) {
-        HapticFeedback.lightImpact(); // 轻微震动
-      }
+    Future<void>.delayed(const Duration(seconds: 8), () {
+      if (!mounted || !_showEasterEgg || _isFadingOut) return;
+      _isFadingOut = true;
+      _fadeOutController.forward(from: 0);
+      _glowController.reverse();
     });
   }
 
@@ -298,16 +328,49 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
   void _onPanEnd(DragEndDetails details) {
     if (_isAnimating) return;
 
-    setState(() {
-      _isDragging = false;
-      _lastDragRotationY = _dragRotationY; // 记录当前旋转角度
+    _isDragging = false;
+    _lastDragRotationY = _dragRotationY; // 记录当前旋转角度
+    _lastDragRotationX = _dragRotationX;
 
-      // 启动回正动画
-      _returnController.forward(from: 0.0);
+    // 启动回正动画
+    _returnController.forward(from: 0.0);
 
-      // 触发轻微震动，表示拖动结束，开始回弹
-      HapticFeedback.lightImpact();
-    });
+    // 触发轻微震动，表示拖动结束，开始回弹
+    HapticFeedback.lightImpact();
+  }
+
+  /// 徽章本体：手势 + 姿态计算，只有这一棵子树随旋转重绘。
+  Widget _buildBadge() {
+    return GestureDetector(
+      onTap: _startAnimation,
+      onPanUpdate: _onPanUpdate,
+      onPanEnd: _onPanEnd,
+      child: AnimatedBuilder(
+        animation: Listenable.merge(<Listenable>[
+          _flipController,
+          _swingController,
+          _pose,
+          _glowController,
+        ]),
+        builder: (BuildContext context, Widget? child) {
+          final BadgePose pose;
+          if (_isAnimating) {
+            // 点击自动翻转：整圈旋转 + 原有摆动曲线。
+            final double swing =
+                _swingController.value < 0.5
+                    ? math.sin(_swingController.value * 4 * math.pi) * 0.1
+                    : math.sin(_swingController.value * 2 * math.pi) * 0.05;
+            pose = BadgePose(
+              rotationX: swing,
+              rotationY: _flipController.value * 2 * math.pi,
+            );
+          } else {
+            pose = _pose.value;
+          }
+          return TransBadge(pose: pose, glow: _glowController.value);
+        },
+      ),
+    );
   }
 
   @override
@@ -329,299 +392,39 @@ class _AboutPageState extends State<AboutPage> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: 20),
-                // 跨性别旗帜3D徽章动画
+                // 跨性别旗立体徽章
                 Center(
                   child: Column(
                     children: [
-                      // 彩带效果
-                      Align(
-                        alignment: Alignment.center,
-                        child: ConfettiWidget(
-                          confettiController: _confettiController,
-                          blastDirectionality: BlastDirectionality.explosive,
-                          particleDrag: 0.05,
-                          emissionFrequency: 0.05,
-                          numberOfParticles: 20,
-                          gravity: 0.1,
-                          colors: const [
-                            Color(0xff5BCEFA),
-                            Color(0xffF5A9B8),
-                            Colors.white,
-                            Color(0xff5BCEFA),
-                          ],
-                        ),
-                      ),
-
-                      // 徽章顶部的挂绳
-                      AnimatedBuilder(
-                        animation: Listenable.merge([
-                          _flipController,
-                          _swingController,
-                          _returnController,
-                        ]),
-                        builder: (context, child) {
-                          // 翻转动画值 (绕Y轴)
-                          final double flipValue = _flipController.value;
-
-                          // 摆动动画 (绕X轴微微摆动)
-                          final double swingAngle =
-                              (_swingController.value < 0.5
-                                  ? math.sin(
-                                        _swingController.value * 4 * math.pi,
-                                      ) *
-                                      0.1
-                                  : math.sin(
-                                        _swingController.value * 2 * math.pi,
-                                      ) *
-                                      0.05);
-
-                          // 计算Y轴旋转角度 - 来自动画、拖动或重力感应
-                          double rotationY =
-                              _isAnimating
-                                  ? flipValue *
-                                      2 *
-                                      math
-                                          .pi // 动画控制的旋转
-                                  : _isDragging
-                                  ? _dragRotationY
-                                  : _dragRotationY +
-                                      _gravityRotationY; // 拖动控制的旋转或重力感应
-
-                          // 计算X轴旋转角度 - 用于实现上下凹凸效果
-                          double rotationX =
-                              _isAnimating
-                                  ? swingAngle // 动画控制的旋转
-                                  : _isDragging
-                                  ? _dragRotationX
-                                  : _dragRotationX +
-                                      _gravityRotationX; // 拖动控制的旋转或重力感应
-
-                          // 使用Matrix4进行3D转换
-                          final Matrix4 transform =
-                              Matrix4.identity()
-                                ..setEntry(3, 2, 0.002) // 透视效果
-                                ..rotateX(rotationX) // X轴旋转（上下凹凸效果）
-                                ..rotateY(rotationY); // Y轴翻转
-
-                          // 计算当前是否显示背面
-                          bool showBack = false;
-                          double normalizedRotation =
-                              (rotationY % (2 * math.pi)) / (2 * math.pi);
-                          if ((normalizedRotation >= 0.25 &&
-                                  normalizedRotation < 0.75) ||
-                              (normalizedRotation >= 1.25 &&
-                                  normalizedRotation < 1.75)) {
-                            showBack = true;
-                          }
-
-                          // 计算旗子厚度的显示 - 当旗子从侧面看时显示厚度
-                          bool showLeftEdge =
-                              normalizedRotation >= 0.125 &&
-                              normalizedRotation < 0.375;
-                          bool showRightEdge =
-                              normalizedRotation >= 0.625 &&
-                              normalizedRotation < 0.875;
-
-                          // 根据旋转角度计算厚度部分的宽度
-                          double leftEdgeWidth = 0.0;
-                          double rightEdgeWidth = 0.0;
-
-                          if (showLeftEdge) {
-                            // 左侧边缘厚度 - 根据旋转角度动态计算
-                            double position =
-                                (normalizedRotation - 0.125) / 0.25; // 0到1之间的值
-                            leftEdgeWidth =
-                                6.0 *
-                                math.sin(position * math.pi); // 最大厚度为6逻辑像素
-                          }
-
-                          if (showRightEdge) {
-                            // 右侧边缘厚度 - 根据旋转角度动态计算
-                            double position =
-                                (normalizedRotation - 0.625) / 0.25; // 0到1之间的值
-                            rightEdgeWidth =
-                                6.0 *
-                                math.sin(position * math.pi); // 最大厚度为6逻辑像素
-                          }
-
-                          return GestureDetector(
-                            onTap: _startAnimation,
-                            onPanUpdate: _onPanUpdate,
-                            onPanEnd: _onPanEnd,
-                            child: Transform(
-                              alignment: Alignment.center,
-                              transform: transform,
-                              child: Container(
-                                width: 200,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
-
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.shadow.withAlpha(80),
-                                      blurRadius: 8,
-                                      offset: Offset(2, 3),
+                      SizedBox(
+                        width: 260,
+                        height: 210,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // 触发后的蓝粉白径向光晕
+                            Positioned.fill(
+                              child: AnimatedBuilder(
+                                animation: _glowController,
+                                builder:
+                                    (context, _) => Center(
+                                      child: BadgeGlow(
+                                        intensity: _glowController.value,
+                                        size: 260,
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(3.0), // 为金属边框留出空间
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(7),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        // 主要旗帜内容
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                          child: Transform(
-                                            alignment: Alignment.center,
-                                            transform:
-                                                showBack
-                                                    ? Matrix4.rotationY(math.pi)
-                                                    : Matrix4.identity(),
-                                            child: Stack(
-                                              children: [
-                                                SvgPicture.asset(
-                                                  'assets/illustration/transgender_flag.svg',
-                                                  fit: BoxFit.cover,
-                                                  width: 200,
-                                                  height: 120,
-                                                ),
-                                                // 添加高光效果
-                                                Positioned.fill(
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      gradient: LinearGradient(
-                                                        begin:
-                                                            Alignment.topLeft,
-                                                        end:
-                                                            Alignment
-                                                                .bottomRight,
-                                                        colors: [
-                                                          Colors.white
-                                                              .withAlpha(150),
-                                                          Colors.transparent,
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-
-                                        // 左侧厚度边缘
-                                        if (showLeftEdge)
-                                          Positioned(
-                                            left: 0,
-                                            top: 0,
-                                            bottom: 0,
-                                            width: leftEdgeWidth,
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .outlineVariant,
-                                                borderRadius: BorderRadius.only(
-                                                  topLeft: Radius.circular(6),
-                                                  bottomLeft: Radius.circular(
-                                                    6,
-                                                  ),
-                                                ),
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.centerLeft,
-                                                  end: Alignment.centerRight,
-                                                  colors: [
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .surfaceContainerHigh,
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .surfaceContainerHighest,
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-
-                                        // 右侧厚度边缘
-                                        if (showRightEdge)
-                                          Positioned(
-                                            right: 0,
-                                            top: 0,
-                                            bottom: 0,
-                                            width: rightEdgeWidth,
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .outlineVariant,
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(6),
-                                                  bottomRight: Radius.circular(
-                                                    6,
-                                                  ),
-                                                ),
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.centerRight,
-                                                  end: Alignment.centerLeft,
-                                                  colors: [
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .surfaceContainerHigh,
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .surfaceContainerHighest,
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-
-                                        // 在旗子最上层添加金属质感的高光效果
-                                        Positioned.fill(
-                                          child: IgnorePointer(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topCenter,
-                                                  end: Alignment.bottomCenter,
-                                                  colors: [
-                                                    Colors.white.withAlpha(150),
-                                                    Colors.transparent,
-                                                    Colors.black.withAlpha(150),
-                                                  ],
-                                                  stops: [0.0, 0.5, 1.0],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
                               ),
                             ),
-                          );
-                        },
+                            _buildBadge(),
+                            // 粒子压在徽章上层：像从徽章里迸出来
+                            Positioned.fill(
+                              child: BadgeParticles(
+                                controller: _burstController,
+                                size: 260,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       SizedBox(height: 10),
                       // 彩蛋文字显示区域 - 始终保持布局空间
