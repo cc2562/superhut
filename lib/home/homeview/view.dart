@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:liquid_glass_easy/liquid_glass_easy.dart';
@@ -12,10 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/home/Functionpage/view.dart';
 import 'package:superhut/home/coursetable/view.dart';
 import 'package:superhut/home/userpage/view.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../pages/Electricitybill/electricityApi.dart';
 import '../../pages/Electricitybill/electricityPage.dart';
+import '../../pages/update/update_dialog.dart';
+import '../../utils/app_update_service.dart';
 import '../../theme/glass/glass_overlays.dart';
 import '../../theme/glass/glass_theme.dart';
 import '../../theme/glass/glass_top_bar.dart';
@@ -35,11 +35,6 @@ class HomeviewPage extends StatefulWidget {
 class _HomeviewPageState extends State<HomeviewPage>
     with AutomaticKeepAliveClientMixin {
   int _selectedIndex = 0;
-  bool _isUpdateAvailable = false;
-  String _latestVersion = '';
-  String _updateDescription = '';
-  bool _isForcedUpdate = false;
-  String _downloadUrl = '';
   String _currentVersion = '0.0.1'; // 默认版本号
 
   /// 顶部标题栏在滚动后显示的文字。
@@ -125,56 +120,20 @@ class _HomeviewPageState extends State<HomeviewPage>
     );
   }
 
+  /// 每次进入首页时的自动检查。
+  ///
+  /// 用户选择过「本版本不再提醒」的版本会被跳过；因为不是用户主动发起的检查，
+  /// 所以这里静默失败，不弹错误提示。
   Future<void> _checkVersion() async {
-    print("DO");
     try {
-      final dio = Dio();
-      final response = await dio.get(
-        'https://super.ccrice.com/api/check_version.php?version=$_currentVersion',
-      );
-      final Map<String, dynamic> data = response.data;
+      final AppUpdateInfo info = await AppUpdateService.fetch(_currentVersion);
       if (!mounted) return;
-      setState(() {
-        _isUpdateAvailable = !data['is_latest'];
-        _latestVersion = data['latest_version'];
-        _updateDescription = data['description'];
-        _isForcedUpdate = data['is_forced'];
-        _downloadUrl = data['download_url'];
-      });
-
-      if (_isUpdateAvailable) {
-        _showUpdateDialog();
-      }
+      final String? skipped = await AppUpdateService.skippedVersion();
+      if (!mounted || !AppUpdateService.shouldNotify(info, skipped)) return;
+      await showAppUpdateDialog(context: context, info: info);
     } on DioException catch (error) {
       debugPrint('版本检查失败: ${error.message}');
     }
-  }
-
-  void _showUpdateDialog() {
-    showGlassDialog(
-      context: context,
-      barrierDismissible: !_isForcedUpdate,
-      title: Text('新版本可用: $_latestVersion'),
-      content: Text(_updateDescription),
-      actions: <Widget>[
-        if (!_isForcedUpdate)
-          TextButton(
-            child: const Text('稍后更新'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        TextButton(
-          child: const Text('立即更新'),
-          onPressed: () {
-            launchUrl(Uri.parse(_downloadUrl));
-            if (_isForcedUpdate) {
-              SystemNavigator.pop();
-            }
-          },
-        ),
-      ],
-    );
   }
 
   @override
