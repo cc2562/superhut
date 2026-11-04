@@ -204,6 +204,11 @@ final class CalendarSyncBridge {
         try store.commit()
       } catch {
         NSLog("CalendarSync commit failed: %@", error.localizedDescription)
+        // 事务没提交 = 这批事件都没真正写进日历。此时不能返回它们的 id 假装成功，
+        // 否则 Dart 侧会推进指纹，之后这些更新永远被判成「未变化」而不再重试。
+        // reset 丢弃未提交的改动，避免残留的 pending change 被下一次 commit 顺带提交。
+        store.reset()
+        return identifiers
       }
       for entry in saved {
         identifiers[entry.index] = entry.event.eventIdentifier ?? NSNull()
@@ -219,7 +224,12 @@ final class CalendarSyncBridge {
     var deleted = 0
 
     for identifier in identifiers {
-      guard let event = store.event(withIdentifier: identifier) else { continue }
+      guard let event = store.event(withIdentifier: identifier) else {
+        // 事件本来就不在了：删除是幂等的，计入成功，
+        // 否则残留的簿记会永远重试、永远删不完。
+        deleted += 1
+        continue
+      }
       do {
         try store.remove(event, span: .thisEvent, commit: false)
         deleted += 1
@@ -233,6 +243,10 @@ final class CalendarSyncBridge {
         try store.commit()
       } catch {
         NSLog("CalendarSync delete commit failed: %@", error.localizedDescription)
+        // commit 失败 = 一条都没真正删掉；返回 0 让 Dart 侧保留这些簿记，
+        // 下一轮同步重新尝试删除，而不是把残留事件当成已清理。
+        store.reset()
+        return 0
       }
     }
     return deleted

@@ -117,7 +117,13 @@ class CalendarSyncBridge(private val context: Context) {
             ContentUris.parseId(uri)
         }
 
-        updateReminder(eventId, reminderMinutes)
+        // 提醒写入失败不能连累事件本身：事件已经在日历里了，必须把 id 交回 Dart，
+        // 否则下一轮同步会再插一条，重复提醒反而更多。
+        try {
+            updateReminder(eventId, reminderMinutes)
+        } catch (error: Exception) {
+            android.util.Log.w(TAG, "update reminder failed: $eventId", error)
+        }
         return eventId
     }
 
@@ -127,11 +133,14 @@ class CalendarSyncBridge(private val context: Context) {
         for (raw in eventIds) {
             val id = raw.toLongOrNull() ?: continue
             try {
-                deleted += resolver.delete(
+                val rows = resolver.delete(
                     ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id),
                     null,
                     null,
                 )
+                // 删除是幂等的：事件本来就不在了也算处理成功，否则 Dart 侧会一直
+                // 保留这条簿记，每次同步都重试一遍却永远删不完。
+                deleted += if (rows > 0 || !eventExists(id)) 1 else 0
             } catch (error: Exception) {
                 android.util.Log.w(TAG, "delete event failed: $id", error)
             }

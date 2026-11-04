@@ -138,9 +138,20 @@ class MainActivity : FlutterActivity() {
                         null
                     } else {
                         val rawEvents = args["events"] as? List<*> ?: emptyList<Any>()
+                        // 逐条兜底：任何一条抛异常都不能连累同批已经写入成功的事件。
+                        // 整批抛错会让 Dart 侧把所有结果都当成 null，已成功的事件
+                        // 拿不到 id，下一轮同步会重复插入并重复提醒。
                         rawEvents.map { raw ->
-                            (raw as? Map<*, *>)?.let {
-                                calendarBridge.writeEvent(calendarId, it)?.toString()
+                            val event = raw as? Map<*, *>
+                            if (event == null) {
+                                null
+                            } else {
+                                try {
+                                    calendarBridge.writeEvent(calendarId, event)?.toString()
+                                } catch (error: Exception) {
+                                    android.util.Log.e("CalendarSync", "write event failed", error)
+                                    null
+                                }
                             }
                         }
                     }
