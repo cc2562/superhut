@@ -2,7 +2,7 @@ import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
-import '../theme/glass/glass_scaffold.dart';
+import 'auth_status_view.dart';
 
 bool isHutCasAuthenticationPage(String url) {
   final uri = Uri.tryParse(url);
@@ -43,10 +43,36 @@ class HutLoginSystem extends StatefulWidget {
 class _HutLoginSystemState extends State<HutLoginSystem> {
   InAppWebViewController? _webViewController;
   bool _isLoading = true;
+
+  /// 是否已经成功加载过至少一页。
+  ///
+  /// CAS 会连续重定向（mycas → jwxtsj），只有第一次才需要整页占位；
+  /// 之后仅用顶部细进度条反馈，避免整屏反复闪烁。
+  bool _hasCompletedFirstLoad = false;
+
+  /// 网页加载失败时的说明；非空时整页显示错误态。
+  String? _loadError;
+
   String _currentUrl = '';
   final String _targetDomain = 'jwxtsj.hut.edu.cn';
   final String _initialUrl = 'https://mycas.hut.edu.cn/cas/login';
   bool _authenticationFailureReported = false;
+
+  /// CAS 登录入口：带上智慧工大 idToken，成功后由教务系统回跳并带上 token。
+  String get _loginUrl =>
+      '$_initialUrl?idToken=${widget.initialIdToken}'
+      '&service=https%3A%2F%2Fjwxtsj.hut.edu.cn%2Fnjwhd%2FloginSso'
+      '&token=${widget.initialIdToken}';
+
+  /// 失败后重新载入认证入口。
+  void _retryLoad() {
+    setState(() {
+      _loadError = null;
+      _isLoading = true;
+      _hasCompletedFirstLoad = false;
+    });
+    _webViewController?.loadUrl(urlRequest: URLRequest(url: WebUri(_loginUrl)));
+  }
 
   void _reportAuthenticationRequired() {
     if (_authenticationFailureReported) return;
@@ -155,99 +181,143 @@ class _HutLoginSystemState extends State<HutLoginSystem> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassScaffold(
-      title: 'HUT统一认证',
-      // 认证流程内不允许返回，避免中断登录。
-      showBackButton: false,
-      // 网页内容不能滚到玻璃下方，整体下移。
-      insetBody: true,
-      body: Stack(
-        children: [
-          // 统一认证网页包含学号密码，整块遮罩，避免被 Clarity 会话录制采集。
-          ClarityMask(
-            child: InAppWebView(
-              initialUrlRequest: URLRequest(
-                url: WebUri(
-                  '$_initialUrl?idToken=${widget.initialIdToken}&service=https%3A%2F%2Fjwxtsj.hut.edu.cn%2Fnjwhd%2FloginSso&token=${widget.initialIdToken}',
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return Scaffold(
+      backgroundColor: colors.surface,
+      // 认证流程内不允许返回，避免中断登录；失败态另给「返回」按钮。
+      body: SafeArea(
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            // 统一认证网页包含学号密码，整块遮罩，避免被 Clarity 会话录制采集。
+            ClarityMask(
+              child: InAppWebView(
+                initialUrlRequest: URLRequest(
+                  url: WebUri(_loginUrl),
+                  headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
+                    "Connection": "keep-alive",
+                    "Accept":
+                        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                    "Accept-Encoding": "gzip, deflate, br, zstd",
+                    "sec-ch-ua":
+                        "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
+                    "sec-ch-ua-mobile": "?1",
+                    "sec-ch-ua-platform": "\"Android\"",
+                    "upgrade-insecure-requests": "1",
+                    "x-requested-with": "com.supwisdom.hut",
+                    "sec-fetch-site": "none",
+                    "sec-fetch-mode": "navigate",
+                    "sec-fetch-user": "?1",
+                    "sec-fetch-dest": "document",
+                    "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                  },
                 ),
-                headers: {
-                  "User-Agent":
-                      "Mozilla/5.0 (Linux; Android 15; 24129PN74C Build/AQ3A.240812.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.39 Mobile Safari/537.36 SuperApp",
-                  "Connection": "keep-alive",
-                  "Accept":
-                      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-                  "Accept-Encoding": "gzip, deflate, br, zstd",
-                  "sec-ch-ua":
-                      "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Android WebView\";v=\"134\"",
-                  "sec-ch-ua-mobile": "?1",
-                  "sec-ch-ua-platform": "\"Android\"",
-                  "upgrade-insecure-requests": "1",
-                  "x-requested-with": "com.supwisdom.hut",
-                  "sec-fetch-site": "none",
-                  "sec-fetch-mode": "navigate",
-                  "sec-fetch-user": "?1",
-                  "sec-fetch-dest": "document",
-                  "accept-language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+                initialOptions: InAppWebViewGroupOptions(
+                  crossPlatform: InAppWebViewOptions(
+                    useShouldOverrideUrlLoading: true,
+                    useOnLoadResource: true,
+                    javaScriptEnabled: true,
+                    cacheEnabled: true,
+                  ),
+                ),
+                onWebViewCreated: (controller) {
+                  _webViewController = controller;
                 },
-              ),
-              initialOptions: InAppWebViewGroupOptions(
-                crossPlatform: InAppWebViewOptions(
-                  useShouldOverrideUrlLoading: true,
-                  useOnLoadResource: true,
-                  javaScriptEnabled: true,
-                  cacheEnabled: true,
-                ),
-              ),
-              onWebViewCreated: (controller) {
-                _webViewController = controller;
-              },
-              shouldOverrideUrlLoading: (controller, navigationAction) async {
-                final url = navigationAction.request.url.toString();
-                _checkUrlAndExtractTokenAndCookie(url);
-                return NavigationActionPolicy.ALLOW;
-              },
-              onLoadStart: (controller, url) {
-                if (url != null) {
-                  setState(() {
-                    _isLoading = true;
-                    _currentUrl = url.toString();
-                  });
-                  _checkUrlAndExtractTokenAndCookie(_currentUrl);
-                }
-              },
-              onLoadStop: (controller, url) {
-                if (url != null) {
-                  final loadedUrl = url.toString();
+                shouldOverrideUrlLoading: (controller, navigationAction) async {
+                  final url = navigationAction.request.url.toString();
+                  _checkUrlAndExtractTokenAndCookie(url);
+                  return NavigationActionPolicy.ALLOW;
+                },
+                onLoadStart: (controller, url) {
+                  if (url != null) {
+                    setState(() {
+                      _isLoading = true;
+                      _loadError = null;
+                      _currentUrl = url.toString();
+                    });
+                    _checkUrlAndExtractTokenAndCookie(_currentUrl);
+                  }
+                },
+                onLoadStop: (controller, url) {
+                  if (url != null) {
+                    final loadedUrl = url.toString();
+                    setState(() {
+                      _isLoading = false;
+                      _hasCompletedFirstLoad = true;
+                      _loadError = null;
+                      _currentUrl = loadedUrl;
+                    });
+                    if (isHutCasAuthenticationPage(loadedUrl)) {
+                      _reportAuthenticationRequired();
+                      return;
+                    }
+                    _checkUrlAndExtractTokenAndCookie(_currentUrl);
+
+                    // 不再打印当前 URL 与页面 console：其中的 code / ticket 参数
+                    // 本身就是凭据，认证相关的任何内容都不应进日志。
+                  }
+                },
+                onLoadError: (controller, url, code, message) {
                   setState(() {
                     _isLoading = false;
-                    _currentUrl = loadedUrl;
+                    // 首次就没加载成功时也要结束整页占位，转到错误态。
+                    _hasCompletedFirstLoad = true;
+                    // 固定文案：message 与 URL 里可能带 idToken / ticket。
+                    _loadError = '认证页面加载失败，请检查网络后重试';
                   });
-                  if (isHutCasAuthenticationPage(loadedUrl)) {
-                    _reportAuthenticationRequired();
-                    return;
+                  if (widget.onError != null) {
+                    widget.onError!('页面加载错误: $message');
                   }
-                  _checkUrlAndExtractTokenAndCookie(_currentUrl);
-
-                  // 不再打印当前 URL 与页面 console：其中的 code / ticket 参数
-                  // 本身就是凭据，认证相关的任何内容都不应进日志。
-                }
-              },
-              onLoadError: (controller, url, code, message) {
-                setState(() {
-                  _isLoading = false;
-                });
-                if (widget.onError != null) {
-                  widget.onError!('页面加载错误: $message');
-                }
-              },
+                },
+              ),
             ),
-          ),
-          if (_isLoading)
-            Container(
-              color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
-              child: const Center(child: CircularProgressIndicator()),
-            ),
-        ],
+            // 首次加载：整页不透明占位，避免露出半张空白网页。
+            if (!_hasCompletedFirstLoad && _loadError == null)
+              ColoredBox(
+                color: colors.surface,
+                child: const AuthStatusView(
+                  icon: Icons.lock_outline_rounded,
+                  title: '正在进入统一认证',
+                  description: '正在加载登录页面，首次进入可能需要几秒',
+                  showProgress: true,
+                ),
+              ),
+            // 加载失败：覆盖网页，给出重试与返回。
+            if (_loadError != null)
+              ColoredBox(
+                color: colors.surface,
+                child: AuthStatusView(
+                  icon: Icons.cloud_off_rounded,
+                  title: '认证页面加载失败',
+                  description: _loadError!,
+                  isError: true,
+                  actions: <Widget>[
+                    FilledButton(
+                      onPressed: _retryLoad,
+                      child: const Text('重新尝试'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      child: const Text('返回'),
+                    ),
+                  ],
+                ),
+              ),
+            // 后续重定向：半透明遮罩 + 与首次加载一致的状态页。
+            if (_isLoading && _hasCompletedFirstLoad && _loadError == null)
+              ColoredBox(
+                color: colors.surface.withValues(alpha: 0.85),
+                child: const AuthStatusView(
+                  icon: Icons.lock_outline_rounded,
+                  title: '正在登录教务系统',
+                  description: '正在与教务系统完成认证，请稍候',
+                  showProgress: true,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

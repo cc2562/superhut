@@ -7,8 +7,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../bridge/getCoursePage.dart';
 import '../../pages/score/scorepage.dart';
+import '../../pages/settings/calendar_sync_page.dart';
 import '../../pages/settings/course_table_style_page.dart';
 import '../../pages/settings/privacy_settings_page.dart';
+import '../../pages/settings/reminder_settings_page.dart';
 import '../../pages/settings/theme_settings_page.dart';
 import '../../security/credential_store.dart';
 import '../../utils/hut_user_api.dart';
@@ -308,6 +310,19 @@ class _UserPageState extends State<UserPage> {
                         );
                       },
                     ),
+                    // 系统日历同步是移动端能力，桌面端不显示入口。
+                    if (CalendarSyncPage.isAvailable)
+                      _buildFunctionItem(
+                        icon: Icons.event_available_outlined,
+                        title: '日历同步',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const CalendarSyncPage(),
+                            ),
+                          );
+                        },
+                      ),
                     _buildFunctionItem(
                       icon: Icons.palette_outlined,
                       title: '外观与主题',
@@ -336,6 +351,19 @@ class _UserPageState extends State<UserPage> {
                         });
                       },
                     ),
+                    // 实时活动是 iOS 独占能力，Android 不显示入口。
+                    if (ReminderSettingsPage.isAvailable)
+                      _buildFunctionItem(
+                        icon: Icons.alarm_on_outlined,
+                        title: '提醒设置',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ReminderSettingsPage(),
+                            ),
+                          );
+                        },
+                      ),
                     _buildFunctionItem(
                       icon: Icons.privacy_tip_outlined,
                       title: '隐私设置',

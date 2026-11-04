@@ -61,11 +61,26 @@ class _ExamSchedulePageState extends State<ExamSchedulePage> {
             margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
             child: ListView.builder(
               padding: EdgeInsets.only(top: glassTopInset(context)),
-              itemCount: examSchedules.length,
+              // 没有考试时补一个提示项：itemCount 为 0 时 itemBuilder 不会执行，
+              // 空态写在里面永远不会显示。
+              itemCount: examSchedules.isEmpty ? 1 : examSchedules.length,
               itemBuilder: (context, index) {
                 if (examSchedules.isEmpty) {
-                  return Column(
-                    children: [SizedBox(height: 10), Text("当前学期暂时没有考试安排")],
+                  return SizedBox(
+                    // 减掉顶部玻璃避让，让提示在可视区内垂直居中。
+                    height:
+                        MediaQuery.sizeOf(context).height -
+                        glassTopInset(context),
+                    child: Center(
+                      child: Text(
+                        '当前学期暂时没有考试安排',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
                   );
                 } else {
                   var ins = index;

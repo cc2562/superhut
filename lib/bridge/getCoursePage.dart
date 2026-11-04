@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:superhut/home/homeview/view.dart';
 
+import '../home/coursetable/schedule/custom_schedule_controller.dart';
+import '../utils/course/calendar/calendar_sync_controller.dart';
 import '../utils/course/coursemain.dart';
 import '../utils/token.dart';
 
@@ -44,6 +46,11 @@ class _GetcoursepageState extends State<Getcoursepage> {
           setState(() => _progress = progress.value);
         },
       );
+
+      // 课表整体换了一份：学期起始周可能变了，「指定周次」的日程要按新周次解释。
+      await CustomScheduleController.maybeInstance?.reloadSemesterInfo();
+      // 再让日历同步做一次差量（未开启时是空操作）。
+      CalendarSyncController.maybeInstance?.notifyScheduleChanged();
 
       if (!mounted) return;
       setState(() {

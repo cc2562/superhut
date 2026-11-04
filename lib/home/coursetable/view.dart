@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
@@ -11,16 +12,31 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/glass/glass_menu.dart';
 import '../../theme/glass/glass_overlays.dart';
 import '../../theme/glass/glass_segmented.dart';
+import '../../theme/glass/glass_theme.dart';
+import '../../theme/glass/glass_top_bar.dart';
 import '../../utils/course/coursemain.dart';
 import '../../utils/course/class_time_table.dart';
 import '../../widget_refresh_service.dart';
 import 'course_table_scroll_behavior.dart';
 import 'logic.dart';
+import 'schedule/custom_schedule_controller.dart';
+import 'schedule/custom_schedule_detail_sheet.dart';
+import 'schedule/custom_schedule_editor_page.dart';
+import 'schedule/custom_schedule_event.dart';
+import 'schedule/schedule_block.dart';
+import 'schedule/schedule_timeline.dart';
 import 'style/course_card_surface.dart';
 import 'style/course_table_style.dart';
 import 'style/course_table_style_controller.dart';
 import '../../utils/course/getCourse.dart';
+import '../../live_activity/class_live_activity_controller.dart';
 import '../../live_notification_manager.dart';
+
+/// 周视图左侧节次栏宽度。
+///
+/// 表头占位、网格节次栏、节次分隔线三处必须共用同一个值：表头曾经用
+/// `Expanded` 配 flex 分配，而网格是固定宽度，手机宽度下日期会整体左偏约 26px。
+const double _kSectionGutterWidth = 40;
 
 class CourseTableView extends StatefulWidget {
   const CourseTableView({super.key});
@@ -53,6 +69,11 @@ class _CourseTableViewState extends State<CourseTableView> {
   static const String _viewModePreferenceKey = 'courseTableViewMode';
 
   final CourseTableViewLogic logic = Get.put(CourseTableViewLogic());
+
+  /// 自定义日程由 main 注册；这里兜底，避免直接进入课表页时取不到。
+  late final CustomScheduleController _scheduleController =
+      CustomScheduleController.maybeInstance ??
+      Get.put(CustomScheduleController());
 
   // DateTime _currentDate = DateTime.now();
   DateTime _currentDate = getMondayOfCurrentWeek();
@@ -302,215 +323,183 @@ class _CourseTableViewState extends State<CourseTableView> {
   Color get _pageEstimate =>
       _style.estimatedPageColor(Theme.of(context).colorScheme);
 
-  /*
-   * 构建单日课程时间表布局
-   * @param courses 当天的课程列表
-   * @return 包含课程块和空白时间段的组件列表
-   * 实现逻辑：
-   * 1. 按开始节数排序课程
-   * 2. 检查是否有重叠的课程，如果有则将它们放在同一个位置显示
-   * 3. 填充课程之间的空白时间段
-   * 4. 保证最多显示到第6节课
-   */
-  List<Widget> _buildDayCourses(List<Course> courses, CourseTableStyle style) {
-    courses.sort((a, b) => a.startSection.compareTo(b.startSection));
-    final widgets = <Widget>[];
-    int currentSection = 1;
-
-    for (int i = 0; i < courses.length; i++) {
-      final course = courses[i];
-      while (currentSection < course.startSection) {
-        widgets.add(_buildTimeSlot(currentSection));
-        currentSection++;
-      }
-
-      // 检查是否有重叠的课程
-      List<Course> overlappingCourses = [course];
-      for (int j = i + 1; j < courses.length; j++) {
-        if (courses[j].startSection < course.startSection + course.duration) {
-          overlappingCourses.add(courses[j]);
-        } else {
-          break;
-        }
-      }
-
-      // 如果有重叠的课程，将它们放在同一个位置显示
-      if (overlappingCourses.length > 1) {
-        widgets.add(_buildOverlappingCourses(overlappingCourses, style));
-        currentSection += course.duration;
-        i += overlappingCourses.length - 1; // 跳过已经处理的重叠课程
-      } else {
-        widgets.add(_buildCourseItem(course, style));
-        currentSection += course.duration;
-      }
-    }
-
-    while (currentSection <= 10) {
-      widgets.add(_buildTimeSlot(currentSection));
-      currentSection++;
-    }
-
-    return widgets;
+  /* 某一天要画的全部块：教务课程 + 当天生效的自定义日程。 */
+  List<DayBlock> _blocksOn(DateTime day) {
+    return buildDayBlocks(
+      courses: _courseData[_dateKey(day)] ?? const <Course>[],
+      schedules: _scheduleController.eventsOn(day),
+    );
   }
 
+  Color _accentFor(DayBlock block) => block.isCourse
+      ? _getCourseColor(block.course!.name)
+      : block.schedule!.color;
+
+  void _openBlock(DayBlock block) {
+    if (block.isCourse) {
+      _showCourseDetails(block.course!);
+    } else {
+      _showScheduleDetails(block.schedule!);
+    }
+  }
+
+  String _formatMinutes(int minutes) {
+    final int value = minutes.clamp(0, 24 * 60);
+    final String hh = (value ~/ 60).toString().padLeft(2, '0');
+    final String mm = (value % 60).toString().padLeft(2, '0');
+    return '$hh:$mm';
+  }
+
+  String _blockTimeText(DayBlock block) =>
+      '${_formatMinutes(block.startMinute)}–${_formatMinutes(block.endMinute)}';
+
   /*
-   * 构建重叠课程显示块
-   * @param courses 重叠的课程列表
-   * @return 包含多个课程名称的彩色区块组件
+   * 一列 = 一个定高 Stack：块按真实时间绝对定位，课间留出与真实时长一致的空白。
+   * 时间重叠的块不合并成一块，而是按开始时间依次向右「扇出」，
+   * 后开始的压在上层、右侧对齐，每块都露出自己的彩色左边。
    */
-  Widget _buildOverlappingCourses(
-    List<Course> courses,
+  Widget _buildDayColumn(
+    List<DayBlock> blocks,
+    TimelineWindow window,
     CourseTableStyle style,
   ) {
-    double marginTB = 0, marginT = 1;
-    if (courses[0].duration >= 2) {
-      marginTB = courses[0].duration.toDouble();
-    }
-    if (courses[0].startSection == 1) {
-      marginT = 0;
-    }
-
-    final accent = _getCourseColor(courses.first.name);
-    final onAccent = style.courseForeground(
-      accent,
-      pageEstimate: _pageEstimate,
+    final List<TimelineCluster<DayBlock>> clusters = clusterTimelineItems(
+      blocks,
+      startOf: (DayBlock block) => block.startMinute,
+      endOf: (DayBlock block) => block.endMinute,
     );
-    final onAccentMuted = onAccent.withValues(alpha: 0.82);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(1, marginT, 1, 1),
-      child: SizedBox(
-        height: 60 * courses[0].duration.toDouble() + marginTB,
-        width: double.infinity,
-        child: CourseCardSurface(
-          accent: accent,
-          style: style,
-          borderRadius: 8,
-          child: Padding(
-            padding: const EdgeInsets.all(2),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children:
-                  courses.map((course) {
-                    return Expanded(
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(6),
-                        onTap: () => _showCourseDetails(course),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              course.name,
-                              style: TextStyle(
-                                color: onAccent,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.left,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              course.location,
-                              style: TextStyle(
-                                color: onAccentMuted,
-                                fontSize: 10,
-                                fontWeight: FontWeight.normal,
-                              ),
-                              textAlign: TextAlign.left,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              course.teacherName,
-                              style: TextStyle(
-                                color: onAccentMuted,
-                                fontSize: 10,
-                                fontWeight: FontWeight.normal,
-                              ),
-                              textAlign: TextAlign.left,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-            ),
-          ),
-        ),
+
+    return SizedBox(
+      height: window.height,
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final double columnWidth = constraints.maxWidth;
+          return Stack(
+            clipBehavior: Clip.hardEdge,
+            children: <Widget>[
+              for (final TimelineCluster<DayBlock> cluster in clusters)
+                ..._buildStackedBlocks(cluster, columnWidth, window, style),
+            ],
+          );
+        },
       ),
     );
   }
 
-  /*
-   * 构建单个课程显示块
-   * @param course 课程对象
-   * @return 包含课程名称的彩色区块组件
-   */
-  Widget _buildCourseItem(Course course, CourseTableStyle style) {
-    double marginTB = 0, marginT = 1;
-    if (course.duration >= 2) {
-      marginTB = course.duration.toDouble();
-    }
-    if (course.startSection == 1) {
-      marginT = 0;
-    }
-    final accent = _getCourseColor(course.name);
-    final onAccent = style.courseForeground(
+  List<Widget> _buildStackedBlocks(
+    TimelineCluster<DayBlock> cluster,
+    double columnWidth,
+    TimelineWindow window,
+    CourseTableStyle style,
+  ) {
+    final double step = cascadeStep(columnWidth: columnWidth);
+
+    return <Widget>[
+      for (int level = 0; level < cluster.items.length; level++)
+        _buildBlockSlot(
+          block: cluster.items[level],
+          columnWidth: columnWidth,
+          level: level,
+          step: step,
+          window: window,
+          style: style,
+        ),
+    ];
+  }
+
+  Widget _buildBlockSlot({
+    required DayBlock block,
+    required double columnWidth,
+    required int level,
+    required double step,
+    required TimelineWindow window,
+    required CourseTableStyle style,
+  }) {
+    final double top = window.topFor(block.startMinute);
+    final double rawHeight = window.heightForRange(
+      block.startMinute,
+      block.endMinute,
+    );
+    final double available = math.max(0, window.height - top);
+    // 过短的事件（如 10 分钟）保底 22px 保证点得到；超出窗口底部时裁掉。
+    final double height = math.max(rawHeight, 22).clamp(0, available).toDouble();
+
+    // 缩进最多一层：第 0 块全宽，后面的块都缩进同一格并依次压在上层。
+    final double inset = step * math.min(level, 1);
+    final double width = math.max(1, columnWidth - 2 - inset);
+
+    return Positioned(
+      left: 1 + inset,
+      width: width,
+      top: top,
+      height: height,
+      child: _buildBlockCard(block, style, height),
+    );
+  }
+
+  /* 单个块：课程与日程共用 CourseCardSurface，只有识别色与副标题不同。 */
+  Widget _buildBlockCard(DayBlock block, CourseTableStyle style, double height) {
+    final Color accent = _accentFor(block);
+    final Color foreground = style.courseForeground(
       accent,
       pageEstimate: _pageEstimate,
     );
-    final onAccentMuted = onAccent.withValues(alpha: 0.82);
+    final Color muted = foreground.withValues(alpha: 0.82);
+    // 只有块太矮（< 44px）时才只留标题，避免 RenderFlex 溢出。
+    // 不能按宽度判「窄」：手机七列布局单列本来就只有 45–53dp，
+    // 否则所有块都会被判窄、地点与教师整片消失。
+    final bool compact = height < 44;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(1, marginT, 1, 1),
-      child: SizedBox(
-        height: 60 * course.duration.toDouble() + marginTB,
-        width: double.infinity,
-        child: CourseCardSurface(
-          accent: accent,
-          style: style,
-          borderRadius: 8,
-          child: Padding(
-            padding: const EdgeInsets.all(2),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(6),
-              onTap: () => _showCourseDetails(course),
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: CourseCardSurface(
+        accent: accent,
+        style: style,
+        borderRadius: 8,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => _openBlock(block),
+            child: Padding(
+              padding: const EdgeInsets.all(2),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                children: <Widget>[
                   Expanded(
                     child: Text(
-                      course.name,
+                      block.title,
                       style: TextStyle(
-                        color: onAccent,
+                        color: foreground,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
-                      textAlign: TextAlign.left,
                       maxLines: 5,
                       overflow: TextOverflow.fade,
                     ),
                   ),
-                  Text(
-                    course.location,
-                    style: TextStyle(
-                      color: onAccentMuted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.normal,
+                  // 课程与自定义日程都显示地点；没填地点的日程不占这一行。
+                  if (!compact && block.location.isNotEmpty)
+                    Text(
+                      block.location,
+                      style: TextStyle(color: muted, fontSize: 10),
+                      maxLines: block.isCourse ? 2 : 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    textAlign: TextAlign.left,
-                  ),
-                  Text(
-                    course.teacherName,
-                    style: TextStyle(
-                      color: onAccentMuted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.normal,
+                  if (!compact && block.isCourse && block.secondary.isNotEmpty)
+                    Text(
+                      block.secondary,
+                      style: TextStyle(color: muted, fontSize: 10),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    textAlign: TextAlign.left,
-                  ),
+                  if (!compact && !block.isCourse)
+                    Text(
+                      _blockTimeText(block),
+                      style: TextStyle(color: muted, fontSize: 10),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                 ],
               ),
             ),
@@ -520,34 +509,6 @@ class _CourseTableViewState extends State<CourseTableView> {
     );
   }
 
-  /*
-   * 构建空白时间段占位组件
-   * @param section 当前节数编号
-   * @return 带有节数标识的灰色边框占位块
-   */
-  Widget _buildTimeSlot(int section) {
-    double marginT = 1;
-    if (section == 1) {
-      marginT = 0;
-    }
-    return Container(
-      height: 60,
-      decoration: BoxDecoration(
-        //border: Border.all(color: Colors.grey.withOpacity(0.5)),
-        //border: Border.all(color: Colors.grey.withOpacity(0.5)),
-      ),
-      margin: EdgeInsets.fromLTRB(1, marginT, 1, 1),
-      child: Center(
-        child: Text(
-          '',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 10,
-          ),
-        ),
-      ),
-    );
-  }
 
   String _courseTimeText(DateTime day, Course course) {
     final range = ClassTimeTable.getCourseTimeRange(day, course);
@@ -614,6 +575,67 @@ class _CourseTableViewState extends State<CourseTableView> {
                 ),
             ],
           ),
+    );
+  }
+
+  /// 课表页右上角的「+」：玻璃开启时是圆形玻璃控件，关闭时回落 Material。
+  Widget _buildAddScheduleButton() {
+    if (context.glassTheme.enabled) {
+      return GlassControlButton(
+        icon: Icons.add_rounded,
+        size: 34,
+        iconSize: 18,
+        tooltip: '新建日程',
+        semanticLabel: '新建日程',
+        onTap: _openScheduleEditor,
+      );
+    }
+    return IconButton.filledTonal(
+      onPressed: _openScheduleEditor,
+      tooltip: '新建日程',
+      icon: const Icon(Icons.add_rounded, size: 18),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
+  /// 新建 / 编辑日程；保存后由 Obx 监听控制器自动刷新课表。
+  Future<void> _openScheduleEditor({CustomScheduleEvent? event}) async {
+    // 周视图默认落在今天（不在本周时落在本周一），日视图就是当前天。
+    final DateTime initialDate =
+        _viewMode == CourseTableViewMode.day
+            ? _currentDate
+            : (_currentWeek == _currentRealWeek
+                ? normalizeCourseDate(DateTime.now())
+                : _getStartOfWeek(_currentDate));
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (BuildContext context) => CustomScheduleEditorPage(
+              event: event,
+              initialDate: initialDate,
+              semesterFirstDay: _scheduleController.semesterFirstDay.value,
+              semesterMaxWeek: _scheduleController.semesterMaxWeek.value,
+            ),
+      ),
+    );
+  }
+
+  void _showScheduleDetails(CustomScheduleEvent event) {
+    showGlassDraggableSheet(
+      context: context,
+      initialChildSize: 0.52,
+      minChildSize: 0.3,
+      maxChildSize: 0.85,
+      bodyBuilder:
+          (BuildContext context, ScrollController controller) =>
+              CustomScheduleDetailSheet(
+                event: event,
+                scrollController: controller,
+                onEdit: () => _openScheduleEditor(event: event),
+                onDelete: () => _scheduleController.remove(event.id),
+              ),
     );
   }
 
@@ -692,10 +714,8 @@ class _CourseTableViewState extends State<CourseTableView> {
   }
 
   Widget _buildDayTimeline(CourseTableStyle style) {
-    final courses = sortCoursesForDay(
-      _courseData[_dateKey(_currentDate)] ?? const <Course>[],
-    );
-    if (courses.isEmpty) {
+    final List<DayBlock> blocks = _blocksOn(_currentDate);
+    if (blocks.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -706,7 +726,7 @@ class _CourseTableViewState extends State<CourseTableView> {
               color: Theme.of(context).colorScheme.outline,
             ),
             const SizedBox(height: 10),
-            const Text('当天没有课程'),
+            const Text('今天没有课程或日程'),
           ],
         ),
       );
@@ -717,16 +737,10 @@ class _CourseTableViewState extends State<CourseTableView> {
       behavior: const CourseTableScrollBehavior(),
       child: ListView.separated(
         padding: const EdgeInsets.only(bottom: 100),
-        itemCount: courses.length,
+        itemCount: blocks.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          final course = courses[index];
-          final courseColor = _getCourseColor(course.name);
-          final onCourse = style.courseForeground(
-            courseColor,
-            pageEstimate: _pageEstimate,
-          );
-          final onCourseMuted = onCourse.withValues(alpha: 0.82);
+        itemBuilder: (BuildContext context, int index) {
+          final DayBlock block = blocks[index];
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -736,7 +750,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      _courseTimeText(_currentDate, course),
+                      _blockTimeText(block),
                       maxLines: 1,
                       style: const TextStyle(
                         fontSize: 12,
@@ -745,10 +759,15 @@ class _CourseTableViewState extends State<CourseTableView> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _courseSectionText(course),
+                      block.isCourse ? block.sectionLabel : '日程',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.outline,
+                        color:
+                            block.isCourse
+                                ? Theme.of(context).colorScheme.outline
+                                : _accentFor(block),
                         fontSize: 12,
+                        fontWeight:
+                            block.isCourse ? FontWeight.normal : FontWeight.w600,
                       ),
                     ),
                   ],
@@ -756,48 +775,114 @@ class _CourseTableViewState extends State<CourseTableView> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: CourseCardSurface(
-                  accent: courseColor,
-                  style: style,
-                  borderRadius: 12,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => _showCourseDetails(course),
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            course.name,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleMedium?.copyWith(
-                              color: onCourse,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            course.location.isEmpty ? '地点待定' : course.location,
-                            style: TextStyle(color: onCourseMuted),
-                          ),
-                          if (course.teacherName.isNotEmpty) ...[
-                            const SizedBox(height: 3),
-                            Text(
-                              course.teacherName,
-                              style: TextStyle(color: onCourseMuted),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                child:
+                    block.isCourse
+                        ? _buildDayCourseCard(block, style)
+                        : _buildDayScheduleCard(block),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildDayCourseCard(DayBlock block, CourseTableStyle style) {
+    final Course course = block.course!;
+    final Color courseColor = _accentFor(block);
+    final Color onCourse = style.courseForeground(
+      courseColor,
+      pageEstimate: _pageEstimate,
+    );
+    final Color onCourseMuted = onCourse.withValues(alpha: 0.82);
+
+    return CourseCardSurface(
+      accent: courseColor,
+      style: style,
+      borderRadius: 12,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _showCourseDetails(course),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                course.name,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: onCourse,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                course.location.isEmpty ? '地点待定' : course.location,
+                style: TextStyle(color: onCourseMuted),
+              ),
+              if (course.teacherName.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  course.teacherName,
+                  style: TextStyle(color: onCourseMuted),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 日视图里的日程卡：Material 3 实心卡 + 左侧色条，与课程卡一眼可分。
+  Widget _buildDayScheduleCard(DayBlock block) {
+    final CustomScheduleEvent event = block.schedule!;
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final Color accent = event.color;
+
+    return Material(
+      color: scheme.surfaceContainerHigh,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showScheduleDetails(event),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(width: 4, color: accent),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.title,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        event.location.isEmpty ? '地点待定' : event.location,
+                        style: TextStyle(color: scheme.onSurfaceVariant),
+                      ),
+                      if (event.note.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          event.note,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: scheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -812,7 +897,11 @@ class _CourseTableViewState extends State<CourseTableView> {
       _currentDate = normalizeCourseDate(DateTime.now());
     }
     _courseData = await loadClassFromLocal();
+    // 自定义日程与课表分开加载：刷新课表不会覆盖它，这里只补一次内存状态。
+    await _scheduleController.ensureLoaded();
     LiveNotificationManager.syncSchedule(_courseData);
+    // iOS 灵动岛与 Android 实时通知共用同一份课表快照，互不影响。
+    ClassLiveActivityController.maybeInstance?.syncSchedule(_courseData);
   }
 
   Widget _buildWeekHeader(List<DateTime> weekDays) {
@@ -820,7 +909,8 @@ class _CourseTableViewState extends State<CourseTableView> {
     final CourseTableStyle style = _style;
     return Row(
       children: [
-        const Expanded(child: SizedBox()),
+        // 与课程网格共用同一个节次栏宽度，日期才能落在对应课程列的正上方。
+        const SizedBox(width: _kSectionGutterWidth),
         ...weekDays.map((day) {
           final bool isToday = isSameCourseDate(day, _now);
           final String showText =
@@ -841,7 +931,6 @@ class _CourseTableViewState extends State<CourseTableView> {
             ),
           );
           return Expanded(
-            flex: 4,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               // 只有今天需要表面：其余六格保持透明，不为它们各建一层空表面。
@@ -862,6 +951,16 @@ class _CourseTableViewState extends State<CourseTableView> {
   }
 
   Widget _buildWeekGrid(List<DateTime> weekDays, CourseTableStyle style) {
+    final Map<String, List<DayBlock>> blocksByDay = <String, List<DayBlock>>{
+      for (final DateTime day in weekDays) _dateKey(day): _blocksOn(day),
+    };
+    // 七列共用一条固定纵轴：第 1 节到第 12 节（11、12 节是给自定义日程预留的
+    // 显示范围），不随当周内容收缩，没课的节次也保留空格子；课间在轴上被折叠，
+    // 十二个节次因此等距，课程块与节次线严格对齐。
+    final TimelineWindow window = TimelineWindow.weekGrid();
+    final List<TimelineSection> sections = sectionsInsideWindow(window);
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
     // 不挂 overscroll 指示器：安卓 12+ 的拉伸会逐帧缩放滚动内容，
     // 课程卡的模糊（BackdropFilter）会因此闪断，详见 CourseTableScrollBehavior。
     return ScrollConfiguration(
@@ -869,46 +968,71 @@ class _CourseTableViewState extends State<CourseTableView> {
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 100),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: SizedBox(
-                  width: 40,
-                  child: Column(
-                    children: List.generate(10, (index) {
-                      return Container(
-                        height: 60,
-                        margin: const EdgeInsets.fromLTRB(0, 1, 0, 1),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '${index + 1}',
-                          style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: 10,
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-              ),
-              ...weekDays.map((day) {
-                return Expanded(
-                  flex: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 1),
-                    child: Column(
-                      children: _buildDayCourses(
-                        _courseData[_dateKey(day)] ?? [],
-                        style,
+          child: SizedBox(
+            height: window.height,
+            child: Stack(
+              children: <Widget>[
+                // 节次分隔线：只做视觉参考，不参与命中测试。
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _SectionGridPainter(
+                        window: window,
+                        sections: sections,
+                        gutterWidth: _kSectionGutterWidth,
+                        color: scheme.outlineVariant.withValues(alpha: 0.45),
                       ),
                     ),
                   ),
-                );
-              }),
-            ],
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    SizedBox(
+                      width: _kSectionGutterWidth,
+                      height: window.height,
+                      child: Stack(
+                        children: <Widget>[
+                          for (final TimelineSection section in sections)
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              top: window.topFor(section.startMinute),
+                              height: window.heightForRange(
+                                section.startMinute,
+                                section.endMinute,
+                              ),
+                              child: Align(
+                                alignment: Alignment.topCenter,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Text(
+                                    '${section.section}',
+                                    style: TextStyle(
+                                      color: scheme.onSurfaceVariant,
+                                      fontSize: 10,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    ...weekDays.map((DateTime day) {
+                      return Expanded(
+                        child: _buildDayColumn(
+                          blocksByDay[_dateKey(day)] ?? const <DayBlock>[],
+                          window,
+                          style,
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1019,6 +1143,8 @@ class _CourseTableViewState extends State<CourseTableView> {
                   selected: _viewMode,
                   onChanged: _setViewMode,
                 ),
+                const SizedBox(width: 8),
+                _buildAddScheduleButton(),
               ],
             ),
           ),
@@ -1123,4 +1249,41 @@ class _CourseTableViewState extends State<CourseTableView> {
           ),
     );
   }
+}
+
+/// 周视图背景：按节次开始时间在日列上画横向分隔线。
+///
+/// 时间轴改成真实比例后，节次之间出现与课间时长一致的空白，
+/// 这些细线让「第几节」仍然可读，又不抢课程块的注意力。
+class _SectionGridPainter extends CustomPainter {
+  const _SectionGridPainter({
+    required this.window,
+    required this.sections,
+    required this.gutterWidth,
+    required this.color,
+  });
+
+  final TimelineWindow window;
+  final List<TimelineSection> sections;
+  final double gutterWidth;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = 0.6;
+    for (final TimelineSection section in sections) {
+      final double y = window.topFor(section.startMinute);
+      if (y <= 1 || y >= size.height - 1) continue;
+      canvas.drawLine(Offset(gutterWidth, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SectionGridPainter oldDelegate) =>
+      oldDelegate.window != window ||
+      oldDelegate.sections.length != sections.length ||
+      oldDelegate.color != color;
 }

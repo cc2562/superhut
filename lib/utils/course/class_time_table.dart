@@ -15,7 +15,32 @@ class ClassTimeTable {
     8: [16, 55, 17, 40],
     9: [19, 0, 19, 45],
     10: [19, 55, 20, 40],
+    // 学校实际只排到第 10 节。第 11、12 节是为自定义日程预留的显示范围（到 22:40），
+    // 教务课程不会落在这些节次上。
+    11: [20, 55, 21, 40],
+    12: [21, 55, 22, 40],
   };
+
+  /// 节次总数。课表页的时间轴据此生成左侧节次号。
+  static const int sectionCount = 12;
+
+  /// 单节时长（分钟）。时间轴密度按「一节 45 分钟 = 60px」换算。
+  static const int sectionMinutes = 45;
+
+  /// 某一节的原始时间表；越界返回 `null`。
+  static List<int>? sectionTimes(int section) => _times[section];
+
+  /// 某一节开始时刻距当天 00:00 的分钟数；越界按第 1 节处理。
+  static int sectionStartMinute(int section) {
+    final List<int> times = _times[section] ?? _times[1]!;
+    return times[0] * 60 + times[1];
+  }
+
+  /// 某一节结束时刻距当天 00:00 的分钟数；越界按最后一节处理。
+  static int sectionEndMinute(int section) {
+    final List<int> times = _times[section] ?? _times[_times.length]!;
+    return times[2] * 60 + times[3];
+  }
 
   /// Calculates the exact start and end DateTime for a Course on a specific base Date.
   ///

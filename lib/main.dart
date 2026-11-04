@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +15,9 @@ import 'package:superhut/welcomepage/view.dart';
 import 'agreement/agreement_controller.dart';
 import 'agreement/consent_page.dart';
 import 'analytics/clarity_service.dart';
+import 'home/coursetable/schedule/custom_schedule_controller.dart';
 import 'home/coursetable/style/course_table_style_controller.dart';
+import 'live_activity/class_live_activity_controller.dart';
 import 'privacy/privacy_consent_controller.dart';
 import 'security/credential_store.dart';
 import 'home/homeview/view.dart';
@@ -21,6 +25,7 @@ import 'pages/drink/view/view.dart';
 import 'pages/water/view.dart';
 import 'pages/Electricitybill/electricityPage.dart';
 import 'theme/theme_controller.dart';
+import 'utils/course/calendar/calendar_sync_controller.dart';
 
 WebViewEnvironment? webViewEnvironment;
 
@@ -94,6 +99,21 @@ class _MyAppState extends State<MyApp> {
     PrivacyConsentController(agreement: agreementController),
   );
 
+  /// 灵动岛课程提醒（仅 iOS）：注册在 main 里，未打开课表页也能在回到前台时补发。
+  final ClassLiveActivityController liveActivityController = Get.put(
+    ClassLiveActivityController(),
+  );
+
+  /// 自定义日程：课表页与日历同步共用同一份内存状态。
+  final CustomScheduleController customScheduleController = Get.put(
+    CustomScheduleController(),
+  );
+
+  /// 系统日历单向同步：启动加载一次，之后由日程/课表变化驱动。
+  final CalendarSyncController calendarSyncController = Get.put(
+    CalendarSyncController(),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -149,6 +169,17 @@ class _MyAppState extends State<MyApp> {
     await courseStyleController.load();
     await agreementController.load();
     await privacyConsentController.load();
+    await liveActivityController.load();
+    await customScheduleController.load();
+    await calendarSyncController.load();
+
+    // 日程增删改后由数据层回调同步层，避免两个控制器互相依赖。
+    CustomScheduleController.onScheduleChanged =
+        calendarSyncController.notifyScheduleChanged;
+    if (calendarSyncController.enabled) {
+      // 冷启动补一次差量同步：没有变化时整轮直接短路，不写任何事件。
+      unawaited(calendarSyncController.syncNow());
+    }
     // await prefs.setBool('isFirstOpen', true);
     _isFirstOpen = prefs.getBool('isFirstOpen') ?? true;
     setState(() {
