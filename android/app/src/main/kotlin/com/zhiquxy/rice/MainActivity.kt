@@ -20,6 +20,7 @@ class MainActivity : FlutterActivity() {
             "com.superhut.rice.superhut/coursetable_widget"
         const val CALENDAR_SYNC_CHANNEL =
             "com.superhut.rice.superhut/calendar_sync"
+        const val UMENG_CHANNEL = "com.zhiquxy.rice/umeng"
         private const val CALENDAR_PERMISSION_REQUEST = 4301
     }
 
@@ -164,6 +165,28 @@ class MainActivity : FlutterActivity() {
                 "deleteCalendar" -> runCalendarTask(result) {
                     val calendarId = (args["calendarId"] as? String)?.toLongOrNull()
                     if (calendarId == null) false else calendarBridge.deleteCalendar(calendarId)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // 友盟：只负责把「用户已同意隐私政策」这个事实告诉原生 SDK。
+        //
+        // 统计与性能的正式初始化由 Flutter 官方组件在 Dart 侧触发，
+        // 这里不参与初始化，也不承载任何业务事件。
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            UMENG_CHANNEL
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "grantConsent" -> {
+                    try {
+                        SuperhutApplication.grantConsent(this)
+                        result.success(true)
+                    } catch (error: Exception) {
+                        android.util.Log.e("Umeng", "grantConsent failed", error)
+                        result.error("umeng_consent_error", error.message, null)
+                    }
                 }
                 else -> result.notImplemented()
             }

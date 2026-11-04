@@ -1,0 +1,44 @@
+group 'com.umeng.umeng_common_sdk'
+version '1.0'
+
+// 本目录是官方 umeng_common_sdk 1.3.1 的本地副本，仅做必要补丁（业务代码未改）：
+// 1. Gradle 9 已移除 jcenter()，官方脚本仍在使用，会直接导致工程无法配置；
+// 2. 去掉插件自带的 buildscript（AGP 7.3.0 / Kotlin 1.7.10），统一由宿主工程提供；
+// 3. lintOptions 在 AGP 9 已移除，改为 lint{}；
+// 4. compileSdk 33 -> 36，与宿主工程对齐；
+// 5. 依赖的 common / asms 从「+」动态版本改为钉死版本，避免上游发版漂移。
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://repo1.maven.org/maven2/' }
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace = "com.umeng.umeng_common_sdk"
+    compileSdkVersion 36
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+
+    // 宿主工程用 Kotlin 2.4（默认 JVM 17），这里把 Java 编译目标也抬到 17，
+    // 否则 AGP 9 会因「Java 11 / Kotlin 17 不一致」直接失败。
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        disable 'InvalidPackage'
+    }
+}
+
+dependencies {
+    // 必选：公共底座与加密通道库
+    api 'com.umeng.umsdk:common:10.0.1'
+    api 'com.umeng.umsdk:asms:1.8.7.2'
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../analytics/clarity_service.dart';
+import '../analytics/umeng_service.dart';
 
 /// 设置页依赖的最小行为分析接口。
 ///
@@ -26,5 +27,25 @@ class ClarityAnalyticsRecorder implements AnalyticsRecorder {
   @override
   Future<void> withdraw() async {
     ClarityService.withdraw();
+  }
+}
+
+/// 默认实现：一次开关同时管住 Microsoft Clarity 与友盟（U-App + U-APM）。
+///
+/// 两套 SDK 的启停互不影响：任何一方失败都只记日志，不会挡住另一方，
+/// 也不会让「关闭」按钮失效。
+class CombinedAnalyticsRecorder implements AnalyticsRecorder {
+  const CombinedAnalyticsRecorder();
+
+  @override
+  Future<void> enable(BuildContext context) async {
+    ClarityService.enable(context);
+    await UmengService.enable();
+  }
+
+  @override
+  Future<void> withdraw() async {
+    ClarityService.withdraw();
+    await UmengService.withdraw();
   }
 }

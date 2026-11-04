@@ -16,7 +16,7 @@
     -->
     <application
             android:label="超级包菜"
-            android:name="${applicationName}"
+            android:name=".SuperhutApplication"
             android:allowBackup="false"
             android:usesCleartextTraffic="false"
             android:enableOnBackInvokedCallback="true"

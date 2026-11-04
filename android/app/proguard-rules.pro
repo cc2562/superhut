@@ -12,3 +12,23 @@
 -keep class com.facebook.** { *; }
 -dontwarn io.flutter.**
 -dontwarn androidx.**
+
+# ========== 友盟统计SDK混淆规则 ==========
+-keep class com.umeng.** {*;}
+-keep class org.repackage.** {*;}
+-keep class com.uyumao.** { *; }
+-keepclassmembers class * {
+   public <init> (org.json.JSONObject);
+}
+
+# ========== 友盟 U-APM 混淆规则 ==========
+-keep class com.efs.** { *; }
+-keep class com.uc.** { *; }
+# U-APM 的网络分析模块会引用 OkHttp 拦截器；本工程是 Flutter，运行时没有
+# OkHttp，这些引用在 R8 看来是缺失类。保留编译期忽略，避免 release 构建失败。
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}

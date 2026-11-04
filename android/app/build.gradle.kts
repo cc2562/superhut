@@ -68,6 +68,11 @@ android {
     }
 
     packaging {
+        // U-APM 依赖 native 库做崩溃采集；AGP 3.6+ 默认不提取 native 库，
+        // 会导致 native crash 采集异常，这里显式恢复传统打包方式。
+        jniLibs {
+            useLegacyPackaging = true
+        }
         resources {
             excludes += setOf(
                 "META-INF/LICENSE*",
@@ -91,6 +96,9 @@ dependencies {
     // false），androidx.core 会回落到 1.13.1；而 NotificationHelper 用到了 1.16 才有的
     // NotificationCompat.ProgressStyle / setRequestPromotedOngoing。显式钉住版本。
     implementation("androidx.core:core-ktx:1.17.0")
+    // 友盟 SDK 统一由 Flutter 官方组件自带（umeng_common_sdk / umeng_apm_sdk），
+    // 官方文档要求工程里不能再单独声明 common / asms / apm，否则会重复引入而冲突。
+    // 版本在 third_party/umeng_*/android/build.gradle 里钉死。
 }
 
 flutter {
