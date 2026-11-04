@@ -72,6 +72,19 @@ dependencies:
   flex_color_picker: ^3.8.0
   clarity_flutter: ^1.10.1
   flutter_secure_storage: ^10.3.4
+  # 友盟官方 Flutter 组件：common 提供公共底座与移动统计（U-App），
+  # apm 提供 Dart 异常、页面性能与帧率监控（U-APM）。
+  # 指向 third_party 下的本地副本：Gradle 9 移除了 jcenter()，官方 1.3.1 / 2.3.7
+  # 的 android/build.gradle 仍在使用，直接依赖 pub 版本会导致构建无法配置。
+  umeng_common_sdk:
+    path: third_party/umeng_common_sdk
+  umeng_apm_sdk:
+    path: third_party/umeng_apm_sdk
+
+# umeng_apm_sdk 声明依赖 http ^0.13.1，而工程其它依赖已经解析到 1.1.x。
+# 按项目要求保持新版 http，不采用官方示例里的 0.13.1 降级。
+dependency_overrides:
+  http: ^1.1.4
 
 dev_dependencies:
   flutter_test:

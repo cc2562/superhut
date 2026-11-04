@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:enhanced_future_builder/enhanced_future_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/welcomepage/view.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,7 +14,9 @@ import '../../pages/settings/course_table_style_page.dart';
 import '../../pages/settings/privacy_settings_page.dart';
 import '../../pages/settings/reminder_settings_page.dart';
 import '../../pages/settings/theme_settings_page.dart';
+import '../../pages/update/update_dialog.dart';
 import '../../security/credential_store.dart';
+import '../../utils/app_update_service.dart';
 import '../../utils/hut_user_api.dart';
 import '../../utils/token.dart';
 import '../../widgets/material_grouped_list.dart';
@@ -53,6 +57,37 @@ class _UserPageState extends State<UserPage> {
   Future<void> _launchUrl() async {
     if (!await launchUrl(_url)) {
       throw Exception('Could not launch $_url');
+    }
+  }
+
+  /// 手动检查更新。
+  ///
+  /// 与首页的自动检查有两点不同：不受「本版本不再提醒」影响，且失败时会明确提示，
+  /// 避免用户点完按钮没有任何反馈。
+  Future<void> _checkUpdateManually() async {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(const SnackBar(content: Text('正在检查更新…')));
+    try {
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      final AppUpdateInfo info = await AppUpdateService.fetch(
+        packageInfo.version,
+      );
+      if (!mounted) return;
+      messenger.hideCurrentSnackBar();
+      if (!info.hasUpdate) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('当前已是最新版本 ${packageInfo.version}')),
+        );
+        return;
+      }
+      await showAppUpdateDialog(context: context, info: info);
+    } on DioException catch (error) {
+      debugPrint('手动检查更新失败: ${error.message}');
+      if (!mounted) return;
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('检查更新失败，请检查网络后重试')),
+      );
     }
   }
 
@@ -373,6 +408,13 @@ class _UserPageState extends State<UserPage> {
                             builder: (_) => const PrivacySettingsPage(),
                           ),
                         );
+                      },
+                    ),
+                    _buildFunctionItem(
+                      icon: Icons.system_update_alt_outlined,
+                      title: '检查更新',
+                      onTap: () {
+                        _checkUpdateManually();
                       },
                     ),
                     _buildFunctionItem(

@@ -1,0 +1,41 @@
+group 'com.umeng.umeng_apm_sdk'
+version '1.0'
+
+// 本目录是官方 umeng_apm_sdk 2.3.7 的本地副本，仅做必要补丁（业务代码未改）：
+// 1. Gradle 9 已移除 jcenter()，官方脚本第 20 行仍在使用，直接导致工程无法配置；
+// 2. 去掉插件自带的 buildscript（AGP 7.3.0 / Kotlin 1.7.10），统一由宿主工程提供；
+// 3. lintOptions 在 AGP 9 已移除，改为 lint{}；
+// 4. compileSdk 33 -> 36，与宿主工程对齐。
+// 5. 依赖的 apm 从 2.0.1 抬到 2.1.0（同一构件，仅版本对齐）。
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://repo1.maven.org/maven2/' }
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace = "com.umeng.umeng_apm_sdk"
+    compileSdkVersion 36
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+
+    // 与宿主工程的 Kotlin 2.4（JVM 17）保持一致，避免 AGP 9 的 JVM 目标校验失败。
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        disable 'InvalidPackage'
+    }
+}
+
+dependencies {
+    api 'com.umeng.umsdk:apm:2.1.0'
+}

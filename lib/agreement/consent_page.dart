@@ -291,7 +291,7 @@ class _AgreementConsentPageState extends State<AgreementConsentPage> {
           GestureDetector(
             onTap: () => _openDocument(AgreementDocuments.privacyPolicy),
             child: Text(
-              '保持体验分析开启，可以帮助我们更准确地发现和定位问题，持续改善超级包菜的使用体验。感谢你帮助超级包菜变得更好！💜\n\n使用Microsoft Clarity，可选，可随时在「隐私设置」中关闭,不影响正常功能使用',
+              '保持体验分析开启，可以帮助我们更准确地发现和定位问题，持续改善超级包菜的使用体验。感谢你帮助超级包菜变得更好！💜\n\n使用 Microsoft Clarity 与友盟+（移动统计、应用性能监控），可选，可随时在「隐私设置」中关闭，不影响正常功能使用',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: scheme.onSurfaceVariant,
                 height: 1.5,

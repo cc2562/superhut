@@ -15,7 +15,7 @@ import '../../theme/glass/glass_theme.dart';
 /// 却找不到真正能关闭采集的地方。
 ///
 /// [recorder] 允许注入，测试里用 fake 断言「开关 -> 采集动作」的调用关系；
-/// 默认走 Microsoft Clarity。
+/// 默认同时管理 Microsoft Clarity 与友盟（U-App 统计 + U-APM 性能监控）。
 class PrivacySettingsPage extends StatefulWidget {
   const PrivacySettingsPage({super.key, this.recorder});
 
@@ -27,7 +27,7 @@ class PrivacySettingsPage extends StatefulWidget {
 
 class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
   late final AnalyticsRecorder _recorder =
-      widget.recorder ?? const ClarityAnalyticsRecorder();
+      widget.recorder ?? const CombinedAnalyticsRecorder();
 
   PrivacyConsentController get _controller =>
       Get.find<PrivacyConsentController>();
@@ -100,7 +100,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
               child: ListTile(
                 leading: const Icon(Icons.insights_outlined),
                 title: const Text('使用体验分析'),
-                subtitle: const Text('Microsoft Clarity'),
+                subtitle: const Text('Microsoft Clarity · 友盟+ 统计与性能监控'),
                 trailing: _GlassSwitch(
                   enabled: glass.enabled,
                   value: enabled,
@@ -125,7 +125,9 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
                     const SizedBox(height: 8),
                     Text(
                       '开启后，我们会通过 Microsoft Clarity 记录页面操作轨迹、点击热图、'
-                      '崩溃与性能信息以及设备与版本信息，用于定位问题和改进体验；'
+                      '崩溃与性能信息以及设备与版本信息；同时通过友盟+（移动统计 U-App、'
+                      '应用性能监控 U-APM）记录启动与活跃情况、设备与系统版本、'
+                      '崩溃与卡顿等稳定性数据。上述信息仅用于定位问题和改进体验；'
                       '统一认证、教务、缴费等网页已整体启用遮罩，'
                       '这些页面的内容与输入不会被记录。',
                       style: theme.textTheme.bodySmall?.copyWith(

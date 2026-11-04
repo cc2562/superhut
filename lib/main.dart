@@ -12,9 +12,11 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/pages/score/jumpToScorePage.dart';
 import 'package:superhut/welcomepage/view.dart';
+import 'package:umeng_apm_sdk/umeng_apm_sdk.dart';
 import 'agreement/agreement_controller.dart';
 import 'agreement/consent_page.dart';
 import 'analytics/clarity_service.dart';
+import 'analytics/umeng_service.dart';
 import 'home/coursetable/schedule/custom_schedule_controller.dart';
 import 'home/coursetable/style/course_table_style_controller.dart';
 import 'live_activity/class_live_activity_controller.dart';
@@ -30,7 +32,18 @@ import 'utils/course/calendar/calendar_sync_controller.dart';
 WebViewEnvironment? webViewEnvironment;
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // 用 U-APM 提供的 Binding 取代默认绑定：它接管帧回调，才能统计页面耗时与帧率。
+  // 这一步只装钩子，不采集、不上报；真正的初始化仍在用户同意之后。
+  ApmWidgetsFlutterBinding.ensureInitialized();
+
+  // 兜住根 zone 里没人捕获的异步错误（Future 里抛出的异常、未设 catchError 的请求等）。
+  // U-APM 自带的 runZonedGuarded 只覆盖它启动 appRunner 的场景，而本应用要等用户
+  // 同意才初始化，runApp 早已执行完毕，只能在这里补一次。未同意时上报会被丢弃。
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    UmengService.reportUncaughtError(error, stack);
+    // 返回 false：保留 Flutter 默认的错误处理与日志，避免我们吞掉问题。
+    return false;
+  };
 
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
     final availableVersion = await WebViewEnvironment.getAvailableVersion();
@@ -202,6 +215,8 @@ class _MyAppState extends State<MyApp> {
       final BuildContext? context = navigatorKey.currentContext;
       if (context == null) return;
       ClarityService.start(context);
+      // 友盟不依赖 widget context，直接走原生通道；失败只记日志。
+      unawaited(UmengService.start());
     });
   }
 
@@ -228,6 +243,11 @@ class _MyAppState extends State<MyApp> {
     if (analyticsConsent && consentContext.mounted) {
       ClarityService.start(consentContext);
     }
+    // 友盟与 Clarity 共用同一次「使用体验分析」同意：只有勾选了才初始化。
+    // 未勾选时不会发出任何原生调用，SDK 也就不会采集数据。
+    if (analyticsConsent) {
+      await UmengService.start();
+    }
     if (mounted) setState(() {});
   }
 
@@ -246,6 +266,10 @@ class _MyAppState extends State<MyApp> {
         return Obx(
           () => GetMaterialApp(
             navigatorKey: navigatorKey,
+            // U-APM 靠这个观察者识别页面进出栈；缺了它页面耗时/错误率都会失真。
+            navigatorObservers: <NavigatorObserver>[
+              ApmNavigatorObserver.singleInstance,
+            ],
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
             supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
             locale: const Locale('zh', 'CN'),
