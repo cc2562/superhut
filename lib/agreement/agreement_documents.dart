@@ -27,10 +27,10 @@ class AgreementDocuments {
   /// 当前协议版本（与 `assets/UserAgreement.md`、`assets/PrivacyAgreement.md`
   /// 文首的版本行必须一致）。
   ///
-  /// 本次改版把同意粒度从一档（协议）拆成两档（协议 + 行为分析），
-  /// 并补充了跨境处理与附录，属于实质性变化：版本号换成发布日后，
+  /// 本次改版新增友盟（U-App 统计 / U-APM 性能监控）这一数据处理者，
+  /// 属于共享对象与数据类别的实质性变化：版本号换成发布日后，
   /// 所有老用户会重新走一次同意页，避免旧同意覆盖新的处理目的。
-  static const String version = '2026-11-03';
+  static const String version = '2026-11-04';
 
   static const AgreementDocument userAgreement = AgreementDocument(
     title: '用户协议',
