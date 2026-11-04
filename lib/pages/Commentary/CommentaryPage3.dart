@@ -81,13 +81,35 @@ class _commentaryPage3State extends State<commentaryPage3> {
           future: getOptionList(),
           rememberFutureResult: true,
           whenDone: (List theOptionList) {
+            // 没有题目时也要给出一行提示，此时列表为「提示 + 提交」两项。
+            final bool isEmpty = theOptionList.isEmpty;
+            final int itemCount = isEmpty ? 2 : theOptionList.length + 1;
+            // 提交按钮始终固定在末位。
+            final int buttonIndex = itemCount - 1;
             return ListView.builder(
               // 顶部避让放进列表 padding，内容可滚到玻璃下方。
               padding: EdgeInsets.only(top: glassTopInset(context)),
-              itemCount: theOptionList.length + 1,
+              itemCount: itemCount,
               itemBuilder: (BuildContext context, int index) {
+                if (isEmpty && index == 0) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        '暂无评教题目',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  );
+                }
                 // 获取当前问题的选项状态
-                if (index == theOptionList.length) {
+                if (index == buttonIndex) {
                   return FilledButton(
                     onPressed: () {
                       List _select = getUserSelect();

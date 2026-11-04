@@ -31,6 +31,22 @@ class _commentaryPage1State extends State<commentaryPage1> {
         future: getBatches(),
         rememberFutureResult: false,
         whenDone: (List batchesList) {
+          if (batchesList.isEmpty) {
+            return Padding(
+              // 顶部避让放进 padding，空态与列表态的位置保持一致。
+              padding: EdgeInsets.only(top: glassTopInset(context)),
+              child: Center(
+                child: Text(
+                  '暂无可评教批次',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            );
+          }
           return Container(
             margin: EdgeInsets.fromLTRB(10, 0, 10, 0),
             child: ListView.builder(
