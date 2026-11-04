@@ -8,7 +8,6 @@ import 'package:superhut/pages/health/health_score_trend_chart.dart';
 import 'package:superhut/pages/health/health_score_widgets.dart';
 import 'package:superhut/theme/glass/glass_scaffold.dart';
 import 'package:superhut/theme/glass/glass_top_bar.dart';
-import 'package:superhut/utils/token.dart';
 
 /// 体测查询主页：最近一次总览 + 历年趋势 + 历年记录。
 class HealthScorePage extends StatefulWidget {
@@ -70,32 +69,6 @@ class _HealthScorePageState extends State<HealthScorePage> {
   }
 
   Future<void> _refresh() => _load(showLoading: false);
-
-  Future<void> _relogin() async {
-    final int seq = ++_requestSeq;
-    // 续期失败时 renewToken 可能只在原地提示（如网络错误），不会跳走，
-    // 因此要先把原错误留一份，失败后恢复，避免出现「无数据也无错误」的空态。
-    final Object? previousError = _error;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    // 与其他功能页一致：统一走 renewToken 判断登录态并自动续期。
-    // 失败时 renewToken 内部已提示并（必要时）跳转统一登录页。
-    final bool ok = await renewToken(context);
-    if (!mounted || seq != _requestSeq) return;
-    if (!ok) {
-      setState(() {
-        _error = previousError ?? const HealthScoreAuthException();
-        _loading = false;
-      });
-      return;
-    }
-    // 登录态刷新后，体测子系统自己的 CAS 会话也要重新建立。
-    _api.resetSession();
-    _load();
-  }
 
   String _describe(Object? error) {
     if (error is HealthScoreAuthException) return error.message;
@@ -161,12 +134,15 @@ class _HealthScorePageState extends State<HealthScorePage> {
           description: _describe(_error),
           isError: true,
           actions: <Widget>[
+            // 认证类失败不做原地续期：入口页已经走过 renewToken，JWXT 有效而
+            // hutToken 失效时再刷也恢复不了，直接退回功能选择页重新发起。
             if (auth)
-              FilledButton(onPressed: _relogin, child: const Text('重新登录'))
+              FilledButton.tonal(
+                onPressed: () => Navigator.of(context).maybePop(),
+                child: const Text('返回'),
+              )
             else
               FilledButton(onPressed: () => _load(), child: const Text('重试')),
-            if (auth)
-              TextButton(onPressed: () => _load(), child: const Text('重试')),
           ],
         ),
       );

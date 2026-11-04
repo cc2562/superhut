@@ -10,11 +10,13 @@ class _FakeHealthScoreApi extends HealthScoreApi {
     required this.snapshot,
     this.detail,
     this.error,
+    this.detailError,
   });
 
   final HealthScoreSnapshot snapshot;
   final HealthDetailTable? detail;
   final Object? error;
+  final Object? detailError;
 
   @override
   Future<HealthScoreSnapshot> fetchSnapshot() async {
@@ -25,6 +27,8 @@ class _FakeHealthScoreApi extends HealthScoreApi {
 
   @override
   Future<HealthDetailTable> fetchDetail(HealthTermRecord record) async {
+    final Object? failure = detailError;
+    if (failure != null) throw failure;
     final HealthDetailTable? table = detail;
     if (table == null) {
       throw const HealthScoreException('没有详情数据');
@@ -66,6 +70,17 @@ Future<void> _pumpPage(WidgetTester tester, HealthScoreApi api) async {
     MaterialApp(
       theme: ThemeData(useMaterial3: true),
       home: HealthScorePage(api: api),
+    ),
+  );
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
+Future<void> _pumpDetail(WidgetTester tester, HealthScoreApi api) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(useMaterial3: true),
+      home: HealthScoreDetailPage(api: api, record: _term2025),
     ),
   );
   await tester.pump();
@@ -131,7 +146,7 @@ void main() {
     expect(find.text('刷新'), findsOneWidget);
   });
 
-  testWidgets('登录失效时给出重新登录入口', (tester) async {
+  testWidgets('登录失效时只给返回入口', (tester) async {
     await _pumpPage(
       tester,
       _FakeHealthScoreApi(
@@ -141,7 +156,23 @@ void main() {
     );
 
     expect(find.text('登录状态已失效'), findsOneWidget);
-    expect(find.text('重新登录'), findsOneWidget);
-    expect(find.text('重试'), findsOneWidget);
+    expect(find.text('返回'), findsOneWidget);
+    // 入口已经走过 renewToken，页内不再提供原地重新登录。
+    expect(find.text('重新登录'), findsNothing);
+    expect(find.text('重试'), findsNothing);
+  });
+
+  testWidgets('详情登录失效时同样只给返回入口', (tester) async {
+    await _pumpDetail(
+      tester,
+      _FakeHealthScoreApi(
+        snapshot: _snapshot(const <HealthTermRecord>[]),
+        detailError: const HealthScoreAuthException(),
+      ),
+    );
+
+    expect(find.text('登录状态已失效'), findsOneWidget);
+    expect(find.text('返回'), findsOneWidget);
+    expect(find.text('重新登录'), findsNothing);
   });
 }

@@ -108,7 +108,7 @@ bool looksLikeHealthLoginPage(String html) {
 /// 未登录访问 `/spQuery` 时平台会返回「暂未开放查询」，而不是跳登录页。
 ///
 /// 这既可能是会话没建立，也可能是查询窗口未开放；页面按「登录失效」处理，
-/// 给用户重新登录与重试两条路，不把它当成正常成绩页。
+/// 只提供返回入口让用户重新进入功能，不把它当成正常成绩页。
 bool looksLikeHealthUnavailablePage(String html) {
   if (html.trim().isEmpty) return false;
   return html.contains('暂未开放查询') ||

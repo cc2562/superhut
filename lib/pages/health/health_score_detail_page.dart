@@ -6,7 +6,6 @@ import 'package:superhut/pages/health/health_score_models.dart';
 import 'package:superhut/pages/health/health_score_widgets.dart';
 import 'package:superhut/theme/glass/glass_scaffold.dart';
 import 'package:superhut/theme/glass/glass_top_bar.dart';
-import 'package:superhut/utils/token.dart';
 
 /// 学年体测详情：按服务端表头列与行序渲染全部项目。
 ///
@@ -65,29 +64,6 @@ class _HealthScoreDetailPageState extends State<HealthScoreDetailPage> {
     }
   }
 
-  Future<void> _relogin() async {
-    final int seq = ++_requestSeq;
-    // 同主页：续期失败且未跳转时恢复错误态，避免 _table! 空断言崩溃。
-    final Object? previousError = _error;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    // 与其他功能页一致：统一走 renewToken 判断登录态并自动续期。
-    final bool ok = await renewToken(context);
-    if (!mounted || seq != _requestSeq) return;
-    if (!ok) {
-      setState(() {
-        _error = previousError ?? const HealthScoreAuthException();
-        _loading = false;
-      });
-      return;
-    }
-    widget.api.resetSession();
-    _load();
-  }
-
   String _describe(Object? error) {
     if (error is HealthScoreAuthException) return error.message;
     if (error is HealthScoreException) return error.message;
@@ -136,17 +112,19 @@ class _HealthScoreDetailPageState extends State<HealthScoreDetailPage> {
           description: _describe(_error),
           isError: true,
           actions: <Widget>[
+            // 认证类失败不做原地续期，直接退回上一页重新发起（同主页）。
             if (auth)
-              FilledButton(onPressed: _relogin, child: const Text('重新登录'))
-            else
+              FilledButton.tonal(
+                onPressed: () => Navigator.of(context).maybePop(),
+                child: const Text('返回'),
+              )
+            else ...<Widget>[
               FilledButton(onPressed: _load, child: const Text('重试')),
-            if (auth)
-              TextButton(onPressed: _load, child: const Text('重试'))
-            else
               TextButton(
                 onPressed: () => Navigator.of(context).maybePop(),
                 child: const Text('返回'),
               ),
+            ],
           ],
         ),
       );

@@ -331,9 +331,10 @@ class _CourseTableViewState extends State<CourseTableView> {
     );
   }
 
-  Color _accentFor(DayBlock block) => block.isCourse
-      ? _getCourseColor(block.course!.name)
-      : block.schedule!.color;
+  Color _accentFor(DayBlock block) =>
+      block.isCourse
+          ? _getCourseColor(block.course!.name)
+          : block.schedule!.color;
 
   void _openBlock(DayBlock block) {
     if (block.isCourse) {
@@ -422,7 +423,8 @@ class _CourseTableViewState extends State<CourseTableView> {
     );
     final double available = math.max(0, window.height - top);
     // 过短的事件（如 10 分钟）保底 22px 保证点得到；超出窗口底部时裁掉。
-    final double height = math.max(rawHeight, 22).clamp(0, available).toDouble();
+    final double height =
+        math.max(rawHeight, 22).clamp(0, available).toDouble();
 
     // 缩进最多一层：第 0 块全宽，后面的块都缩进同一格并依次压在上层。
     final double inset = step * math.min(level, 1);
@@ -438,7 +440,11 @@ class _CourseTableViewState extends State<CourseTableView> {
   }
 
   /* 单个块：课程与日程共用 CourseCardSurface，只有识别色与副标题不同。 */
-  Widget _buildBlockCard(DayBlock block, CourseTableStyle style, double height) {
+  Widget _buildBlockCard(
+    DayBlock block,
+    CourseTableStyle style,
+    double height,
+  ) {
     final Color accent = _accentFor(block);
     final Color foreground = style.courseForeground(
       accent,
@@ -508,7 +514,6 @@ class _CourseTableViewState extends State<CourseTableView> {
       ),
     );
   }
-
 
   String _courseTimeText(DateTime day, Course course) {
     final range = ClassTimeTable.getCourseTimeRange(day, course);
@@ -767,7 +772,9 @@ class _CourseTableViewState extends State<CourseTableView> {
                                 : _accentFor(block),
                         fontSize: 12,
                         fontWeight:
-                            block.isCourse ? FontWeight.normal : FontWeight.w600,
+                            block.isCourse
+                                ? FontWeight.normal
+                                : FontWeight.w600,
                       ),
                     ),
                   ],
@@ -955,8 +962,8 @@ class _CourseTableViewState extends State<CourseTableView> {
       for (final DateTime day in weekDays) _dateKey(day): _blocksOn(day),
     };
     // 七列共用一条固定纵轴：第 1 节到第 12 节（11、12 节是给自定义日程预留的
-    // 显示范围），不随当周内容收缩，没课的节次也保留空格子；课间在轴上被折叠，
-    // 十二个节次因此等距，课程块与节次线严格对齐。
+    // 显示范围），不随当周内容收缩，没课的节次也保留位置；课间在轴上被折叠，
+    // 十二个节次因此等距。网格只保留左栏节次号，不画横向分隔线。
     final TimelineWindow window = TimelineWindow.weekGrid();
     final List<TimelineSection> sections = sectionsInsideWindow(window);
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -970,67 +977,50 @@ class _CourseTableViewState extends State<CourseTableView> {
           padding: const EdgeInsets.only(bottom: 100),
           child: SizedBox(
             height: window.height,
-            child: Stack(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                // 节次分隔线：只做视觉参考，不参与命中测试。
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: CustomPaint(
-                      painter: _SectionGridPainter(
-                        window: window,
-                        sections: sections,
-                        gutterWidth: _kSectionGutterWidth,
-                        color: scheme.outlineVariant.withValues(alpha: 0.45),
-                      ),
-                    ),
-                  ),
-                ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    SizedBox(
-                      width: _kSectionGutterWidth,
-                      height: window.height,
-                      child: Stack(
-                        children: <Widget>[
-                          for (final TimelineSection section in sections)
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              top: window.topFor(section.startMinute),
-                              height: window.heightForRange(
-                                section.startMinute,
-                                section.endMinute,
-                              ),
-                              child: Align(
-                                alignment: Alignment.topCenter,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Text(
-                                    '${section.section}',
-                                    style: TextStyle(
-                                      color: scheme.onSurfaceVariant,
-                                      fontSize: 10,
-                                      height: 1.1,
-                                    ),
-                                  ),
+                SizedBox(
+                  width: _kSectionGutterWidth,
+                  height: window.height,
+                  child: Stack(
+                    children: <Widget>[
+                      for (final TimelineSection section in sections)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: window.topFor(section.startMinute),
+                          height: window.heightForRange(
+                            section.startMinute,
+                            section.endMinute,
+                          ),
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                '${section.section}',
+                                style: TextStyle(
+                                  color: scheme.onSurfaceVariant,
+                                  fontSize: 10,
+                                  height: 1.1,
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                    ),
-                    ...weekDays.map((DateTime day) {
-                      return Expanded(
-                        child: _buildDayColumn(
-                          blocksByDay[_dateKey(day)] ?? const <DayBlock>[],
-                          window,
-                          style,
+                          ),
                         ),
-                      );
-                    }),
-                  ],
+                    ],
+                  ),
                 ),
+                ...weekDays.map((DateTime day) {
+                  return Expanded(
+                    child: _buildDayColumn(
+                      blocksByDay[_dateKey(day)] ?? const <DayBlock>[],
+                      window,
+                      style,
+                    ),
+                  );
+                }),
               ],
             ),
           ),
@@ -1249,41 +1239,4 @@ class _CourseTableViewState extends State<CourseTableView> {
           ),
     );
   }
-}
-
-/// 周视图背景：按节次开始时间在日列上画横向分隔线。
-///
-/// 时间轴改成真实比例后，节次之间出现与课间时长一致的空白，
-/// 这些细线让「第几节」仍然可读，又不抢课程块的注意力。
-class _SectionGridPainter extends CustomPainter {
-  const _SectionGridPainter({
-    required this.window,
-    required this.sections,
-    required this.gutterWidth,
-    required this.color,
-  });
-
-  final TimelineWindow window;
-  final List<TimelineSection> sections;
-  final double gutterWidth;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint =
-        Paint()
-          ..color = color
-          ..strokeWidth = 0.6;
-    for (final TimelineSection section in sections) {
-      final double y = window.topFor(section.startMinute);
-      if (y <= 1 || y >= size.height - 1) continue;
-      canvas.drawLine(Offset(gutterWidth, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SectionGridPainter oldDelegate) =>
-      oldDelegate.window != window ||
-      oldDelegate.sections.length != sections.length ||
-      oldDelegate.color != color;
 }
