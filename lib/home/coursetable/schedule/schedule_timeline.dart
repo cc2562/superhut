@@ -41,8 +41,8 @@ class TimelineEntry {
 
 /// 时间轴上被「折叠」的区间：这段时间在显示时不占高度。
 ///
-/// 目前用于午休（11:40–14:00）与晚饭（17:40–19:00）：跨越这些空档的自定义日程
-/// 不会被撑长，上下两段直接紧贴。
+/// 周视图把所有节次之间的空档（小课间、20 分钟大课间、午休、晚饭）都折叠：
+/// 跨越这些空档的自定义日程不会被撑长，上下两段直接紧贴，节次因此等距排列。
 @immutable
 class TimelineFold {
   const TimelineFold({required this.startMinute, required this.endMinute});
@@ -71,26 +71,28 @@ class TimelineWindow {
     this.folds = const <TimelineFold>[],
   });
 
-  /// 周视图固定窗口：第 1 节开始到最后一节结束，折叠午休与晚饭两段空档。
+  /// 周视图固定窗口：第 1 节开始到最后一节结束，**所有课间都不占高度**。
   ///
   /// 固定而非按当周内容收缩，是为了让没课的节次也保留空格子（节次是刻度），
   /// 同时让自定义日程的显示范围始终覆盖到第 12 节。
+  ///
+  /// 折叠区间由作息表自动推导（第 n 节结束 → 第 n+1 节开始），既包含午休、
+  /// 晚饭，也包含 10 分钟小课间与 20 分钟大课间：12 个节次因此在纵向上严格
+  /// 等距（每节 45 分钟 = 60px），两节连排的课程块正好填满两格，不会出现
+  /// 某两节之间空隙格外大的观感。
   factory TimelineWindow.weekGrid() {
+    final List<TimelineFold> folds = <TimelineFold>[];
+    for (int section = 1; section < ClassTimeTable.sectionCount; section++) {
+      final int end = ClassTimeTable.sectionEndMinute(section);
+      final int nextStart = ClassTimeTable.sectionStartMinute(section + 1);
+      // 作息表填错（下一节早于上一节结束）时跳过，避免产生负长度折叠。
+      if (nextStart <= end) continue;
+      folds.add(TimelineFold(startMinute: end, endMinute: nextStart));
+    }
     return TimelineWindow(
       startMinute: ClassTimeTable.sectionStartMinute(1),
       endMinute: ClassTimeTable.sectionEndMinute(ClassTimeTable.sectionCount),
-      folds: <TimelineFold>[
-        // 午休：第 4 节结束 → 第 5 节开始。
-        TimelineFold(
-          startMinute: ClassTimeTable.sectionEndMinute(4),
-          endMinute: ClassTimeTable.sectionStartMinute(5),
-        ),
-        // 晚饭：第 8 节结束 → 第 9 节开始。
-        TimelineFold(
-          startMinute: ClassTimeTable.sectionEndMinute(8),
-          endMinute: ClassTimeTable.sectionStartMinute(9),
-        ),
-      ],
+      folds: folds,
     );
   }
 

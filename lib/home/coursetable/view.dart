@@ -32,6 +32,12 @@ import '../../utils/course/getCourse.dart';
 import '../../live_activity/class_live_activity_controller.dart';
 import '../../live_notification_manager.dart';
 
+/// 周视图左侧节次栏宽度。
+///
+/// 表头占位、网格节次栏、节次分隔线三处必须共用同一个值：表头曾经用
+/// `Expanded` 配 flex 分配，而网格是固定宽度，手机宽度下日期会整体左偏约 26px。
+const double _kSectionGutterWidth = 40;
+
 class CourseTableView extends StatefulWidget {
   const CourseTableView({super.key});
 
@@ -903,7 +909,8 @@ class _CourseTableViewState extends State<CourseTableView> {
     final CourseTableStyle style = _style;
     return Row(
       children: [
-        const Expanded(child: SizedBox()),
+        // 与课程网格共用同一个节次栏宽度，日期才能落在对应课程列的正上方。
+        const SizedBox(width: _kSectionGutterWidth),
         ...weekDays.map((day) {
           final bool isToday = isSameCourseDate(day, _now);
           final String showText =
@@ -924,7 +931,6 @@ class _CourseTableViewState extends State<CourseTableView> {
             ),
           );
           return Expanded(
-            flex: 4,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               // 只有今天需要表面：其余六格保持透明，不为它们各建一层空表面。
@@ -949,7 +955,8 @@ class _CourseTableViewState extends State<CourseTableView> {
       for (final DateTime day in weekDays) _dateKey(day): _blocksOn(day),
     };
     // 七列共用一条固定纵轴：第 1 节到第 12 节（11、12 节是给自定义日程预留的
-    // 显示范围），不随当周内容收缩，没课的节次也保留空格子；午休在轴上被折叠。
+    // 显示范围），不随当周内容收缩，没课的节次也保留空格子；课间在轴上被折叠，
+    // 十二个节次因此等距，课程块与节次线严格对齐。
     final TimelineWindow window = TimelineWindow.weekGrid();
     final List<TimelineSection> sections = sectionsInsideWindow(window);
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -972,7 +979,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                       painter: _SectionGridPainter(
                         window: window,
                         sections: sections,
-                        gutterWidth: 40,
+                        gutterWidth: _kSectionGutterWidth,
                         color: scheme.outlineVariant.withValues(alpha: 0.45),
                       ),
                     ),
@@ -982,7 +989,7 @@ class _CourseTableViewState extends State<CourseTableView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     SizedBox(
-                      width: 40,
+                      width: _kSectionGutterWidth,
                       height: window.height,
                       child: Stack(
                         children: <Widget>[

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:superhut/home/coursetable/schedule/schedule_block.dart';
 import 'package:superhut/home/coursetable/schedule/schedule_timeline.dart';
+import 'package:superhut/utils/course/class_time_table.dart';
 import 'package:superhut/utils/course/coursemain.dart';
 
 void main() {
@@ -179,18 +180,61 @@ void main() {
   });
 
   group('周视图固定窗口与空档折叠', () {
-    test('固定覆盖第 1 节到第 12 节，并折叠午休与晚饭', () {
+    test('固定覆盖第 1 节到第 12 节，并折叠所有课间', () {
       final TimelineWindow window = TimelineWindow.weekGrid();
       expect(window.startMinute, 8 * 60);
       expect(window.endMinute, 22 * 60 + 40);
+      // 每一对相邻节次之间都是一段折叠区间：小课间、大课间、午休、晚饭全都不占高度。
+      expect(window.folds.length, ClassTimeTable.sectionCount - 1);
       expect(
         window.folds.map((TimelineFold fold) => fold.startMinute),
-        <int>[11 * 60 + 40, 17 * 60 + 40],
+        <int>[
+          8 * 60 + 45,
+          9 * 60 + 40,
+          10 * 60 + 45,
+          11 * 60 + 40,
+          14 * 60 + 45,
+          15 * 60 + 40,
+          16 * 60 + 45,
+          17 * 60 + 40,
+          19 * 60 + 45,
+          20 * 60 + 40,
+          21 * 60 + 40,
+        ],
       );
       expect(
         window.folds.map((TimelineFold fold) => fold.endMinute),
-        <int>[14 * 60, 19 * 60],
+        <int>[
+          8 * 60 + 55,
+          10 * 60,
+          10 * 60 + 55,
+          14 * 60,
+          14 * 60 + 55,
+          16 * 60,
+          16 * 60 + 55,
+          19 * 60,
+          19 * 60 + 55,
+          20 * 60 + 55,
+          21 * 60 + 55,
+        ],
       );
+    });
+
+    test('相邻节次线等距：每节恒为 60px', () {
+      final TimelineWindow window = TimelineWindow.weekGrid();
+      for (int section = 1; section < ClassTimeTable.sectionCount; section++) {
+        final double current = window.topFor(
+          ClassTimeTable.sectionStartMinute(section),
+        );
+        final double next = window.topFor(
+          ClassTimeTable.sectionStartMinute(section + 1),
+        );
+        expect(
+          next - current,
+          closeTo(60, 0.0001),
+          reason: '第 $section 节到第 ${section + 1} 节',
+        );
+      }
     });
 
     test('午休不占高度：第 5 节紧贴第 4 节结束', () {
@@ -209,21 +253,34 @@ void main() {
       );
     });
 
-    test('跨越午休的日程只按上午段 + 下午段计高', () {
+    test('跨越午休的日程只按可见时段计高', () {
       final TimelineWindow window = TimelineWindow.weekGrid();
-      // 11:00–15:00 跨越 11:40–14:00，应只算 40 + 60 = 100 分钟。
+      // 11:00–15:00 折叠 11:40–14:00 与 14:45–14:55，可见 90 分钟。
       expect(
         window.heightForRange(11 * 60, 15 * 60),
-        closeTo(100 * 60 / 45, 0.0001),
+        closeTo(90 * 60 / 45, 0.0001),
       );
     });
 
-    test('跨越晚饭的日程只按前后两段计高', () {
+    test('跨越晚饭的日程只按可见时段计高', () {
       final TimelineWindow window = TimelineWindow.weekGrid();
-      // 17:00–20:00 跨越 17:40–19:00，应只算 40 + 60 = 100 分钟。
+      // 17:00–20:00 折叠 17:40–19:00 与 19:45–19:55，可见 90 分钟。
       expect(
         window.heightForRange(17 * 60, 20 * 60),
-        closeTo(100 * 60 / 45, 0.0001),
+        closeTo(90 * 60 / 45, 0.0001),
+      );
+    });
+
+    test('连排两节的课程块正好填满两格', () {
+      final TimelineWindow window = TimelineWindow.weekGrid();
+      // 第 5–6 节（14:00–15:40）：块顶落在第 5 节线，高度 120px。
+      expect(
+        window.topFor(14 * 60),
+        closeTo(window.topFor(8 * 60) + 4 * 60, 0.0001),
+      );
+      expect(
+        window.heightForRange(14 * 60, 15 * 60 + 40),
+        closeTo(120, 0.0001),
       );
     });
 
