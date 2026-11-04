@@ -114,7 +114,7 @@ class _HealthScoreDetailPageState extends State<HealthScoreDetailPage> {
           actions: <Widget>[
             // 认证类失败不做原地续期，直接退回上一页重新发起（同主页）。
             if (auth)
-              FilledButton.tonal(
+              FilledButton(
                 onPressed: () => Navigator.of(context).maybePop(),
                 child: const Text('返回'),
               )

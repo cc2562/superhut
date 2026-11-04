@@ -137,7 +137,7 @@ class _HealthScorePageState extends State<HealthScorePage> {
             // 认证类失败不做原地续期：入口页已经走过 renewToken，JWXT 有效而
             // hutToken 失效时再刷也恢复不了，直接退回功能选择页重新发起。
             if (auth)
-              FilledButton.tonal(
+              FilledButton(
                 onPressed: () => Navigator.of(context).maybePop(),
                 child: const Text('返回'),
               )
