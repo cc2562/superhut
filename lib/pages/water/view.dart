@@ -6,8 +6,10 @@ import 'package:get/get.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../pages/campuscard/campus_card_api.dart';
+import '../../pages/campuscard/campus_card_recharge_page.dart';
+import '../../security/credential_store.dart';
 import '../../theme/glass/glass_scaffold.dart';
 import '../../theme/glass/glass_theme.dart';
 import 'logic.dart';
@@ -72,13 +74,44 @@ class FunctionHotWaterPage extends StatefulWidget {
 class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
   final logic = Get.put(FunctionHotWaterLogic());
   final state = Get.find<FunctionHotWaterLogic>().state;
-  final Uri _url = Uri.parse(
-    'alipays://platformapi/startapp?appId=2019030163398604&page=pages/index/index',
-  );
+  bool _isOpeningRechargePage = false;
 
+  /// 充值入口：构建完美校园 H5 链接并用自带 WebView 打开，
+  /// 返回后刷新校园卡余额；token 缺失时提示先登录。
+  /// 完美校园 H5 只认 HUT 会话令牌（hutToken），与热水页用户信息、
+  /// 体测等 HUT 接口同一凭证；教务系统 token 不被该 H5 接受。
   Future<void> _launchUrl() async {
-    if (!await launchUrl(_url)) {
-      throw Exception('Could not launch $_url');
+    if (_isOpeningRechargePage) {
+      return;
+    }
+    _isOpeningRechargePage = true;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final token = await CredentialStore.instance.readOrEmpty('hutToken');
+      final Uri entryUrl;
+      try {
+        entryUrl = CampusCardApi.buildEntryUrl(token);
+      } on CampusCardTokenMissingException {
+        messenger.showSnackBar(const SnackBar(content: Text('请先登录后再充值')));
+        return;
+      }
+      if (!mounted) {
+        return;
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CampusCardRechargePage(entryUrl: entryUrl),
+        ),
+      );
+      try {
+        await logic.getBalance();
+      } catch (_) {
+        // 余额刷新失败不影响充值流程本身。
+      }
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('无法打开充值入口')));
+    } finally {
+      _isOpeningRechargePage = false;
     }
   }
 

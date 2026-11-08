@@ -5,9 +5,10 @@ import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:superhut/welcomepage/view.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../bridge/getCoursePage.dart';
+import '../../pages/campuscard/campus_card_api.dart';
+import '../../pages/campuscard/campus_card_recharge_page.dart';
 import '../../pages/score/scorepage.dart';
 import '../../pages/settings/calendar_sync_page.dart';
 import '../../pages/settings/course_table_style_page.dart';
@@ -50,13 +51,62 @@ class _UserPageState extends State<UserPage> {
     });
   }
 
-  final Uri _url = Uri.parse(
-    'alipays://platformapi/startapp?appId=2019030163398604&page=pages/index/index',
-  );
+  bool _isOpeningRechargePage = false;
+
+  /// 生产默认充值入口：构建完美校园 H5 链接并用自带 WebView 打开。
+  ///
+  /// token 缺失时提示先登录；WebView 关闭后刷新校园卡余额展示。
+  /// 完美校园 H5 只认 HUT 会话令牌（hutToken），与水电、体测等 HUT
+  /// 接口同一凭证；教务系统 token 不被该 H5 接受。
+  Future<bool> _openCampusCardRecharge() async {
+    try {
+      final token = await hutUserApi.getToken();
+      final Uri entryUrl;
+      try {
+        entryUrl = CampusCardApi.buildEntryUrl(token);
+      } on CampusCardTokenMissingException {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('请先登录后再充值')));
+        }
+        return false;
+      }
+      if (!mounted) {
+        return false;
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CampusCardRechargePage(entryUrl: entryUrl),
+        ),
+      );
+      if (mounted) {
+        try {
+          await getBalance();
+        } catch (_) {
+          // 余额刷新失败不影响充值流程本身。
+        }
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<void> _launchUrl() async {
-    if (!await launchUrl(_url)) {
-      throw Exception('Could not launch $_url');
+    if (_isOpeningRechargePage) {
+      return;
+    }
+    _isOpeningRechargePage = true;
+    try {
+      final opened = await _openCampusCardRecharge();
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('无法打开充值入口')));
+      }
+    } finally {
+      _isOpeningRechargePage = false;
     }
   }
 
