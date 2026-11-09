@@ -4,7 +4,26 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:superhut/pages/drink/api/oct_signature.dart';
 import 'package:superhut/security/credential_store.dart';
+
+/// acc/login 的签名实现已完全还原，见 [octComputeSignature]。
+///
+/// 旧版本用 `--dart-define=DRINK_SIGN_SALT` 注入盐再算
+/// `md5("authCode=..&un=..<salt>")`，那套推测是错的：
+/// 官方真正的算法是 `blake3_keyed(secret8 + strD + strB + strC, strF)`，
+/// 与盐无关，也不再需要任何构建期注入。
+
+/// acc/login 的请求体：只有短信码与手机号。
+///
+/// 不能带 `cid` / `openCode`：那是广告渠道标识，混进登录体会让服务端在
+/// 会话建立阶段回「请升级到新版本」（见 ilife798 提交 8703df5 的实测结论）。
+Map<String, dynamic> drinkLoginBody({
+  required String phone,
+  required String code,
+}) {
+  return {"authCode": code, "un": phone};
+}
 
 /// 慧生活798 接口统一返回结构
 class DrinkApiResult<T> {
@@ -56,17 +75,29 @@ class DrinkApi {
   /// 与官方客户端保持一致的网关地址
   static const String _baseUrl = "https://i.ilife798.com/api/v1/";
 
-  /// 参考实现 ApiConfig.VERSION_CODE
-  static const String _versionCode = "3.1.9";
+  /// 官方客户端的 versionName，服务端按它做版本校验。
+  ///
+  /// 官方请求头是 `VersionCode: <versionName>` + `User-Agent: Android_ilife798_<versionName>`，
+  /// 值取自 APK 的 `packageInfo.versionName`（见官方 `k4/a.a()`）。
+  /// 当前官方最新包 versionName = 3.1.10（versionCode 31010），旧包 3.1.7。
+  /// 之前的 3.1.9 不是任何已发布版本，服务端会回「请升级最新版应用」。
+  /// 需要快速对比不同版本时：`--dart-define=DRINK_VERSION_CODE=3.1.7`。
+  static const String _versionCode = String.fromEnvironment(
+    "DRINK_VERSION_CODE",
+    defaultValue: "3.1.10",
+  );
 
   /// 参考实现 ApiConfig.USER_AGENT
+  ///
+  /// 服务端按 UA 前缀识别平台（`Android_` / `iOS_`），并据此选择服务端侧的校验分支：
+  /// 本项目按安卓客户端声明，签名算法也是从安卓版的 `liboct.so` 还原的。
   static const String _userAgent = "Android_ilife798_$_versionCode";
 
   /// 参考实现 ApiConfig.APP_TYPE_DEVICE
   static const String _appTypeDevice = "1,1";
 
-  /// 官方客户端标识，仓库内拿不到真实值，沿用旧值
-  static const String _cid = "sbsbsbsbsbsbsbsbsbsbsb";
+  /// 登录接口路径（签名里的 `strC` 由它推导：去掉非字母数字后取后 8 位）。
+  static const String _loginPath = "/api/v1/acc/login";
 
   static const String _tokenKey = "drink798UsrApiToken";
   static const String _loginFlagKey = "hui798IsLogin";
@@ -88,6 +119,13 @@ class DrinkApi {
   final Map<String, dynamic> _token = {"uid": "", "eid": "", "token": ""};
 
   Future<void>? _initFuture;
+
+  /// 服务端与本机的时钟差（秒）。签名里的 `strD` 取的是**服务端时间**，
+  /// 由任意响应的 `Date` 头推算，登录前先打过图形码 / 短信码接口即可完成对齐。
+  int _serverOffsetSeconds = 0;
+
+  /// 是否已成功对齐服务端时钟；未对齐时签名可能落在错误的 30 秒窗口。
+  bool _serverClockSynced = false;
 
   /// 登录态失效回调，由 controller 注册
   void Function()? onSessionExpired;
@@ -135,6 +173,87 @@ class DrinkApi {
 
   int _nowMillis() => DateTime.now().millisecondsSinceEpoch;
 
+  /// 当前的服务端时间（epoch 秒，未对齐 30 秒）。
+  int _serverEpochSeconds() =>
+      DateTime.now().millisecondsSinceEpoch ~/ 1000 + _serverOffsetSeconds;
+
+  static const Map<String, int> _httpMonths = {
+    "JAN": 1,
+    "FEB": 2,
+    "MAR": 3,
+    "APR": 4,
+    "MAY": 5,
+    "JUN": 6,
+    "JUL": 7,
+    "AUG": 8,
+    "SEP": 9,
+    "OCT": 10,
+    "NOV": 11,
+    "DEC": 12,
+  };
+
+  /// 解析 RFC 1123 形式的 `Date` 头（`Mon, 09 Nov 2026 03:29:32 GMT`）。
+  ///
+  /// 不用 `HttpDate`：`dart:io` 在 Web 端不可用，而这里只需要这一个格式。
+  DateTime? _parseHttpDate(String raw) {
+    final m = RegExp(
+      r'^[A-Za-z]{3},\s*(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})\s+'
+      r'(\d{2}):(\d{2}):(\d{2})',
+    ).firstMatch(raw.trim());
+    if (m == null) return null;
+    final month = _httpMonths[m.group(2)!.toUpperCase()];
+    if (month == null) return null;
+    return DateTime.utc(
+      int.parse(m.group(3)!),
+      month,
+      int.parse(m.group(1)!),
+      int.parse(m.group(4)!),
+      int.parse(m.group(5)!),
+      int.parse(m.group(6)!),
+    );
+  }
+
+  void _syncServerClock(String? dateHeader) {
+    if (dateHeader == null || dateHeader.isEmpty) return;
+    final server = _parseHttpDate(dateHeader);
+    if (server == null) return;
+    _serverOffsetSeconds = server.difference(DateTime.now()).inSeconds;
+    if (!_serverClockSynced && kDebugMode) {
+      debugPrint(
+        "[drink] 服务端时钟对齐: offset=${_serverOffsetSeconds}s (Date=$dateHeader)",
+      );
+    }
+    _serverClockSynced = true;
+  }
+
+  /// 打印一次登录签名的全部中间量，方便把手机端日志直接贴出来比对。
+  ///
+  /// 只在 debug 构建输出：`kDebugMode` 是编译期常量，release 下整段被裁掉。
+  void _printSignDiagnostics(OctSignature signature) {
+    if (!kDebugMode) return;
+    final now = DateTime.now();
+    debugPrint("[oct] ================ acc/login 签名诊断 ================");
+    debugPrint(
+      "[oct] 本机时间 ${now.toIso8601String()} "
+      "(epoch ${now.millisecondsSinceEpoch ~/ 1000})",
+    );
+    debugPrint(
+      "[oct] 服务端偏移 ${_serverOffsetSeconds}s 已对齐=$_serverClockSynced",
+    );
+    debugPrint(
+      "[oct] epoch=${signature.epoch} 对齐后=${signature.alignedEpoch} "
+      "path=${signature.path}",
+    );
+    for (final line in signature.describe().split("\n")) {
+      debugPrint("[oct] $line");
+    }
+    debugPrint(
+      "[oct] sign 长度=${signature.sign.length} "
+      "VersionCode=$_versionCode UA=$_userAgent",
+    );
+    debugPrint("[oct] ====================================================");
+  }
+
   int _toInt(dynamic value, {int fallback = -1}) {
     if (value is int) return value;
     if (value is num) return value.toInt();
@@ -173,9 +292,9 @@ class DrinkApi {
     if (auth || withAppType) {
       headers["ApplicationType"] = _appTypeDevice;
     }
-    if (auth) {
-      headers["Authorization"] = _token["token"];
-    }
+    // 官方客户端在初始化时就把 Authorization 写进全局头（未登录时为空串），
+    // 登录这类未鉴权接口同样会带上这个空头，这里保持一致。
+    headers["Authorization"] = _token["token"] ?? "";
 
     try {
       final response = await _dio.request<dynamic>(
@@ -188,21 +307,39 @@ class DrinkApi {
           headers: headers.isEmpty ? null : headers,
         ),
       );
-      return await _parseBody<T>(path, response.data, parse);
+      _syncServerClock(response.headers.value("date"));
+      return await _parseBody<T>(path, response.realUri, response.data, parse);
     } on DioException catch (e) {
+      _syncServerClock(e.response?.headers.value("date"));
       final message = _networkErrorMessage(e);
-      debugPrint("[drink] $method $path 请求失败: $message");
+      debugPrint("[drink] $method ${e.requestOptions.uri} 请求失败: $message");
+      final rawError = e.response?.data;
+      if (rawError != null) {
+        debugPrint(
+          "[drink] $method ${e.requestOptions.uri} 响应: ${_clipLog(rawError)}",
+        );
+      }
       return DrinkApiResult<T>(success: false, code: -1, msg: message);
     }
   }
 
+  /// 失败日志里响应体的最大保留长度，避免刷屏
+  static const int _maxLogChars = 800;
+
+  String _clipLog(dynamic raw) {
+    final text = raw is String ? raw : raw?.toString() ?? "";
+    if (text.length <= _maxLogChars) return text;
+    return "${text.substring(0, _maxLogChars)}...(已截断)";
+  }
+
   Future<DrinkApiResult<T>> _parseBody<T>(
     String path,
+    Uri? uri,
     dynamic raw,
     T? Function(dynamic data)? parse,
   ) async {
     if (raw is! Map) {
-      debugPrint("[drink] $path 返回格式异常");
+      debugPrint("[drink] $path 返回格式异常: ${_clipLog(raw)}");
       return DrinkApiResult<T>(success: false, code: -1, msg: "接口返回格式异常");
     }
 
@@ -217,7 +354,10 @@ class DrinkApi {
 
     if (code != 0) {
       final text = msg.isNotEmpty ? msg : "操作失败（code: $code）";
-      debugPrint("[drink] $path 失败: code=$code msg=$text");
+      // 失败时把完整地址与响应原文打出来：服务端只回一句「请升级到新版本」时，
+      // 靠 code 与原始 body 才能判断是协议被拒还是验签失败。
+      debugPrint("[drink] ${uri ?? path} 失败: code=$code msg=$text");
+      debugPrint("[drink] ${uri ?? path} 响应: ${_clipLog(raw)}");
       return DrinkApiResult<T>(success: false, code: code, msg: text);
     }
 
@@ -265,23 +405,48 @@ class DrinkApi {
     );
   }
 
-  /// 开始登录
+  /// 开始登录（设备通道 ApplicationType 1,1）
+  ///
+  /// 协议对齐官方客户端（参考 ilife798 提交 8703df5）：
+  /// - body 就是裸的 `{"authCode": 短信码, "un": 手机号}`，**不能**带 cid / openCode：
+  ///   cid 是广告渠道标识，混进登录体会让服务端在会话建立阶段直接回
+  ///   「请升级到新版本」，与本项目此前失效的现象一致；
+  /// - 签名放 query：`acc/login?sign=<32 位小写 hex>`，算法见 [octComputeSignature]；
+  /// - `strD` 取服务端时间，所以签名前要先完成时钟对齐
+  ///   （登录前必然先请求过图形码 / 短信码接口，[Date] 头已把偏移校准）。
   Future<DrinkApiResult<dynamic>> userLogin({
     required String phone,
     required String messageCode,
   }) async {
+    final signature = octComputeSignature(
+      params: {"authCode": messageCode, "un": phone},
+      path: _loginPath,
+      epochSeconds: _serverEpochSeconds(),
+      token: (_token["token"] as String?) ?? "",
+    );
+    _printSignDiagnostics(signature);
+
     final result = await _request<Map<String, dynamic>>(
       "acc/login",
       method: "POST",
       withAppType: true,
-      body: {"openCode": "", "authCode": messageCode, "un": phone, "cid": _cid},
+      query: {"sign": signature.sign},
+      body: drinkLoginBody(phone: phone, code: messageCode),
       parse: (data) {
         if (data is! Map) return null;
         return Map<String, dynamic>.from(data);
       },
     );
 
-    if (!result.success) return result;
+    if (!result.success) {
+      // 服务端只回一句「请升级到新版本」时，靠这几项才能区分
+      // 「协议被拒」「签名不被接受」「VersionCode 与 UA 不匹配」。
+      debugPrint(
+        "[drink] acc/login 诊断: ApplicationType=$_appTypeDevice "
+        "VersionCode=$_versionCode sign=${signature.sign} UA=$_userAgent",
+      );
+      return result;
+    }
 
     final al = result.data?["al"];
     if (al is! Map) {
@@ -302,6 +467,12 @@ class DrinkApi {
     await CredentialStore.instance.write(_tokenKey, jsonEncode(_token));
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_loginFlagKey, true);
+    if (kDebugMode) {
+      debugPrint(
+        "[oct] 登录成功：服务端已接受该 sign（uid=${_token["uid"]} token 长度="
+        "${(_token["token"] as String).length}）",
+      );
+    }
     return const DrinkApiResult(success: true, code: 0);
   }
 
