@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.6.0+4
+version: 1.6.1+5
 
 environment:
   sdk: ^3.7.0
@@ -65,6 +65,8 @@ dependencies:
   dio_cache_interceptor: ^4.0.5
   uuid: ^4.5.1
   html: ^0.15.5
+  # 饮水（慧生活798）登录签名在 lib/pages/drink/api/oct_signature.dart：
+  # BLAKE3 keyed 为纯 Dart 实现，AES-128-ECB 复用下面的 encrypt（pointycastle）。
   flutter_inappwebview: ^6.1.5
   permission_handler: ^12.0.1
   change_app_package_name: ^1.5.0

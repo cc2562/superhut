@@ -49,3 +49,4 @@ app.*.map.json
 /.codebuddy/
 # Widget Preview related
 .widget_preview/
+/work/

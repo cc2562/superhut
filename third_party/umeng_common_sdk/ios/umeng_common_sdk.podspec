@@ -21,6 +21,7 @@ A new Flutter plugin.
   s.dependency 'UMDevice'
   s.static_framework = true
 
-  # Flutter.framework does not contain a i386 slice. Only x86_64 simulators are supported.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'VALID_ARCHS[sdk=iphonesimulator*]' => 'x86_64' }
+  # 与 umeng_apm_sdk 保持一致：只排除模拟器上的 i386，保留 arm64 模拟器。
+  # 原写法 VALID_ARCHS 已废弃且把模拟器架构写死成 x86_64，Apple Silicon 上无法编译。
+  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
 end
