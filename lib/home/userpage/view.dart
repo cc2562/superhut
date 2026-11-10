@@ -53,13 +53,20 @@ class _UserPageState extends State<UserPage> {
 
   bool _isOpeningRechargePage = false;
 
-  /// 生产默认充值入口：构建完美校园 H5 链接并用自带 WebView 打开。
+  /// 生产默认充值入口：校验并恢复 HUT 会话后，构建完美校园 H5 链接
+  /// 并用自带 WebView 打开。
   ///
-  /// token 缺失时提示先登录；WebView 关闭后刷新校园卡余额展示。
-  /// 完美校园 H5 只认 HUT 会话令牌（hutToken），与水电、体测等 HUT
-  /// 接口同一凭证；教务系统 token 不被该 H5 接受。
+  /// token 缺失或会话失效且无法恢复时提示先登录；WebView 关闭后刷新
+  /// 校园卡余额展示。完美校园 H5 只认 HUT 会话令牌（hutToken），与水电、
+  /// 体测等 HUT 接口同一凭证；教务系统 token 不被该 H5 接受。
   Future<bool> _openCampusCardRecharge() async {
     try {
+      // 本地缓存的 hutToken 可能已过期（Codex P2）：先在线校验，
+      // 失效时尝试刷新；刷新失败时引导重新登录，不带着死 token 打开 H5。
+      final sessionReady = await _ensureHutSession();
+      if (!sessionReady) {
+        return false;
+      }
       final token = await hutUserApi.getToken();
       final Uri entryUrl;
       try {
@@ -91,6 +98,33 @@ class _UserPageState extends State<UserPage> {
     } catch (_) {
       return false;
     }
+  }
+
+  /// 校验 HUT 会话：有效直接放行；失效时尝试刷新；无法恢复则提示重新登录。
+  Future<bool> _ensureHutSession() async {
+    final messenger = mounted ? ScaffoldMessenger.of(context) : null;
+    bool valid;
+    try {
+      valid = await hutUserApi.checkTokenValidity();
+    } catch (_) {
+      // 校验网络异常不阻断流程，交给 WebView 内的失败回落兜底。
+      return true;
+    }
+    if (valid) {
+      return true;
+    }
+    try {
+      final refreshed = await hutUserApi.refreshToken();
+      if (refreshed) {
+        return true;
+      }
+    } catch (_) {
+      // 刷新失败按会话不可恢复处理。
+    }
+    messenger?.showSnackBar(
+      const SnackBar(content: Text('登录已过期，请重新登录后再充值')),
+    );
+    return false;
   }
 
   Future<void> _launchUrl() async {

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'package:superhut/theme/glass/glass_scaffold.dart';
 
 import 'campus_card_api.dart';
 
@@ -111,30 +112,15 @@ class _CampusCardRechargePageState extends State<CampusCardRechargePage> {
     }
   }
 
-  /// 复制入口链接（含登录凭证）：WebView 内异常时可在浏览器打开同一页面。
-  Future<void> _copyEntryUrl() async {
-    await Clipboard.setData(ClipboardData(text: widget.entryUrl.toString()));
-    if (!mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('链接已复制，可粘贴到浏览器打开（含登录凭证，请勿外发）')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('校园卡充值'),
-        actions: [
-          IconButton(
-            tooltip: '复制链接',
-            icon: const Icon(Icons.link_outlined),
-            onPressed: _copyEntryUrl,
-          ),
-        ],
-      ),
+    final scheme = Theme.of(context).colorScheme;
+    return GlassScaffold(
+      title: '校园卡充值',
+      // WebView 是原生视图，玻璃镜片采样不到它的画面，关掉滚动边缘色带，
+      // 避免顶栏下方横一条与网页内容无关的底色带（与 type1webview 同款处理）。
+      showScrollEdge: false,
+      insetBody: true,
       body: Stack(
         children: [
           InAppWebView(
@@ -196,11 +182,16 @@ class _CampusCardRechargePageState extends State<CampusCardRechargePage> {
             },
           ),
           if (_pageLoading && _loadErrorMessage == null)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(minHeight: 2),
+            Positioned.fill(
+              child: Container(
+                color: scheme.surface.withValues(alpha: 0.6),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    color: scheme.primary,
+                  ),
+                ),
+              ),
             ),
           if (_loadErrorMessage != null)
             Positioned.fill(
