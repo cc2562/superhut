@@ -6,10 +6,13 @@ import 'package:get/get.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../pages/campuscard/campus_card_api.dart';
+import '../../pages/campuscard/campus_card_recharge_page.dart';
+import '../../security/credential_store.dart';
 import '../../theme/glass/glass_scaffold.dart';
 import '../../theme/glass/glass_theme.dart';
+import '../../utils/hut_user_api.dart';
 import 'logic.dart';
 
 // Local implementation of ScreenUtils
@@ -72,13 +75,68 @@ class FunctionHotWaterPage extends StatefulWidget {
 class _FunctionHotWaterPageState extends State<FunctionHotWaterPage> {
   final logic = Get.put(FunctionHotWaterLogic());
   final state = Get.find<FunctionHotWaterLogic>().state;
-  final Uri _url = Uri.parse(
-    'alipays://platformapi/startapp?appId=2019030163398604&page=pages/index/index',
-  );
+  bool _isOpeningRechargePage = false;
 
+  /// 充值入口：校验并恢复 HUT 会话后，构建完美校园 H5 链接并用自带
+  /// WebView 打开，返回后刷新校园卡余额；token 缺失或会话失效且无法
+  /// 恢复时提示先登录。完美校园 H5 只认 HUT 会话令牌（hutToken），与
+  /// 热水页用户信息、体测等 HUT 接口同一凭证；教务系统 token 不被该
+  /// H5 接受。
   Future<void> _launchUrl() async {
-    if (!await launchUrl(_url)) {
-      throw Exception('Could not launch $_url');
+    if (_isOpeningRechargePage) {
+      return;
+    }
+    _isOpeningRechargePage = true;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      // 本地缓存的 hutToken 可能已过期（Codex P2）：先在线校验，
+      // 失效时尝试刷新；刷新失败时引导重新登录，不带着死 token 打开 H5。
+      bool sessionValid;
+      try {
+        sessionValid = await HutUserApi().checkTokenValidity();
+      } catch (_) {
+        // 校验网络异常不阻断流程，交给 WebView 内的失败回落兜底。
+        sessionValid = true;
+      }
+      if (!sessionValid) {
+        bool refreshed = false;
+        try {
+          refreshed = await HutUserApi().refreshToken();
+        } catch (_) {
+          // 刷新失败按会话不可恢复处理。
+        }
+        if (!refreshed) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('登录已过期，请重新登录后再充值')),
+          );
+          return;
+        }
+      }
+      final token = await CredentialStore.instance.readOrEmpty('hutToken');
+      final Uri entryUrl;
+      try {
+        entryUrl = CampusCardApi.buildEntryUrl(token);
+      } on CampusCardTokenMissingException {
+        messenger.showSnackBar(const SnackBar(content: Text('请先登录后再充值')));
+        return;
+      }
+      if (!mounted) {
+        return;
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CampusCardRechargePage(entryUrl: entryUrl),
+        ),
+      );
+      try {
+        await logic.getBalance();
+      } catch (_) {
+        // 余额刷新失败不影响充值流程本身。
+      }
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('无法打开充值入口')));
+    } finally {
+      _isOpeningRechargePage = false;
     }
   }
 
