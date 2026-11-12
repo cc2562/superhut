@@ -6,10 +6,10 @@
 
 **为湖南工业大学学生打造的第三方一站式服务应用**
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.7.0+-blue.svg)](https://flutter.dev/)
-[![Dart](https://img.shields.io/badge/Dart-3.7.0+-blue.svg)](https://dart.dev/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.47.0%2B-blue.svg)](https://flutter.dev/)
+[![Dart](https://img.shields.io/badge/Dart-3.13.0%2B-blue.svg)](https://dart.dev/)
 [![License](https://img.shields.io/badge/GPL-3.0-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.5.1-brightgreen.svg)](pubspec.yaml)
+[![Version](https://img.shields.io/badge/Version-1.6.1-brightgreen.svg)](pubspec.yaml)
 
 </div>
 
@@ -40,11 +40,11 @@ SuperHUT 是专为湖南工业大学学生开发的第三方一站式服务应�
 
 ## 🛠️ 技术栈
 
-- **框架**: Flutter 3.7.0+
+- **框架**: Flutter 3.47.0+（Dart 3.13.0+）
 - **状态管理**: GetX
 - **网络请求**: Dio
-- **本地存储**: SharedPreferences
-- **WebView**: flutter_inappwebview
+- **本地存储**: SharedPreferences（应用设置）、flutter_secure_storage（登录凭据与令牌）
+- **WebView**: flutter_inappwebview、webview_flutter
 - **UI组件**: Material Design 3
 - **主题**: FlexColorScheme
 - **图标**: Ionicons
@@ -53,11 +53,36 @@ SuperHUT 是专为湖南工业大学学生开发的第三方一站式服务应�
 ## 📦 安装说明
 
 ### 环境要求
-- Flutter SDK 3.7.0 或更高版本
-- Dart SDK 3.7.0 或更高版本
-- Android Studio / VS Code
-- Android SDK (Android 5.0+)
-- iOS SDK (iOS 11.0+) - 仅iOS开发需要
+
+SDK 下限以当前 [pubspec.lock](pubspec.lock) 的 `sdks` 字段为准；更新依赖时请同步核对环境要求。
+
+#### 通用工具
+
+- **Flutter SDK**：3.47.0 或更高的兼容稳定版，并将其 `bin` 目录加入 PATH。
+- **Dart SDK**：`>=3.13.0 <4.0.0`，随 Flutter SDK 提供，无需单独安装。
+- **Git**：用于克隆仓库和拉取 Git 来源的依赖。
+- **编辑器**：Android Studio 或 VS Code，并安装 Flutter / Dart 插件；编辑器插件不能替代 Flutter SDK。
+
+#### Android 开发
+
+通过 Android Studio 的 SDK Manager 安装所需组件：
+
+| 组件 | 当前构建要求 |
+| --- | --- |
+| Android SDK Platform | API 36（`compileSdk = 36`） |
+| Android SDK Build-Tools | 36.0.0（AGP 9.1 默认版本） |
+| Android NDK | 28.2.13676358 |
+| JDK | 17 或与 Gradle 9.3.1 兼容的版本，可使用 Android Studio 自带的 JDK |
+
+配置来源：[Android 应用配置](android/app/build.gradle.kts)、[Gradle Wrapper 配置](android/gradle/wrapper/gradle-wrapper.properties)和[Gradle 插件配置](android/settings.gradle.kts)。Gradle 9.3.1、AGP 9.1.0 和 Kotlin 2.4.0 已由项目配置管理，无需单独安装 Gradle 或 Kotlin 编译器。
+
+准备开启 USB 调试的 Android 真机，或安装 Android Emulator 及系统镜像。Windows 环境若提示缺少符号链接权限，请按 Flutter 提示配置开发者模式。完整步骤见 [Flutter Android 环境配置](https://docs.flutter.dev/platform-integration/android/setup)。
+
+#### iOS 开发（仅 macOS）
+
+本地编译和调试 iOS 需要 macOS、与所用 Flutter SDK 兼容的 Xcode 及命令行工具、CocoaPods，以及 iOS 模拟器或真机。
+
+当前 [iOS 构建工作流](.github/workflows/build-ios-ipa.yml)使用 `macos-15-intel`、`latest-stable` Xcode 和 Flutter stable，可作为工具链配置参考。详细步骤见 [Flutter iOS 环境配置](https://docs.flutter.dev/platform-integration/ios/setup)。
 
 ### 安装步骤
 
@@ -67,17 +92,35 @@ git clone https://github.com/cc2562/superhut.git
 cd superhut
 ```
 
-2. **安装依赖**
+2. **检查开发环境**
+
 ```bash
-flutter pub get
+flutter --version
+flutter doctor -v
+
+# Android 开发：阅读并接受 SDK 许可
+flutter doctor --android-licenses
 ```
 
-3. **运行项目**
+按目标平台处理 `flutter doctor` 提示的问题，再继续安装依赖。
+
+3. **安装依赖并运行测试**
+
 ```bash
+flutter pub get
+flutter test
+```
+
+4. **运行项目**
+
+```bash
+# 查看已连接的真机和模拟器
+flutter devices
+
 # 调试模式
 flutter run
 
-# 发布模式
+# 发布模式：使用受支持的真机
 flutter run --release
 ```
 
@@ -90,10 +133,14 @@ flutter build apk --release
 # Android App Bundle
 flutter build appbundle --release
 
-# iOS
+# iOS（仅 macOS，需要配置签名）
 flutter build ios --release
 
+# iOS：仅验证编译，不签名
+flutter build ios --release --no-codesign
 ```
+
+Android 正式发布前需要配置本地 `android/key.properties` 和签名密钥；当前工程在未配置正式签名时使用 debug 签名。iOS 真机安装和分发也需要相应的签名配置。
 
 ## 🚀 开发指南
 
